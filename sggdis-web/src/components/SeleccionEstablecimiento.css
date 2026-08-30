@@ -1,0 +1,268 @@
+:root {
+  --azul-oscuro: #021A53;
+  --azul-medio: #002E7A;
+  --azul-acero: #164687;
+  --dorado: #CFAC65;
+  --gris: #C1C5C8;
+  --blanco: #FFFFFF;
+}
+
+.pagina-inicio {
+  font-family: 'Segoe UI', Inter, Helvetica, sans-serif;
+  background: var(--azul-oscuro);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+.cabecera-simple {
+  background: var(--blanco);
+  padding: 12px 24px;
+  border-bottom: 3px solid var(--azul-medio);
+}
+
+.cabecera__marca { display: flex; align-items: center; gap: 12px; }
+.cabecera__logo {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--dorado); color: var(--azul-oscuro);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.8rem;
+}
+.cabecera__marca h1 { font-size: 1rem; margin: 0; color: var(--azul-oscuro); }
+.cabecera__marca p { font-size: 0.75rem; margin: 0; color: #5b6470; }
+
+.tarjeta-inicio {
+  background: var(--blanco);
+  max-width: 520px;
+  margin: 40px auto;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+}
+
+.tarjeta-inicio__logo {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--dorado); color: var(--azul-oscuro);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.2rem;
+  margin: 0 auto 12px auto;
+}
+
+.tarjeta-inicio__institucion {
+  color: var(--azul-acero);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px 0;
+}
+
+.tarjeta-inicio h2 {
+  font-family: Baskerville, Georgia, serif;
+  color: var(--azul-oscuro);
+  font-size: 1.5rem;
+  margin: 0 0 24px 0;
+}
+
+.campo-fila {
+  display: flex;
+  gap: 16px;
+  text-align: left;
+}
+
+.campo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.campo label {
+  font-size: 0.75rem;
+  color: #5b6470;
+  font-weight: 600;
+}
+
+.campo input {
+  border: 1px solid var(--gris);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.campo input:read-only {
+  background: #F4F5F6;
+  color: #5b6470;
+}
+
+.campo-titulo {
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+  margin: 8px 0;
+}
+
+.tipos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.tipo-card {
+  text-align: left;
+  border: 1px solid var(--gris);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--blanco);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tipo-card--activa {
+  border-color: var(--azul-acero);
+  box-shadow: 0 0 0 2px rgba(22, 70, 135, 0.2);
+}
+
+.tipo-card__fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tipo-card__nombre {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+}
+
+.tipo-card__secciones {
+  font-size: 0.7rem;
+  color: #5b6470;
+}
+
+.chip {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chip--puntos {
+  background: var(--azul-acero);
+  color: var(--blanco);
+}
+
+.boton {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.boton--primario {
+  background: var(--azul-acero);
+  color: var(--blanco);
+}
+
+.boton--primario:hover {
+  background: var(--azul-medio);
+}
+
+.boton--primario:disabled {
+  background: var(--gris);
+  cursor: not-allowed;
+}
+
+.boton--ancho {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .tipos-grid { grid-template-columns: 1fr; }
+  .campo-fila { flex-direction: column; }
+  .tarjeta-inicio { margin: 16px; padding: 20px; }
+}
+
+.ayuda-obligatorio {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #5b6470;
+}
+
+.input-fecha-wrapper {
+  width: 100%;
+}
+
+.input-fecha {
+  width: 100%;
+  border: 1px solid var(--gris);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--blanco);
+  color: var(--azul-oscuro);
+}
+
+.react-datepicker {
+  font-family: 'Segoe UI', Inter, Helvetica, sans-serif;
+  border: 1px solid var(--gris);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.react-datepicker__header {
+  background: var(--azul-oscuro);
+  border-bottom: none;
+}
+
+.react-datepicker__header .react-datepicker__current-month,
+.react-datepicker-time__header {
+  color: #FFFFFF !important;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.react-datepicker__day-name {
+  color: var(--azul-oscuro) !important;
+  font-weight: 600;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: var(--azul-acero);
+  color: var(--blanco);
+}
+
+.react-datepicker__day:hover {
+  background: #EEF1F4;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: var(--blanco);
+}
+
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+  color: var(--azul-oscuro) !important;
+  background: #FFFFFF !important;
+  color-scheme: light;
+  border-radius: 4px;
+  border: 1px solid var(--gris);
+  padding: 2px 6px;
+  font-weight: 600;
+}
+
+.react-datepicker__month-select {
+  text-transform: capitalize;
+}
