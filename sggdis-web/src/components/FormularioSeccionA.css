@@ -290,3 +290,29 @@
   border-color: var(--azul-acero);
   font-weight: 600;
 }
+
+.tarjeta-estado {
+  max-width: 480px;
+  margin: 64px auto;
+  background: var(--blanco);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(2, 26, 83, 0.18);
+  overflow: hidden;
+}
+
+.estado-mensaje {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 24px;
+  font-size: 15px;
+  color: var(--azul-oscuro);
+}
+
+.estado-mensaje__icono {
+  font-size: 22px;
+}
+
+.estado-mensaje--error {
+  color: #B00020;
+}

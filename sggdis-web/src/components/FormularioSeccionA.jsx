@@ -1,74 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './FormularioSeccionA.css';
 
-// Contenido oficial: Reglamento de Servicio de Alimentación al Público N° 37308-S
-// (Guía de Evaluación Sanitaria, Acuerdo 1803)
-const GRUPOS = [
-  {
-    articulo: 'Ubicación · Art. 5',
-    critico: false,
-    items: [
-      { id: 'a1', texto: 'Distancia mayor o igual a 3m de expendios y bodegas de agroquímicos que no realizan mezclas y mayor o igual a 10m de aquellas que realizan mezclas.', valor: 1 },
-      { id: 'a2', texto: 'Limpios, libres de basura o equipo en desuso', valor: 1 },
-    ],
-  },
-  {
-    articulo: 'Alrededores · Art. 6',
-    critico: false,
-    items: [
-      { id: 'a3', texto: 'Libres de aguas estancadas', valor: 1 },
-      { id: 'a4', texto: 'Zonas verdes y ornamentales recortadas y libres de maleza', valor: 1 },
-      { id: 'a5', texto: 'Se observan equipos o materiales en desuso que puedan constituirse en atracción y refugio para insectos y roedores', valor: 1 },
-      { id: 'a6', texto: 'Mantenimiento adecuado de los conductos o canales exteriores que drenan las aguas, para evitar su estancamiento.', valor: 1 },
-    ],
-  },
-  {
-    articulo: 'Edificaciones · Art. 7',
-    critico: false,
-    items: [
-      { id: 'a7', texto: 'La edificación se encuentra en buenas condiciones físicas e higiénicas.', valor: 1 },
-      { id: 'a8', texto: 'Cumple con las condiciones de acceso reguladas por la Ley 7600', valor: 1 },
-      { id: 'a9', texto: 'Está independiente de viviendas u otras actividades de naturaleza distinta', valor: 1 },
-    ],
-  },
-  {
-    articulo: 'Distribución de las Áreas · Art. 8 y 9',
-    critico: false,
-    items: [
-      { id: 'a10', texto: 'Según corresponda, cuenta con las áreas claramente definidas de: almacenamiento y conservación, Preparación, Consumo, Servicios sanitarios', valor: 1 },
-      { id: 'a11', texto: 'Las dimensiones permiten el desarrollo adecuado de cada actividad', valor: 1 },
-    ],
-  },
-  {
-    articulo: 'Instalaciones de Gas · Art. 11',
-    critico: false,
-    items: [
-      { id: 'a12', texto: 'Las tuberías o mangueras de gas se encuentran en buenas condiciones de funcionamiento (sin fugas)', valor: 2 },
-      { id: 'a13', texto: 'Los cilindros se encuentran en buenas condiciones físicas y sus llaves de salida operan correctamente', valor: 2 },
-      { id: 'a14', texto: 'Los cilindros se encuentran en un área ventilada, segura y debidamente protegida, fuera del área preparación de alimentos.', valor: 2 },
-      { id: 'a15', texto: 'Cuentan con una bitácora donde se anota el mantenimiento preventivo y correctivo de las instalaciones de gas.', valor: 2 },
-    ],
-  },
-  {
-    articulo: 'Abastecimiento de Agua Potable · Art. 10',
-    critico: true,
-    items: [
-      { id: 'a16', texto: 'Disposición de agua potable siempre', valor: 3 },
-      { id: 'a17', texto: 'Agua suficiente para ejecutar todas las operaciones en el establecimiento', valor: 3 },
-      { id: 'a18', texto: 'Existe un procedimiento escrito para la higienización de tanques de almacenamiento cuando cuenten con éstos.', valor: 2 },
-    ],
-  },
-  {
-    articulo: 'Instalaciones Eléctricas · Art. 12',
-    critico: false,
-    items: [
-      { id: 'a19', texto: 'El cableado eléctrico, tomacorrientes, interruptores y enchufes se mantiene en buenas condiciones de funcionamiento.', valor: 2 },
-      { id: 'a20', texto: 'Cuenta con caja de Brecker en buen estado de funcionamiento', valor: 1 },
-      { id: 'a21', texto: 'El cableado eléctrico se encuentra entubado', valor: 1 },
-      { id: 'a22', texto: 'Tomacorrientes e interruptores se encuentran anclados.', valor: 1 },
-    ],
-  },
-];
+// Ajustar el puerto si el tuyo es distinto al que muestra Swagger
+const API_BASE_URL = 'https://localhost:7119';
 
 const TABS = [
   'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
@@ -81,9 +15,57 @@ const OPCIONES = [
   { valor: 'N/A', icono: '—' },
 ];
 
+// Convierte la lista plana de ítems que devuelve la API en grupos por artículo,
+// igual a como antes venía armado el array GRUPOS a mano.
+function agruparPorArticulo(items) {
+  const grupos = [];
+  let grupoActual = null;
+
+  items.forEach((item) => {
+    if (!grupoActual || grupoActual.articulo !== item.articulo) {
+      grupoActual = { articulo: item.articulo, items: [] };
+      grupos.push(grupoActual);
+    }
+    grupoActual.items.push({
+      id: item.idItem,
+      texto: item.descripcion,
+      valor: item.puntaje,
+      critico: item.esCritico,
+    });
+  });
+
+  return grupos;
+}
+
 function FormularioSeccionA({ datos }) {
+  const [grupos, setGrupos] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
   // Cada respuesta guarda { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
   const [respuestas, setRespuestas] = useState({});
+
+  useEffect(() => {
+    async function cargarSeccion() {
+      try {
+        setCargando(true);
+        setError(null);
+        const respuesta = await fetch(`${API_BASE_URL}/api/guias-inspeccion/1/secciones/A`);
+        if (!respuesta.ok) {
+          throw new Error('La API respondió con un error.');
+        }
+        const datosApi = await respuesta.json();
+        setGrupos(agruparPorArticulo(datosApi.items));
+          } catch (err) {
+              console.error('Error al cargar la Sección A:', err);
+              setError('No se pudo cargar la Sección A. Verificá que el backend esté corriendo.');
+       } finally {
+        setCargando(false);
+      }
+    }
+
+    cargarSeccion();
+  }, []);
 
   // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
   const manejarSeleccion = (itemId, opcion, valorMaximo) => {
@@ -121,17 +103,43 @@ function FormularioSeccionA({ datos }) {
     let obtenidos = 0;
     let maximo = 0;
     let criticosIncumplidos = 0;
-    GRUPOS.forEach((grupo) => {
+    grupos.forEach((grupo) => {
       grupo.items.forEach((item) => {
         const respuesta = respuestas[item.id];
         if (respuesta?.estado === 'N/A') return;
         maximo += item.valor;
         if (respuesta?.estado === 'Cumple') obtenidos += respuesta.puntos ?? 0;
-        if (grupo.critico && respuesta?.estado === 'No cumple') criticosIncumplidos += 1;
+        if (item.critico && respuesta?.estado === 'No cumple') criticosIncumplidos += 1;
       });
     });
     return { obtenidos, maximo, criticosIncumplidos };
-  }, [respuestas]);
+  }, [respuestas, grupos]);
+
+  if (cargando) {
+    return (
+      <div className="pagina">
+        <div className="tarjeta-estado">
+          <div className="estado-mensaje">
+            <span className="estado-mensaje__icono">⏳</span>
+            <p>Cargando Sección A…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="pagina">
+        <div className="tarjeta-estado">
+          <div className="estado-mensaje estado-mensaje--error">
+            <span className="estado-mensaje__icono">⚠</span>
+            <p>{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pagina">
@@ -168,12 +176,12 @@ function FormularioSeccionA({ datos }) {
           </div>
         </div>
 
-        {GRUPOS.map((grupo) => (
+        {grupos.map((grupo) => (
           <div className="grupo" key={grupo.articulo}>
             <span className="grupo__etiqueta">{grupo.articulo}</span>
             {grupo.items.map((item) => {
               const respuesta = respuestas[item.id];
-              const esCritico = grupo.critico;
+              const esCritico = item.critico;
               const incumplido = esCritico && respuesta?.estado === 'No cumple';
               return (
                 <div className={`item ${incumplido ? 'item--critico' : ''}`} key={item.id}>
