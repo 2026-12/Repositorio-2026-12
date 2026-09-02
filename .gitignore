@@ -1,0 +1,12 @@
+﻿################################################################################
+# Este archivo .gitignore ha sido creado automáticamente por Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/src/SGGDIS_Api/SGGDIS_Api/obj
+**/.vs/
+**/bin/
+**/obj/
+**/node_modules/
+*.user
+*.suo
