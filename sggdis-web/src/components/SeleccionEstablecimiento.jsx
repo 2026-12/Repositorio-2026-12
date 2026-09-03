@@ -1,35 +1,21 @@
 import { useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale';
+import { useTiposEstablecimiento } from '../hooks/useTiposEstablecimiento';
+import { ID_GUIA_ACTIVA } from '../config/inspeccion';
 import 'react-datepicker/dist/react-datepicker.css';
 import './SeleccionEstablecimiento.css';
 
 registerLocale('es', es);
-
-// Tipos de establecimiento y secciones aplicables (Guía de Evaluación
-// Sanitaria, Acuerdo 1803) — fuente: Excel del equipo.
-const TIPOS_ESTABLECIMIENTO = [
-  { id: 'con-express', nombre: 'Establecimiento con servicio Express', secciones: 'A-B-C-D-E-F-G', puntos: 210 },
-  { id: 'sin-express', nombre: 'Establecimiento sin servicio Express', secciones: 'A-B-C-D-E-F', puntos: 199 },
-  { id: 'catering', nombre: 'Servicios de Catering', secciones: 'A-B-C-D-E-H', puntos: 171 },
-  { id: 'express', nombre: 'Servicio Express', secciones: 'A-B-C-D-E-G', puntos: 180 },
-  { id: 'ventana', nombre: 'Ventana', secciones: 'A-B-C-D-E', puntos: 177 },
-];
-
-function generarConsecutivo() {
-  // Prueba: en producción este número lo asigna el backend, no el frontend.
-  const correlativo = String(Math.floor(Math.random() * 9000) + 1000);
-  const anio = new Date().getFullYear();
-  return `MS-DRRSCS-ARS-T-AI-${correlativo}-${anio}`;
-}
 
 function SeleccionEstablecimiento({ onComenzar }) {
   const [fecha, setFecha] = useState(null);
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
   const [consecutivo, setConsecutivo] = useState('');
+  const { tipos, cargando, error } = useTiposEstablecimiento(ID_GUIA_ACTIVA);
 
-  const tipoSeleccionado = TIPOS_ESTABLECIMIENTO.find((t) => t.id === tipoId);
+  const tipoSeleccionado = tipos.find((tipo) => tipo.idTipoEstablecimiento === tipoId);
   const puedeComenzar =
     fecha !== null &&
     consecutivo.trim().length > 0 &&
@@ -43,7 +29,9 @@ function SeleccionEstablecimiento({ onComenzar }) {
       fecha: fecha.toLocaleDateString('es-CR'),
       consecutivo,
       tipoLabel: tipoSeleccionado.nombre,
-      secciones: tipoSeleccionado.secciones,
+      idGuia: ID_GUIA_ACTIVA,
+      idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
+      secciones: tipoSeleccionado.secciones ?? [],
     });
   };
 
@@ -107,22 +95,24 @@ function SeleccionEstablecimiento({ onComenzar }) {
         </div>
 
         <p className="campo-titulo">Seleccione el tipo de establecimiento *</p>
-        <div className="tipos-grid">
-          {TIPOS_ESTABLECIMIENTO.map((tipo) => (
+        {cargando && <p className="ayuda-obligatorio">Cargando tipos de establecimiento...</p>}
+        {error && <p className="ayuda-obligatorio">{error}</p>}
+        {!cargando && !error && <div className="tipos-grid">
+          {tipos.map((tipo) => (
             <button
               type="button"
-              key={tipo.id}
-              className={`tipo-card ${tipoId === tipo.id ? 'tipo-card--activa' : ''}`}
-              onClick={() => setTipoId(tipo.id)}
+              key={tipo.idTipoEstablecimiento}
+              className={`tipo-card ${tipoId === tipo.idTipoEstablecimiento ? 'tipo-card--activa' : ''}`}
+              onClick={() => setTipoId(tipo.idTipoEstablecimiento)}
             >
               <div className="tipo-card__fila">
                 <span className="tipo-card__nombre">{tipo.nombre}</span>
-                <span className="chip chip--puntos">{tipo.puntos} pts</span>
+                <span className="chip chip--puntos">{tipo.puntajeMaximo} pts</span>
               </div>
-              <span className="tipo-card__secciones">Secciones: {tipo.secciones}</span>
+              <span className="tipo-card__secciones">Secciones: {tipo.secciones.map((seccion) => seccion.codigo).filter((codigo) => codigo !== 'H').join('-')}</span>
             </button>
           ))}
-        </div>
+        </div>}
 
         <button
           type="button"

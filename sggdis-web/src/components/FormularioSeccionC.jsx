@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+import { obtenerSeccion } from '../services/guiasInspeccionService';
+import { agruparPorArticulo } from '../domain/agrupacionItems';
 import './FormularioSeccionC.css';
-
-// Ajustar el puerto si el tuyo es distinto al que muestra Swagger
-const API_BASE_URL = 'https://localhost:7119';
 
 const TABS = [
   'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
@@ -15,29 +14,11 @@ const OPCIONES = [
   { valor: 'N/A', icono: '—' },
 ];
 
-// Igual que en FormularioSeccionA: convierte la lista plana de ítems que
-// devuelve la API en grupos por artículo.
-function agruparPorArticulo(items) {
-  const grupos = [];
-  let grupoActual = null;
-
-  items.forEach((item) => {
-    if (!grupoActual || grupoActual.articulo !== item.articulo) {
-      grupoActual = { articulo: item.articulo, items: [] };
-      grupos.push(grupoActual);
-    }
-    grupoActual.items.push({
-      id: item.idItem,
-      texto: item.descripcion,
-      valor: item.puntaje,
-      critico: item.esCritico,
-    });
-  });
-
-  return grupos;
-}
-
-function FormularioSeccionC({ datos }) {
+function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada }) {
+  const codigos = useMemo(
+    () => ['C1', 'C2'].filter((codigo) => datos.secciones?.some((seccion) => seccion.codigo === codigo)),
+    [datos.secciones],
+  );
   // C1 y C2 se guardan por separado para poder mostrar el título dorado de
   // cada subsección, pero se validan y puntúan como una sola Sección C.
   const [gruposC1, setGruposC1] = useState([]);
@@ -46,7 +27,6 @@ function FormularioSeccionC({ datos }) {
   const [error, setError] = useState(null);
 
   // Cada respuesta guarda { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
-  const [respuestas, setRespuestas] = useState({});
 
   // Controla si se debe mostrar la alerta roja de "faltan ítems" (solo
   // aparece después de un intento fallido de avanzar, no desde el inicio).
@@ -62,16 +42,16 @@ function FormularioSeccionC({ datos }) {
         // (C1 = Condiciones Físicas y Sanitarias, C2 = Condiciones de
         // Almacenamiento), así que hay que traer ambas y juntarlas en una
         // sola vista para el usuario final.
-        const [resC1, resC2] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/guias-inspeccion/1/secciones/C1`),
-          fetch(`${API_BASE_URL}/api/guias-inspeccion/1/secciones/C2`),
-        ]);
-        if (!resC1.ok || !resC2.ok) {
-          throw new Error('La API respondió con un error.');
-        }
-        const [datosC1, datosC2] = await Promise.all([resC1.json(), resC2.json()]);
-        setGruposC1(agruparPorArticulo(datosC1.items));
-        setGruposC2(agruparPorArticulo(datosC2.items));
+        const resultados = await Promise.all(codigos.map((codigo) => (
+          seccionesCache[codigo]
+            ?? obtenerSeccion(datos.idGuia ?? 1, codigo, datos.idTipoEstablecimiento)
+        )));
+        const datosPorCodigo = Object.fromEntries(resultados.map((seccion) => [seccion.codigo, seccion]));
+        const datosC1 = datosPorCodigo.C1;
+        const datosC2 = datosPorCodigo.C2;
+        setGruposC1(datosC1 ? agruparPorArticulo(datosC1.items) : []);
+        setGruposC2(datosC2 ? agruparPorArticulo(datosC2.items) : []);
+        resultados.forEach((seccion) => onSeccionCargada?.(seccion.codigo, seccion));
       } catch (err) {
         console.error('Error al cargar la Sección C:', err);
         setError('No se pudo cargar la Sección C. Verificá que el backend esté corriendo.');
@@ -81,14 +61,14 @@ function FormularioSeccionC({ datos }) {
     }
 
     cargarSeccion();
-  }, []);
+  }, [codigos, datos.idGuia, datos.idTipoEstablecimiento, onSeccionCargada, seccionesCache]);
 
   // Todos los grupos combinados (C1 + C2), usado para puntaje y validación.
   const todosLosGrupos = useMemo(() => [...gruposC1, ...gruposC2], [gruposC1, gruposC2]);
 
   // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
   const manejarSeleccion = (itemId, opcion, valorMaximo) => {
-    setRespuestas((prev) => {
+    onRespuestasChange?.((prev) => {
       const actual = prev[itemId];
       if (actual && actual.estado === opcion) {
         const copia = { ...prev };
@@ -109,7 +89,7 @@ function FormularioSeccionC({ datos }) {
 
   // Ajustar el puntaje parcial de un ítem ya marcado como "Cumple" (0..valor máximo).
   const manejarPuntos = (itemId, puntos) => {
-    setRespuestas((prev) => ({
+    onRespuestasChange?.((prev) => ({
       ...prev,
       [itemId]: { ...prev[itemId], puntos },
     }));
@@ -165,6 +145,7 @@ function FormularioSeccionC({ datos }) {
     }
     setMostrarAlerta(false);
     alert('¡Sección C completada con éxito! Todos los ítems fueron respondidos.');
+    onSiguiente?.();
   };
 
   if (cargando) {
@@ -321,7 +302,7 @@ function FormularioSeccionC({ datos }) {
       </main>
 
       <footer className="pie">
-        <button type="button" className="boton boton--secundario">← Anterior</button>
+        <button type="button" className="boton boton--secundario" onClick={onAnterior} disabled={!puedeRetroceder}>← Anterior</button>
         <span>Paso 3 de 9</span>
         <button type="button" className="boton boton--primario" onClick={manejarSiguiente}>
           Siguiente →
