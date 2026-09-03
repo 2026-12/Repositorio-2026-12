@@ -6,7 +6,7 @@ const API_BASE_URL = 'https://localhost:7119';
 
 const TABS = [
   'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Servicio a Domicilio', 'Cierre y Dictamen',
+  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
 ];
 
 const OPCIONES = [
@@ -38,9 +38,8 @@ function agruparPorArticulo(items) {
 }
 
 function FormularioSeccionC({ datos }) {
-  // Antes era un solo arreglo "grupos" con C1 y C2 mezclados; ahora se
-  // guardan por separado para poder mostrar el título dorado de cada
-  // subsección antes de sus ítems correspondientes.
+  // C1 y C2 se guardan por separado para poder mostrar el título dorado de
+  // cada subsección, pero se validan y puntúan como una sola Sección C.
   const [gruposC1, setGruposC1] = useState([]);
   const [gruposC2, setGruposC2] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -48,6 +47,10 @@ function FormularioSeccionC({ datos }) {
 
   // Cada respuesta guarda { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
   const [respuestas, setRespuestas] = useState({});
+
+  // Controla si se debe mostrar la alerta roja de "faltan ítems" (solo
+  // aparece después de un intento fallido de avanzar, no desde el inicio).
+  const [mostrarAlerta, setMostrarAlerta] = useState(false);
 
   useEffect(() => {
     async function cargarSeccion() {
@@ -79,6 +82,9 @@ function FormularioSeccionC({ datos }) {
 
     cargarSeccion();
   }, []);
+
+  // Todos los grupos combinados (C1 + C2), usado para puntaje y validación.
+  const todosLosGrupos = useMemo(() => [...gruposC1, ...gruposC2], [gruposC1, gruposC2]);
 
   // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
   const manejarSeleccion = (itemId, opcion, valorMaximo) => {
@@ -112,13 +118,11 @@ function FormularioSeccionC({ datos }) {
   // Los ítems marcados N/A no cuentan ni en el puntaje obtenido ni en el
   // máximo posible (regla 4 de la guía oficial). "Cumple" suma los puntos
   // parciales elegidos por el inspector, no siempre el valor completo.
-  // Ahora se recorren gruposC1 y gruposC2 juntos, para que el puntaje total
-  // siga sumando las dos subsecciones como una sola Sección C.
   const { obtenidos, maximo, criticosIncumplidos } = useMemo(() => {
     let obtenidos = 0;
     let maximo = 0;
     let criticosIncumplidos = 0;
-    [...gruposC1, ...gruposC2].forEach((grupo) => {
+    todosLosGrupos.forEach((grupo) => {
       grupo.items.forEach((item) => {
         const respuesta = respuestas[item.id];
         if (respuesta?.estado === 'N/A') return;
@@ -128,7 +132,40 @@ function FormularioSeccionC({ datos }) {
       });
     });
     return { obtenidos, maximo, criticosIncumplidos };
-  }, [respuestas, gruposC1, gruposC2]);
+  }, [respuestas, todosLosGrupos]);
+
+  // Cuenta los ítems totales y los pendientes de responder (entre C1 y C2
+  // juntas), para la validación de obligatoriedad (issue #107).
+  const { totalItems, itemsSinResponder } = useMemo(() => {
+    let total = 0;
+    let sinResponder = 0;
+    todosLosGrupos.forEach((grupo) => {
+      grupo.items.forEach((item) => {
+        total++;
+        if (!respuestas[item.id]) {
+          sinResponder++;
+        }
+      });
+    });
+    return { totalItems: total, itemsSinResponder: sinResponder };
+  }, [respuestas, todosLosGrupos]);
+
+  // Al hacer clic en "Siguiente": si faltan ítems por responder, no avanza
+  // y muestra la alerta con scroll hacia arriba. Si todo está respondido,
+  // avanza (por ahora con un alert(); cuando el wizard general esté listo,
+  // este es el lugar donde se llamaría a onCompletar()).
+  const manejarSiguiente = () => {
+    if (itemsSinResponder > 0) {
+      setMostrarAlerta(true);
+      const tarjeta = document.querySelector('.tarjeta');
+      if (tarjeta) {
+        tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+    setMostrarAlerta(false);
+    alert('¡Sección C completada con éxito! Todos los ítems fueron respondidos.');
+  };
 
   if (cargando) {
     return (
@@ -156,8 +193,8 @@ function FormularioSeccionC({ datos }) {
     );
   }
 
-  // Este bloque se repite igual para C1 y C2, así que se saca a una función
-  // en vez de duplicar todo el JSX dos veces.
+  // Se repite igual para C1 y C2, así que se saca a una función en vez de
+  // duplicar todo el JSX dos veces.
   function renderizarGrupos(grupos) {
     return grupos.map((grupo) => (
       <div className="grupo" key={grupo.articulo}>
@@ -166,8 +203,9 @@ function FormularioSeccionC({ datos }) {
           const respuesta = respuestas[item.id];
           const esCritico = item.critico;
           const incumplido = esCritico && respuesta?.estado === 'No cumple';
+          const esPendiente = mostrarAlerta && !respuesta;
           return (
-            <div className={`item ${incumplido ? 'item--critico' : ''}`} key={item.id}>
+            <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id}>
               {esCritico && <span className="item__tag">⚠ PUNTO CRÍTICO</span>}
               <div className="item__fila">
                 <div className="item__texto">
@@ -253,6 +291,26 @@ function FormularioSeccionC({ datos }) {
           </div>
         </div>
 
+        {/* --- Mensajes de validación / progreso en tiempo real --- */}
+        {mostrarAlerta && itemsSinResponder > 0 && (
+          <div className="alerta-validacion-error">
+            <span className="alerta-validacion-error__titulo">⚠️ Validación de Formulario</span>
+            <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItems} ítems. Por favor complete los campos marcados en rojo.</span>
+          </div>
+        )}
+
+        {!mostrarAlerta && itemsSinResponder > 0 && (
+          <div className="mensaje-progreso-validacion">
+            <span>📝 En progreso: Has respondido {totalItems - itemsSinResponder} de {totalItems} ítems. Faltan {itemsSinResponder} por completar.</span>
+          </div>
+        )}
+
+        {itemsSinResponder === 0 && totalItems > 0 && (
+          <div className="mensaje-progreso-validacion mensaje-progreso-validacion--completo">
+            <span>✅ ¡Excelente! Completaste los {totalItems} ítems de esta sección.</span>
+          </div>
+        )}
+
         {/* C1: Condiciones Físicas y Sanitarias */}
         <h3 className="subseccion-titulo">Condiciones Físicas y Sanitarias</h3>
         {renderizarGrupos(gruposC1)}
@@ -265,7 +323,9 @@ function FormularioSeccionC({ datos }) {
       <footer className="pie">
         <button type="button" className="boton boton--secundario">← Anterior</button>
         <span>Paso 3 de 9</span>
-        <button type="button" className="boton boton--primario">Siguiente →</button>
+        <button type="button" className="boton boton--primario" onClick={manejarSiguiente}>
+          Siguiente →
+        </button>
       </footer>
     </div>
   );
