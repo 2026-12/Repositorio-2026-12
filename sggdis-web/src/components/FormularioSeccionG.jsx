@@ -6,7 +6,7 @@ const API_BASE_URL = 'https://localhost:7119';
 
 const TABS = [
   'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Servicio a Domicilio', 'Cierre y Dictamen',
+  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
 ];
 
 const OPCIONES = [
@@ -44,6 +44,10 @@ function FormularioSeccionG({ datos }) {
 
   // Cada respuesta guarda { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
   const [respuestas, setRespuestas] = useState({});
+
+  // Controla si se debe mostrar la alerta roja de "faltan ítems" (solo
+  // aparece después de un intento fallido de avanzar, no desde el inicio).
+  const [mostrarAlerta, setMostrarAlerta] = useState(false);
 
   useEffect(() => {
     async function cargarSeccion() {
@@ -115,6 +119,40 @@ function FormularioSeccionG({ datos }) {
     return { obtenidos, maximo, criticosIncumplidos };
   }, [respuestas, grupos]);
 
+  // Cuenta los ítems totales y los pendientes de responder, para la
+  // validación de obligatoriedad (issue #85 - Validación de obligatoriedad
+  // y habilitación de siguiente sección).
+  const { totalItems, itemsSinResponder } = useMemo(() => {
+    let total = 0;
+    let sinResponder = 0;
+    grupos.forEach((grupo) => {
+      grupo.items.forEach((item) => {
+        total++;
+        if (!respuestas[item.id]) {
+          sinResponder++;
+        }
+      });
+    });
+    return { totalItems: total, itemsSinResponder: sinResponder };
+  }, [respuestas, grupos]);
+
+  // Al hacer clic en "Siguiente": si faltan ítems por responder, no avanza
+  // y muestra la alerta con scroll hacia arriba. Si todo está respondido,
+  // avanza (por ahora con un alert(); cuando el wizard general esté listo,
+  // este es el lugar donde se llamaría a onCompletar()).
+  const manejarSiguiente = () => {
+    if (itemsSinResponder > 0) {
+      setMostrarAlerta(true);
+      const tarjeta = document.querySelector('.tarjeta');
+      if (tarjeta) {
+        tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+    setMostrarAlerta(false);
+    alert('¡Sección G completada con éxito! Todos los ítems fueron respondidos.');
+  };
+
   if (cargando) {
     return (
       <div className="pagina">
@@ -176,6 +214,26 @@ function FormularioSeccionG({ datos }) {
           </div>
         </div>
 
+        {/* --- Mensajes de validación / progreso en tiempo real --- */}
+        {mostrarAlerta && itemsSinResponder > 0 && (
+          <div className="alerta-validacion-error">
+            <span className="alerta-validacion-error__titulo">⚠️ Validación de Formulario</span>
+            <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItems} ítems. Por favor complete los campos marcados en rojo.</span>
+          </div>
+        )}
+
+        {!mostrarAlerta && itemsSinResponder > 0 && (
+          <div className="mensaje-progreso-validacion">
+            <span>📝 En progreso: Has respondido {totalItems - itemsSinResponder} de {totalItems} ítems. Faltan {itemsSinResponder} por completar.</span>
+          </div>
+        )}
+
+        {itemsSinResponder === 0 && totalItems > 0 && (
+          <div className="mensaje-progreso-validacion mensaje-progreso-validacion--completo">
+            <span>✅ ¡Excelente! Completaste los {totalItems} ítems de esta sección.</span>
+          </div>
+        )}
+
         {grupos.map((grupo) => (
           <div className="grupo" key={grupo.articulo}>
             <span className="grupo__etiqueta">{grupo.articulo}</span>
@@ -183,8 +241,9 @@ function FormularioSeccionG({ datos }) {
               const respuesta = respuestas[item.id];
               const esCritico = item.critico;
               const incumplido = esCritico && respuesta?.estado === 'No cumple';
+              const esPendiente = mostrarAlerta && !respuesta;
               return (
-                <div className={`item ${incumplido ? 'item--critico' : ''}`} key={item.id}>
+                <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id}>
                   {esCritico && <span className="item__tag">⚠ PUNTO CRÍTICO</span>}
                   <div className="item__fila">
                     <div className="item__texto">
@@ -238,7 +297,9 @@ function FormularioSeccionG({ datos }) {
       <footer className="pie">
         <button type="button" className="boton boton--secundario">← Anterior</button>
         <span>Paso 7 de 9</span>
-        <button type="button" className="boton boton--primario">Siguiente →</button>
+        <button type="button" className="boton boton--primario" onClick={manejarSiguiente}>
+          Siguiente →
+        </button>
       </footer>
     </div>
   );
