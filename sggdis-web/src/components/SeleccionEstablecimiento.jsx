@@ -6,14 +6,17 @@ import './SeleccionEstablecimiento.css';
 
 registerLocale('es', es);
 
+const API_BASE_URL = 'https://localhost:7119';
+const ID_GUIA = 1; // Guia de Inspeccion para Servicios de Alimentacion al Publico
+
 // Tipos de establecimiento y secciones aplicables (Guía de Evaluación
 // Sanitaria, Acuerdo 1803) — fuente: Excel del equipo.
 const TIPOS_ESTABLECIMIENTO = [
-  { id: 'con-express', nombre: 'Establecimiento con servicio Express', secciones: 'A-B-C-D-E-F-G', puntos: 210 },
-  { id: 'sin-express', nombre: 'Establecimiento sin servicio Express', secciones: 'A-B-C-D-E-F', puntos: 199 },
-  { id: 'catering', nombre: 'Servicios de Catering', secciones: 'A-B-C-D-E-H', puntos: 171 },
-  { id: 'express', nombre: 'Servicio Express', secciones: 'A-B-C-D-E-G', puntos: 180 },
-  { id: 'ventana', nombre: 'Ventana', secciones: 'A-B-C-D-E', puntos: 177 },
+  { id: 'con-express', idBackend: 1, nombre: 'Establecimiento con servicio Express', secciones: 'A-B-C-D-E-F-G', puntos: 210 },
+  { id: 'sin-express', idBackend: 2, nombre: 'Establecimiento sin servicio Express', secciones: 'A-B-C-D-E-F', puntos: 199 },
+  { id: 'catering', idBackend: 3, nombre: 'Servicios de Catering', secciones: 'A-B-C-D-E-H', puntos: 171 },
+  { id: 'express', idBackend: 4, nombre: 'Servicio Express', secciones: 'A-B-C-D-E-G', puntos: 180 },
+  { id: 'ventana', idBackend: 5, nombre: 'Ventana', secciones: 'A-B-C-D-E', puntos: 177 },
 ];
 
 function generarConsecutivo() {
@@ -28,6 +31,8 @@ function SeleccionEstablecimiento({ onComenzar }) {
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
   const [consecutivo, setConsecutivo] = useState('');
+  const [creando, setCreando] = useState(false);
+  const [errorCreacion, setErrorCreacion] = useState(null);
 
   const tipoSeleccionado = TIPOS_ESTABLECIMIENTO.find((t) => t.id === tipoId);
   const puedeComenzar =
@@ -36,15 +41,39 @@ function SeleccionEstablecimiento({ onComenzar }) {
     nombre.trim().length > 0 &&
     tipoSeleccionado;
 
-  const manejarComenzar = () => {
-    if (!puedeComenzar) return;
-    onComenzar({
-      nombre,
-      fecha: fecha.toLocaleDateString('es-CR'),
-      consecutivo,
-      tipoLabel: tipoSeleccionado.nombre,
-      secciones: tipoSeleccionado.secciones,
-    });
+  const manejarComenzar = async () => {
+    if (!puedeComenzar || creando) return;
+    setCreando(true);
+    setErrorCreacion(null);
+    try {
+      const respuesta = await fetch(`${API_BASE_URL}/api/inspecciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idGuia: ID_GUIA,
+          idTipoEstablecimiento: tipoSeleccionado.idBackend,
+          nombreEstablecimiento: nombre,
+          consecutivo,
+        }),
+      });
+      if (!respuesta.ok) {
+        throw new Error('La API respondio con un error.');
+      }
+      const datosApi = await respuesta.json();
+      onComenzar({
+        idInspeccion: datosApi.idInspeccion,
+        nombre,
+        fecha: fecha.toLocaleDateString('es-CR'),
+        consecutivo,
+        tipoLabel: tipoSeleccionado.nombre,
+        secciones: tipoSeleccionado.secciones,
+      });
+    } catch (err) {
+      console.error('Error al crear la inspeccion:', err);
+      setErrorCreacion('No se pudo crear la inspección. Verificá que el backend esté corriendo.');
+    } finally {
+      setCreando(false);
+    }
   };
 
   return (
@@ -127,15 +156,18 @@ function SeleccionEstablecimiento({ onComenzar }) {
         <button
           type="button"
           className="boton boton--primario boton--ancho"
-          disabled={!puedeComenzar}
+          disabled={!puedeComenzar || creando}
           onClick={manejarComenzar}
         >
-          Comenzar inspección →
+          {creando ? 'Creando inspección…' : 'Comenzar inspección →'}
         </button>
         {!puedeComenzar && (
           <p className="ayuda-obligatorio">
             Completá la fecha, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
           </p>
+        )}
+        {errorCreacion && (
+          <p className="ayuda-obligatorio" style={{ color: 'var(--rojo, #B00020)' }}>{errorCreacion}</p>
         )}
       </main>
     </div>

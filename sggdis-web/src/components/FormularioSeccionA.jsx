@@ -37,13 +37,23 @@ function agruparPorArticulo(items) {
   return grupos;
 }
 
-function FormularioSeccionA({ datos }) {
+function FormularioSeccionA({ datos, onCompletar }) {
   const [grupos, setGrupos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
   // Cada respuesta guarda { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
   const [respuestas, setRespuestas] = useState({});
+
+  const totalItems = grupos.flatMap((g) => g.items).length;
+  const totalRespondidos = grupos
+    .flatMap((g) => g.items)
+    .filter((item) => respuestas[item.id]).length;
+  const seccionCompleta = totalItems > 0 && totalRespondidos === totalItems;
+
+  const avanzarSiguienteSeccion = () => {
+    onCompletar();
+  };
 
   useEffect(() => {
     async function cargarSeccion() {
@@ -56,16 +66,50 @@ function FormularioSeccionA({ datos }) {
         }
         const datosApi = await respuesta.json();
         setGrupos(agruparPorArticulo(datosApi.items));
-          } catch (err) {
-              console.error('Error al cargar la Sección A:', err);
-              setError('No se pudo cargar la Sección A. Verificá que el backend esté corriendo.');
-       } finally {
+      } catch (err) {
+        console.error('Error al cargar la Sección A:', err);
+        setError('No se pudo cargar la Sección A. Verificá que el backend esté corriendo.');
+      } finally {
         setCargando(false);
       }
     }
 
     cargarSeccion();
   }, []);
+
+  // Restaurar respuestas ya guardadas en el backend (en vez de localStorage)
+  useEffect(() => {
+    async function cargarRespuestas() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/inspecciones/${datos.idInspeccion}/respuestas`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const restauradas = {};
+        data.forEach((r) => {
+          restauradas[r.idItem] = { estado: r.estado, puntos: r.puntosOtorgados ?? 0 };
+        });
+        setRespuestas(restauradas);
+      } catch (err) {
+        console.error('No se pudieron restaurar las respuestas:', err);
+      }
+    }
+    cargarRespuestas();
+  }, [datos.idInspeccion]);
+
+  // Autoguardar en el backend cada vez que cambian las respuestas
+  useEffect(() => {
+    if (Object.keys(respuestas).length === 0) return;
+    const payload = Object.entries(respuestas).map(([idItem, r]) => ({
+      idItem: Number(idItem),
+      estado: r.estado,
+      puntosOtorgados: r.puntos,
+    }));
+    fetch(`${API_BASE_URL}/api/inspecciones/${datos.idInspeccion}/respuestas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch((err) => console.error('Error al autoguardar:', err));
+  }, [respuestas, datos.idInspeccion]);
 
   // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
   const manejarSeleccion = (itemId, opcion, valorMaximo) => {
@@ -237,8 +281,22 @@ function FormularioSeccionA({ datos }) {
 
       <footer className="pie">
         <button type="button" className="boton boton--secundario">← Anterior</button>
-        <span>Paso 1 de 9</span>
-        <button type="button" className="boton boton--primario">Siguiente →</button>
+        <div className="pie__centro">
+          <span>Paso 1 de 9</span>
+          {!seccionCompleta && (
+            <p className="mensaje-validacion">
+              Faltan {totalItems - totalRespondidos} ítem(s) por contestar antes de continuar.
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          className="boton boton--primario"
+          disabled={!seccionCompleta}
+          onClick={avanzarSiguienteSeccion}
+        >
+          Siguiente →
+        </button>
       </footer>
     </div>
   );

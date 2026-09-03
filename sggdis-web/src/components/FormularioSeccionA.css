@@ -316,3 +316,22 @@
 .estado-mensaje--error {
   color: #B00020;
 }
+
+.pie__centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mensaje-validacion {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--dorado);
+}
+
+.boton--primario:disabled {
+  background: var(--gris);
+  color: #5b6470;
+  cursor: not-allowed;
+}

@@ -11,6 +11,8 @@ namespace SGGDIS_Api.Data
         public DbSet<InsTipoEstablecimiento> TiposEstablecimiento => Set<InsTipoEstablecimiento>();
         public DbSet<InsSeccion> Secciones => Set<InsSeccion>();
         public DbSet<InsItem> Items => Set<InsItem>();
+        public DbSet<InsInspeccion> Inspecciones { get; set; }
+        public DbSet<InsRespuesta> Respuestas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +26,14 @@ namespace SGGDIS_Api.Data
                     j => j.HasOne<InsTipoEstablecimiento>().WithMany().HasForeignKey("ID_TIPO_ESTABLECIMIENTO"));
 
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<InsRespuesta>()
+                .HasIndex(r => new { r.IdInspeccion, r.IdItem })
+                .IsUnique();
+
+            modelBuilder.Entity<InsInspeccion>()
+                .HasIndex(i => i.Consecutivo)
+                .IsUnique();
         }
     }
 }

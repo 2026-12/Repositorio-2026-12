@@ -9,7 +9,15 @@ function App() {
     return <SeleccionEstablecimiento onComenzar={setDatos} />;
   }
 
-  return <FormularioSeccionA datos={datos} />;
+  return (
+    <FormularioSeccionA
+      datos={datos}
+      onCompletar={() => {
+        // TEMPORAL: aquí se encadenará la Sección B cuando ese componente exista.
+        alert('Sección A completa. La siguiente sección se conectará cuando esté lista.');
+      }}
+    />
+  );
 }
 
 export default App;
