@@ -2,6 +2,7 @@ import { useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale';
 import { useTiposEstablecimiento } from '../hooks/useTiposEstablecimiento';
+import { crearInspeccion } from '../services/inspeccionesService';
 import { ID_GUIA_ACTIVA } from '../config/inspeccion';
 import 'react-datepicker/dist/react-datepicker.css';
 import './SeleccionEstablecimiento.css';
@@ -30,6 +31,8 @@ function SeleccionEstablecimiento({ onComenzar }) {
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
   const [consecutivo, setConsecutivo] = useState('');
+  const [creando, setCreando] = useState(false);
+  const [errorCreacion, setErrorCreacion] = useState(null);
   const { tipos, cargando, error } = useTiposEstablecimiento(ID_GUIA_ACTIVA);
 
   const tipoSeleccionado = tipos.find((tipo) => tipo.idTipoEstablecimiento === tipoId);
@@ -39,17 +42,32 @@ function SeleccionEstablecimiento({ onComenzar }) {
     nombre.trim().length > 0 &&
     tipoSeleccionado;
 
-  const manejarComenzar = () => {
+  const manejarComenzar = async () => {
     if (!puedeComenzar) return;
-    onComenzar({
-      nombre,
-      fecha: fecha.toLocaleDateString('es-CR'),
-      consecutivo,
-      tipoLabel: tipoSeleccionado.nombre,
-      idGuia: ID_GUIA_ACTIVA,
-      idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
-      secciones: tipoSeleccionado.secciones ?? [],
-    });
+    setCreando(true);
+    setErrorCreacion(null);
+    try {
+      const { idInspeccion } = await crearInspeccion({
+        idGuia: ID_GUIA_ACTIVA,
+        idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
+        nombreEstablecimiento: nombre,
+        consecutivo,
+      });
+      onComenzar({
+        nombre,
+        fecha: fecha.toLocaleDateString('es-CR'),
+        consecutivo,
+        tipoLabel: tipoSeleccionado.nombre,
+        idGuia: ID_GUIA_ACTIVA,
+        idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
+        secciones: tipoSeleccionado.secciones ?? [],
+        idInspeccion,
+      });
+    } catch {
+      setErrorCreacion('No se pudo crear la inspección. Verificá que el backend esté corriendo e intentá de nuevo.');
+    } finally {
+      setCreando(false);
+    }
   };
 
   return (

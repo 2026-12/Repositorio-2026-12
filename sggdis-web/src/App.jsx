@@ -5,6 +5,7 @@ import FormularioSeccionC from './components/FormularioSeccionC';
 import FormularioSeccionGenerico from './components/FormularioSeccionGenerico';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
+import { guardarRespuestas } from './services/inspeccionesService';
 
 const COMPONENTES_POR_CODIGO = {
   A: FormularioSeccionGenerico,
@@ -30,6 +31,18 @@ function App() {
   const registrarSeccion = useCallback((codigo, seccion) => {
     setSeccionesCache((actuales) => (actuales[codigo] === seccion ? actuales : { ...actuales, [codigo]: seccion }));
   }, []);
+
+  // Al pasar de sección se guardan las respuestas en el backend. No se
+  // bloquea el avance si falla (soporte sin conexión: el progreso ya quedó
+  // en localStorage y se reintentará en el próximo cambio de sección).
+  const avanzarYGuardar = useCallback(() => {
+    if (datos?.idInspeccion) {
+      guardarRespuestas(datos.idInspeccion, respuestas).catch((error) => {
+        console.error('No se pudieron guardar las respuestas en el servidor:', error);
+      });
+    }
+    wizard.avanzar();
+  }, [datos?.idInspeccion, respuestas, wizard]);
 
   // Guarda el progreso en cada cambio para poder continuar sin conexión o tras recargar la página.
   useEffect(() => {
@@ -73,7 +86,7 @@ function App() {
         paso={wizard.indice + 1}
         tabActivo={wizard.indice}
         onAnterior={manejarAnterior}
-        onSiguiente={wizard.avanzar}
+        onSiguiente={avanzarYGuardar}
         puedeRetroceder
         respuestas={respuestas}
         onRespuestasChange={actualizarRespuestas}
@@ -87,7 +100,7 @@ function App() {
     <Formulario
       datos={datos}
       onAnterior={manejarAnterior}
-      onSiguiente={wizard.avanzar}
+      onSiguiente={avanzarYGuardar}
       puedeRetroceder
       puedeAvanzar={wizard.puedeAvanzar}
       respuestas={respuestas}
