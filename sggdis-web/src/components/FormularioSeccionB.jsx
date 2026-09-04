@@ -36,6 +36,11 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   // { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
   const respuestasPorSubseccion = respuestas;
 
+  // Al cambiar de subsección llevar la vista al inicio de la página.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [subSeccionActiva]);
+
   useEffect(() => {
     async function cargarSeccionB() {
       try {

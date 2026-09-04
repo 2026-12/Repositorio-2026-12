@@ -3,7 +3,7 @@ import { agruparPorArticulo } from '../domain/agrupacionItems';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
 import './FormularioSeccionA.css';
-import { contarPendientes } from '../domain/validacionSeccion';
+import { obtenerPendientes } from '../domain/validacionSeccion';
 
 const OPCIONES = [
   { valor: 'Cumple', icono: '✓' },
@@ -31,14 +31,18 @@ export default function FormularioSeccionGenerico({
   onSeccionCargada,
 }) {
   const [grupos, setGrupos] = useState(seccionInicial ? agruparPorArticulo(seccionInicial.items) : []);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(!seccionInicial);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let activo = true;
     if (seccionInicial) {
+      setGrupos(agruparPorArticulo(seccionInicial.items));
+      setError(null);
+      setCargando(false);
       return () => { activo = false; };
     }
+    setCargando(true);
     obtenerSeccion(datos.idGuia ?? 1, codigo, datos.idTipoEstablecimiento)
       .then((seccion) => {
         if (activo) {
@@ -59,11 +63,17 @@ export default function FormularioSeccionGenerico({
   const gruposActuales = seccionInicial ? agruparPorArticulo(seccionInicial.items) : grupos;
   const { respuestas: respuestasActuales, alternarRespuesta, actualizarPuntos, resumen } = useRespuestasInspeccion(gruposActuales, respuestas, onRespuestasChange);
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
-  const pendientes = contarPendientes(gruposActuales, respuestasActuales);
+  const totalItems = gruposActuales.reduce((total, grupo) => total + grupo.items.length, 0);
+  const itemsPendientes = obtenerPendientes(gruposActuales, respuestasActuales);
+  const pendientes = itemsPendientes.length;
 
   const manejarSiguiente = () => {
     if (pendientes > 0) {
       setMostrarAlerta(true);
+      const tarjeta = document.querySelector('.tarjeta');
+      if (tarjeta) {
+        tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       return;
     }
     setMostrarAlerta(false);
@@ -111,21 +121,35 @@ export default function FormularioSeccionGenerico({
             <span className="chip chip--puntos">{resumen.obtenidos}/{resumen.maximo} Puntos</span>
           </div>
         </div>
+
+        {mostrarAlerta && pendientes > 0 && (
+          <div className="alerta-validacion-error">
+            <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
+            <span>No se puede avanzar. Faltan responder {pendientes} de los {totalItems} ítems:</span>
+            <ul className="alerta-validacion-error__lista">
+              {itemsPendientes.slice(0, 6).map((item) => (
+                <li key={item.id}>{item.articulo} — {item.texto}</li>
+              ))}
+              {pendientes > 6 && <li>y {pendientes - 6} ítem{pendientes - 6 !== 1 ? 's' : ''} más…</li>}
+            </ul>
+          </div>
+        )}
+
         {gruposActuales.map((grupo) => (
           <div className="grupo" key={grupo.articulo}>
             <span className="grupo__etiqueta">{grupo.articulo}</span>
             {grupo.items.map((item) => {
               const respuesta = respuestasActuales[item.id];
               const incumplido = item.critico && respuesta?.estado === 'No cumple';
+              const esPendiente = mostrarAlerta && !respuesta;
               return (
-                <div className={`item ${incumplido ? 'item--critico' : ''}`} key={item.id}>
+                <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id}>
                   {item.critico && <span className="item__tag">⚠ PUNTO CRÍTICO</span>}
                   <div className="item__fila">
                     <div className="item__texto"><p>{item.texto}</p><span className="item__valor">Valor: {item.valor} pts</span></div>
                     <div className="item__opciones">
                       {OPCIONES.map((opcion) => <button key={opcion.valor} type="button" className={`opcion opcion--${opcion.valor === 'Cumple' ? 'cumple' : opcion.valor === 'No cumple' ? 'no-cumple' : 'na'} ${respuesta?.estado === opcion.valor ? 'opcion--activa' : ''}`} onClick={() => alternarRespuesta(item.id, opcion.valor, item.valor)}>{opcion.icono} {opcion.valor}</button>)}
                     </div>
-                    {mostrarAlerta && <div className="alerta-validacion-error">Faltan responder {pendientes} ítems antes de continuar.</div>}
                   </div>
                   {respuesta?.estado === 'Cumple' && <div className="item__puntos"><span className="item__puntos-label">Puntos otorgados:</span><div className="item__puntos-opciones">{Array.from({ length: item.valor + 1 }, (_, puntos) => <button key={puntos} type="button" className={`punto-opcion ${respuesta.puntos === puntos ? 'punto-opcion--activa' : ''}`} onClick={() => actualizarPuntos(item.id, puntos)}>{puntos} pt{puntos !== 1 ? 's' : ''}</button>)}</div></div>}
                   {incumplido && <p className="item__advertencia">🛡 Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.</p>}

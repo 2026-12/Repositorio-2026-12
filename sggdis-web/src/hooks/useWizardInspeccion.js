@@ -21,9 +21,9 @@ function obtenerVistas(secciones) {
   return vistas;
 }
 
-export function useWizardInspeccion(secciones = []) {
+export function useWizardInspeccion(secciones = [], indiceInicial = 0) {
   const vistas = obtenerVistas(secciones);
-  const [indice, setIndice] = useState(0);
+  const [indice, setIndice] = useState(indiceInicial);
   const vistaActual = vistas[indice] ?? null;
 
   return {
@@ -34,5 +34,6 @@ export function useWizardInspeccion(secciones = []) {
     puedeAvanzar: indice < vistas.length - 1,
     avanzar: () => setIndice((actual) => Math.min(actual + 1, vistas.length - 1)),
     retroceder: () => setIndice((actual) => Math.max(actual - 1, 0)),
+    reiniciar: () => setIndice(0),
   };
 }

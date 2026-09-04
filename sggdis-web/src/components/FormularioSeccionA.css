@@ -161,6 +161,12 @@
   border-color: var(--amarillo);
 }
 
+.item--pendiente {
+  border-color: var(--rojo);
+  box-shadow: 0 0 0 1px var(--rojo);
+  background-color: #fdf5f5;
+}
+
 .item__tag {
   display: inline-block;
   background: var(--amarillo);
@@ -246,6 +252,34 @@
 .boton--primario { background: var(--azul-acero); color: var(--blanco); }
 .boton--primario:hover { background: var(--azul-medio); }
 .boton--secundario { background: transparent; color: var(--blanco); border: 1px solid var(--blanco); }
+
+.alerta-validacion-error {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
+  background-color: #fcebeb;
+  border-left: 5px solid var(--rojo);
+  border-radius: 8px;
+  color: var(--rojo);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.alerta-validacion-error__titulo {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.alerta-validacion-error__lista {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.alerta-validacion-error__lista li {
+  margin-bottom: 2px;
+}
 
 @media (max-width: 700px) {
   .item__fila { flex-direction: column; align-items: flex-start; }
