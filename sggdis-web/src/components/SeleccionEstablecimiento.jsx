@@ -8,6 +8,23 @@ import './SeleccionEstablecimiento.css';
 
 registerLocale('es', es);
 
+// Tipos de establecimiento y secciones aplicables (Guía de Evaluación
+// Sanitaria, Acuerdo 1803) — fuente: Excel del equipo.
+const TIPOS_ESTABLECIMIENTO = [
+  { id: 'con-express', nombre: 'Establecimiento con servicio Express', secciones: 'A-B-C-D-E-F-G', puntos: 210 },
+  { id: 'sin-express', nombre: 'Establecimiento sin servicio Express', secciones: 'A-B-C-D-E-F', puntos: 199 },
+  { id: 'catering', nombre: 'Servicios de Catering', secciones: 'A-B-C-D-E-H', puntos: 171 },
+  { id: 'express', nombre: 'Servicio Express', secciones: 'A-B-C-D-E-G', puntos: 180 },
+  { id: 'ventana', nombre: 'Ventana', secciones: 'A-B-C-D-E', puntos: 177 },
+];
+
+function generarConsecutivo() {
+  // Prueba: en producción este número lo asigna el backend, no el frontend.
+  const correlativo = String(Math.floor(Math.random() * 9000) + 1000);
+  const anio = new Date().getFullYear();
+  return `MS-DRRSCS-ARS-T-AI-${correlativo}-${anio}`;
+}
+
 function SeleccionEstablecimiento({ onComenzar }) {
   const [fecha, setFecha] = useState(null);
   const [nombre, setNombre] = useState('');
@@ -117,15 +134,18 @@ function SeleccionEstablecimiento({ onComenzar }) {
         <button
           type="button"
           className="boton boton--primario boton--ancho"
-          disabled={!puedeComenzar}
+          disabled={!puedeComenzar || creando}
           onClick={manejarComenzar}
         >
-          Comenzar inspección →
+          {creando ? 'Creando inspección…' : 'Comenzar inspección →'}
         </button>
         {!puedeComenzar && (
           <p className="ayuda-obligatorio">
             Completá la fecha, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
           </p>
+        )}
+        {errorCreacion && (
+          <p className="ayuda-obligatorio" style={{ color: 'var(--rojo, #B00020)' }}>{errorCreacion}</p>
         )}
       </main>
     </div>

@@ -13,6 +13,8 @@ builder.Services.AddDbContext<SggdisDbContext>(options =>
 
 builder.Services.AddScoped<ISeccionService, SeccionService>();
 
+builder.Services.AddScoped<IInspeccionService, InspeccionService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
