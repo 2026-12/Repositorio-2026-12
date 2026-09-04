@@ -1,22 +1,21 @@
 import { useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale';
+import { useTiposEstablecimiento } from '../hooks/useTiposEstablecimiento';
+import { ID_GUIA_ACTIVA } from '../config/inspeccion';
 import 'react-datepicker/dist/react-datepicker.css';
 import './SeleccionEstablecimiento.css';
 
 registerLocale('es', es);
 
-const API_BASE_URL = 'https://localhost:7119';
-const ID_GUIA = 1; // Guia de Inspeccion para Servicios de Alimentacion al Publico
-
 // Tipos de establecimiento y secciones aplicables (Guía de Evaluación
 // Sanitaria, Acuerdo 1803) — fuente: Excel del equipo.
 const TIPOS_ESTABLECIMIENTO = [
-  { id: 'con-express', idBackend: 1, nombre: 'Establecimiento con servicio Express', secciones: 'A-B-C-D-E-F-G', puntos: 210 },
-  { id: 'sin-express', idBackend: 2, nombre: 'Establecimiento sin servicio Express', secciones: 'A-B-C-D-E-F', puntos: 199 },
-  { id: 'catering', idBackend: 3, nombre: 'Servicios de Catering', secciones: 'A-B-C-D-E-H', puntos: 171 },
-  { id: 'express', idBackend: 4, nombre: 'Servicio Express', secciones: 'A-B-C-D-E-G', puntos: 180 },
-  { id: 'ventana', idBackend: 5, nombre: 'Ventana', secciones: 'A-B-C-D-E', puntos: 177 },
+  { id: 'con-express', nombre: 'Establecimiento con servicio Express', secciones: 'A-B-C-D-E-F-G', puntos: 210 },
+  { id: 'sin-express', nombre: 'Establecimiento sin servicio Express', secciones: 'A-B-C-D-E-F', puntos: 199 },
+  { id: 'catering', nombre: 'Servicios de Catering', secciones: 'A-B-C-D-E-H', puntos: 171 },
+  { id: 'express', nombre: 'Servicio Express', secciones: 'A-B-C-D-E-G', puntos: 180 },
+  { id: 'ventana', nombre: 'Ventana', secciones: 'A-B-C-D-E', puntos: 177 },
 ];
 
 function generarConsecutivo() {
@@ -31,49 +30,26 @@ function SeleccionEstablecimiento({ onComenzar }) {
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
   const [consecutivo, setConsecutivo] = useState('');
-  const [creando, setCreando] = useState(false);
-  const [errorCreacion, setErrorCreacion] = useState(null);
+  const { tipos, cargando, error } = useTiposEstablecimiento(ID_GUIA_ACTIVA);
 
-  const tipoSeleccionado = TIPOS_ESTABLECIMIENTO.find((t) => t.id === tipoId);
+  const tipoSeleccionado = tipos.find((tipo) => tipo.idTipoEstablecimiento === tipoId);
   const puedeComenzar =
     fecha !== null &&
     consecutivo.trim().length > 0 &&
     nombre.trim().length > 0 &&
     tipoSeleccionado;
 
-  const manejarComenzar = async () => {
-    if (!puedeComenzar || creando) return;
-    setCreando(true);
-    setErrorCreacion(null);
-    try {
-      const respuesta = await fetch(`${API_BASE_URL}/api/inspecciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          idGuia: ID_GUIA,
-          idTipoEstablecimiento: tipoSeleccionado.idBackend,
-          nombreEstablecimiento: nombre,
-          consecutivo,
-        }),
-      });
-      if (!respuesta.ok) {
-        throw new Error('La API respondio con un error.');
-      }
-      const datosApi = await respuesta.json();
-      onComenzar({
-        idInspeccion: datosApi.idInspeccion,
-        nombre,
-        fecha: fecha.toLocaleDateString('es-CR'),
-        consecutivo,
-        tipoLabel: tipoSeleccionado.nombre,
-        secciones: tipoSeleccionado.secciones,
-      });
-    } catch (err) {
-      console.error('Error al crear la inspeccion:', err);
-      setErrorCreacion('No se pudo crear la inspección. Verificá que el backend esté corriendo.');
-    } finally {
-      setCreando(false);
-    }
+  const manejarComenzar = () => {
+    if (!puedeComenzar) return;
+    onComenzar({
+      nombre,
+      fecha: fecha.toLocaleDateString('es-CR'),
+      consecutivo,
+      tipoLabel: tipoSeleccionado.nombre,
+      idGuia: ID_GUIA_ACTIVA,
+      idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
+      secciones: tipoSeleccionado.secciones ?? [],
+    });
   };
 
   return (
@@ -136,22 +112,24 @@ function SeleccionEstablecimiento({ onComenzar }) {
         </div>
 
         <p className="campo-titulo">Seleccione el tipo de establecimiento *</p>
-        <div className="tipos-grid">
-          {TIPOS_ESTABLECIMIENTO.map((tipo) => (
+        {cargando && <p className="ayuda-obligatorio">Cargando tipos de establecimiento...</p>}
+        {error && <p className="ayuda-obligatorio">{error}</p>}
+        {!cargando && !error && <div className="tipos-grid">
+          {tipos.map((tipo) => (
             <button
               type="button"
-              key={tipo.id}
-              className={`tipo-card ${tipoId === tipo.id ? 'tipo-card--activa' : ''}`}
-              onClick={() => setTipoId(tipo.id)}
+              key={tipo.idTipoEstablecimiento}
+              className={`tipo-card ${tipoId === tipo.idTipoEstablecimiento ? 'tipo-card--activa' : ''}`}
+              onClick={() => setTipoId(tipo.idTipoEstablecimiento)}
             >
               <div className="tipo-card__fila">
                 <span className="tipo-card__nombre">{tipo.nombre}</span>
-                <span className="chip chip--puntos">{tipo.puntos} pts</span>
+                <span className="chip chip--puntos">{tipo.puntajeMaximo} pts</span>
               </div>
-              <span className="tipo-card__secciones">Secciones: {tipo.secciones}</span>
+              <span className="tipo-card__secciones">Secciones: {tipo.secciones.map((seccion) => seccion.codigo).filter((codigo) => codigo !== 'H').join('-')}</span>
             </button>
           ))}
-        </div>
+        </div>}
 
         <button
           type="button"
