@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
-import './FormularioSeccionC.css';
+import './formulario.css';
 
 const TABS = [
   'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
-import './FormularioSeccionA.css';
+import './formulario.css';
 import { obtenerPendientes } from '../domain/validacionSeccion';
 
 const OPCIONES = [
