@@ -14,14 +14,49 @@ namespace SGGDIS_Api.Controllers
             _seccionService = seccionService;
         }
 
-        /// Devuelve una sección de la guía (con sus ítems) según su código, ej. GET /api/guias-inspeccion/1/secciones/A
-
-        [HttpGet("{idGuia}/secciones/{codigo}")]
-        public async Task<IActionResult> ObtenerSeccion(int idGuia, string codigo)
+        [HttpGet("{idGuia}/tipos-establecimiento")]
+        public async Task<IActionResult> ObtenerTiposEstablecimiento(int idGuia)
         {
             try
             {
-                var seccion = await _seccionService.ObtenerSeccionConItemsAsync(idGuia, codigo);
+                var tipos = await _seccionService.ObtenerTiposPorGuiaAsync(idGuia);
+
+                return Ok(tipos.Select(tipo => new
+                {
+                    tipo.IdTipoEstablecimiento,
+                    tipo.IdGuia,
+                    tipo.Nombre,
+                    tipo.PuntajeMaximo,
+                    Secciones = tipo.Secciones
+                        .OrderBy(seccion => seccion.Orden)
+                        .Select(seccion => new
+                        {
+                            seccion.Codigo,
+                            seccion.Nombre,
+                            seccion.Orden
+                        })
+                }));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ocurrió un error al obtener los tipos de establecimiento.");
+            }
+        }
+
+        /// Devuelve una sección de la guía (con sus ítems) según su código, ej. GET /api/guias-inspeccion/1/secciones/A
+
+        [HttpGet("{idGuia}/secciones/{codigo}")]
+        public async Task<IActionResult> ObtenerSeccion(
+            int idGuia,
+            string codigo,
+            [FromQuery] int? idTipoEstablecimiento = null)
+        {
+            try
+            {
+                var seccion = await _seccionService.ObtenerSeccionConItemsAsync(
+                    idGuia,
+                    codigo,
+                    idTipoEstablecimiento);
 
                 if (seccion == null)
                 {

@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import './FormularioSeccionB.css';
-
-// Ajustar el puerto si el tuyo es distinto al que muestra Swagger
-const API_BASE_URL = 'https://localhost:7119';
+import { obtenerSeccion } from '../services/guiasInspeccionService';
+import { agruparPorArticulo } from '../domain/agrupacionItems';
+import './formulario.css';
 
 const TABS = [
   'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
@@ -22,30 +21,12 @@ const SUBSECCIONES = [
   { codigo: 'B3', titulo: 'Área de Preparación de Alimentos (Cocina) — Operaciones de Preparación de los Alimentos' },
 ];
 
-// Convierte la lista plana de ítems que devuelve la API en grupos por artículo,
-// igual a como antes venía armado el array GRUPOS a mano.
-function agruparPorArticulo(items) {
-  const grupos = [];
-  let grupoActual = null;
-
-  items.forEach((item) => {
-    if (!grupoActual || grupoActual.articulo !== item.articulo) {
-      grupoActual = { articulo: item.articulo, items: [] };
-      grupos.push(grupoActual);
-    }
-    grupoActual.items.push({
-      id: item.idItem,
-      texto: item.descripcion,
-      valor: item.puntaje,
-      critico: item.esCritico,
-    });
-  });
-
-  return grupos;
-}
-
-function FormularioSeccionB({ datos }) {
-  const [subSeccionActiva, setSubSeccionActiva] = useState(SUBSECCIONES[0].codigo);
+function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada }) {
+  const subsecciones = useMemo(
+    () => SUBSECCIONES.filter((sub) => datos.secciones?.some((seccion) => seccion.codigo === sub.codigo)),
+    [datos.secciones],
+  );
+  const [subSeccionActiva, setSubSeccionActiva] = useState(subsecciones[0]?.codigo ?? SUBSECCIONES[0].codigo);
   const [gruposPorSubseccion, setGruposPorSubseccion] = useState({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -53,25 +34,26 @@ function FormularioSeccionB({ datos }) {
   // Cada subsección (B1, B2, B3) guarda su propio mapa de respuestas, para no
   // perder el progreso al cambiar de pestaña. Cada respuesta es
   // { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
-  const [respuestasPorSubseccion, setRespuestasPorSubseccion] = useState({});
+  const respuestasPorSubseccion = respuestas;
+
+  // Al cambiar de subsección llevar la vista al inicio de la página.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [subSeccionActiva]);
 
   useEffect(() => {
     async function cargarSeccionB() {
       try {
         setCargando(true);
         setError(null);
-        const resultados = await Promise.all(
-          SUBSECCIONES.map(async (sub) => {
-            const respuesta = await fetch(`${API_BASE_URL}/api/guias-inspeccion/1/secciones/${sub.codigo}`);
-            if (!respuesta.ok) {
-              throw new Error(`La API respondió con un error en la subsección ${sub.codigo}.`);
-            }
-            return respuesta.json();
-          })
-        );
+        const resultados = await Promise.all(subsecciones.map((sub) => (
+          seccionesCache[sub.codigo]
+            ?? obtenerSeccion(datos.idGuia ?? 1, sub.codigo, datos.idTipoEstablecimiento)
+        )));
         const nuevosGrupos = {};
         resultados.forEach((datosApi, i) => {
-          nuevosGrupos[SUBSECCIONES[i].codigo] = agruparPorArticulo(datosApi.items);
+          nuevosGrupos[subsecciones[i].codigo] = agruparPorArticulo(datosApi.items);
+          onSeccionCargada?.(subsecciones[i].codigo, datosApi);
         });
         setGruposPorSubseccion(nuevosGrupos);
       } catch (err) {
@@ -83,31 +65,26 @@ function FormularioSeccionB({ datos }) {
     }
 
     cargarSeccionB();
-  }, []);
+  }, [datos.idGuia, datos.idTipoEstablecimiento, onSeccionCargada, seccionesCache, subsecciones]);
 
-  const grupos = gruposPorSubseccion[subSeccionActiva] ?? [];
-  const respuestas = respuestasPorSubseccion[subSeccionActiva] ?? {};
-
+  const grupos = useMemo(
+    () => gruposPorSubseccion[subSeccionActiva] ?? [],
+    [gruposPorSubseccion, subSeccionActiva],
+  );
   // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
   const manejarSeleccion = (itemId, opcion, valorMaximo) => {
-    setRespuestasPorSubseccion((prev) => {
-      const respuestasSub = prev[subSeccionActiva] ?? {};
-      const actual = respuestasSub[itemId];
+    onRespuestasChange?.((prev) => {
+      const actual = prev[itemId];
       if (actual && actual.estado === opcion) {
-        const copia = { ...respuestasSub };
+        const copia = { ...prev };
         delete copia[itemId];
-        return { ...prev, [subSeccionActiva]: copia };
+        return copia;
       }
       return {
         ...prev,
-        [subSeccionActiva]: {
-          ...respuestasSub,
-          [itemId]: {
-            estado: opcion,
-            // Al marcar "Cumple" se asignan los puntos completos por defecto;
-            // el inspector puede bajarlos con el selector de puntos.
-            puntos: opcion === 'Cumple' ? valorMaximo : 0,
-          },
+        [itemId]: {
+          estado: opcion,
+          puntos: opcion === 'Cumple' ? valorMaximo : 0,
         },
       };
     });
@@ -115,12 +92,9 @@ function FormularioSeccionB({ datos }) {
 
   // Ajustar el puntaje parcial de un ítem ya marcado como "Cumple" (0..valor máximo).
   const manejarPuntos = (itemId, puntos) => {
-    setRespuestasPorSubseccion((prev) => ({
+    onRespuestasChange?.((prev) => ({
       ...prev,
-      [subSeccionActiva]: {
-        ...prev[subSeccionActiva],
-        [itemId]: { ...prev[subSeccionActiva]?.[itemId], puntos },
-      },
+      [itemId]: { ...prev[itemId], puntos },
     }));
   };
 
@@ -145,11 +119,6 @@ function FormularioSeccionB({ datos }) {
 
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
 
-  // Cada vez que cambiamos de subsección activa, limpiamos la alerta de intento fallido
-  useEffect(() => {
-    setMostrarAlerta(false);
-  }, [subSeccionActiva]);
-
   // Contar los ítems totales y los pendientes en la subsección activa
   const { totalItemsEnSubseccion, itemsSinResponder } = useMemo(() => {
     let total = 0;
@@ -168,9 +137,9 @@ function FormularioSeccionB({ datos }) {
   // Navegación en el footer
   const manejarAnterior = () => {
     setMostrarAlerta(false);
-    const index = SUBSECCIONES.findIndex((sub) => sub.codigo === subSeccionActiva);
+    const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
     if (index > 0) {
-      setSubSeccionActiva(SUBSECCIONES[index - 1].codigo);
+      setSubSeccionActiva(subsecciones[index - 1].codigo);
     }
   };
 
@@ -186,11 +155,12 @@ function FormularioSeccionB({ datos }) {
     }
     setMostrarAlerta(false);
     
-    const index = SUBSECCIONES.findIndex((sub) => sub.codigo === subSeccionActiva);
-    if (index < SUBSECCIONES.length - 1) {
-      setSubSeccionActiva(SUBSECCIONES[index + 1].codigo);
+    const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
+    if (index < subsecciones.length - 1) {
+      setSubSeccionActiva(subsecciones[index + 1].codigo);
     } else {
       alert('¡Sección B completada con éxito! Todos los ítems fueron respondidos.');
+      onSiguiente?.();
     }
   };
 
@@ -220,7 +190,7 @@ function FormularioSeccionB({ datos }) {
     );
   }
 
-  const subSeccionInfo = SUBSECCIONES.find((sub) => sub.codigo === subSeccionActiva);
+  const subSeccionInfo = subsecciones.find((sub) => sub.codigo === subSeccionActiva) ?? SUBSECCIONES[0];
 
   return (
     <div className="pagina">
@@ -249,9 +219,9 @@ function FormularioSeccionB({ datos }) {
       </nav>
 
       <nav className="subtabs">
-        {SUBSECCIONES.map((sub) => {
+        {subsecciones.map((sub) => {
           const subGrupos = gruposPorSubseccion[sub.codigo] ?? [];
-          const subRespuestas = respuestasPorSubseccion[sub.codigo] ?? {};
+          const subRespuestas = respuestasPorSubseccion;
           let total = 0;
           let contestados = 0;
           subGrupos.forEach((grupo) => {
@@ -371,9 +341,11 @@ function FormularioSeccionB({ datos }) {
         <button 
           type="button" 
           className="boton boton--secundario" 
-          onClick={manejarAnterior}
-          disabled={subSeccionActiva === SUBSECCIONES[0].codigo}
-          style={{ opacity: subSeccionActiva === SUBSECCIONES[0].codigo ? 0.5 : 1, cursor: subSeccionActiva === SUBSECCIONES[0].codigo ? 'not-allowed' : 'pointer' }}
+          onClick={() => {
+            if (subSeccionActiva === subsecciones[0]?.codigo) onAnterior?.();
+            else manejarAnterior();
+          }}
+          disabled={subSeccionActiva === subsecciones[0]?.codigo && !puedeRetroceder}
         >
           ← Anterior
         </button>
@@ -383,7 +355,7 @@ function FormularioSeccionB({ datos }) {
           className="boton boton--primario"
           onClick={manejarSiguiente}
         >
-          {subSeccionActiva === SUBSECCIONES[SUBSECCIONES.length - 1].codigo ? 'Finalizar Sección B ✓' : 'Siguiente →'}
+          {subSeccionActiva === subsecciones[subsecciones.length - 1]?.codigo ? 'Finalizar Sección B ✓' : 'Siguiente →'}
         </button>
       </footer>
     </div>
