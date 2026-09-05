@@ -17,10 +17,25 @@ const COMPONENTES_POR_CODIGO = {
   G: FormularioSeccionGenerico,
 };
 
+function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
+  const modificadas = {};
+  for (const [idItem, respuesta] of Object.entries(respuestasActuales)) {
+    const guardada = respuestasGuardadas[idItem];
+    const cambioEstado = !guardada || guardada.estado !== respuesta.estado;
+    const cambioPuntos = !guardada || guardada.puntos !== respuesta.puntos;
+
+    if (cambioEstado || cambioPuntos) {
+      modificadas[idItem] = respuesta;
+    }
+  }
+  return modificadas;
+}
+
 function App() {
   const [progresoGuardado] = useState(cargarProgreso);
   const [datos, setDatos] = useState(progresoGuardado?.datos ?? null);
   const [respuestas, setRespuestas] = useState(progresoGuardado?.respuestas ?? {});
+  const [respuestasGuardadas, setRespuestasGuardadas] = useState(progresoGuardado?.respuestasGuardadas ?? {});
   const [seccionesCache, setSeccionesCache] = useState(progresoGuardado?.seccionesCache ?? {});
   const wizard = useWizardInspeccion(datos?.secciones ?? [], progresoGuardado?.indiceWizard ?? 0);
 
@@ -32,17 +47,24 @@ function App() {
     setSeccionesCache((actuales) => (actuales[codigo] === seccion ? actuales : { ...actuales, [codigo]: seccion }));
   }, []);
 
-  // Al pasar de sección se guardan las respuestas en el backend. No se
-  // bloquea el avance si falla (soporte sin conexión: el progreso ya quedó
+  // Al pasar de sección se guardan únicamente las respuestas modificadas en el backend.
+  // No se bloquea el avance si falla (soporte sin conexión: el progreso ya quedó
   // en localStorage y se reintentará en el próximo cambio de sección).
   const avanzarYGuardar = useCallback(() => {
     if (datos?.idInspeccion) {
-      guardarRespuestas(datos.idInspeccion, respuestas).catch((error) => {
-        console.error('No se pudieron guardar las respuestas en el servidor:', error);
-      });
+      const delta = obtenerRespuestasModificadas(respuestas, respuestasGuardadas);
+      if (Object.keys(delta).length > 0) {
+        guardarRespuestas(datos.idInspeccion, delta)
+          .then(() => {
+            setRespuestasGuardadas((actuales) => ({ ...actuales, ...delta }));
+          })
+          .catch((error) => {
+            console.error('No se pudieron guardar las respuestas en el servidor:', error);
+          });
+      }
     }
     wizard.avanzar();
-  }, [datos?.idInspeccion, respuestas, wizard]);
+  }, [datos?.idInspeccion, respuestas, respuestasGuardadas, wizard]);
 
   // Guarda el progreso en cada cambio para poder continuar sin conexión o tras recargar la página.
   useEffect(() => {
@@ -50,8 +72,8 @@ function App() {
       limpiarProgreso();
       return;
     }
-    guardarProgreso({ datos, respuestas, seccionesCache, indiceWizard: wizard.indice });
-  }, [datos, respuestas, seccionesCache, wizard.indice]);
+    guardarProgreso({ datos, respuestas, respuestasGuardadas, seccionesCache, indiceWizard: wizard.indice });
+  }, [datos, respuestas, respuestasGuardadas, seccionesCache, wizard.indice]);
 
   // Al cambiar de sección (o subsección) llevar la vista al inicio de la página.
   useEffect(() => {
@@ -66,6 +88,7 @@ function App() {
     }
     setDatos(null);
     setRespuestas({});
+    setRespuestasGuardadas({});
     setSeccionesCache({});
     wizard.reiniciar();
   }, [wizard]);

@@ -30,17 +30,27 @@ namespace SGGDIS_Api.Services
             return inspeccion;
         }
 
+        // MERGE (upsert) en vez de "buscar y luego insertar/actualizar": evita filas
+        // duplicadas en INS_RESPUESTA cuando llegan guardados concurrentes para el
+        // mismo item, aprovechando el indice unico (ID_INSPECCION, ID_ITEM).
         public async Task GuardarRespuestasAsync(int idInspeccion, List<RespuestaDto> respuestas)
         {
+            if (respuestas == null || respuestas.Count == 0) return;
+
+            var idsItems = respuestas.Select(r => r.IdItem).ToList();
+
+            // 1. Carga en memoria solo las respuestas modificadas que ya existen
+            var existentes = await _context.Respuestas
+                .Where(x => x.IdInspeccion == idInspeccion && idsItems.Contains(x.IdItem))
+                .ToDictionaryAsync(x => x.IdItem);
+
+            // 2. Modifica o crea nuevas entidades
             foreach (var r in respuestas)
             {
-                var existente = await _context.Respuestas
-                    .FirstOrDefaultAsync(x => x.IdInspeccion == idInspeccion && x.IdItem == r.IdItem);
-
-                if (existente != null)
+                if (existentes.TryGetValue(r.IdItem, out var entidad))
                 {
-                    existente.Estado = r.Estado;
-                    existente.PuntosOtorgados = r.PuntosOtorgados;
+                    entidad.Estado = r.Estado;
+                    entidad.PuntosOtorgados = r.PuntosOtorgados;
                 }
                 else
                 {
@@ -53,6 +63,8 @@ namespace SGGDIS_Api.Services
                     });
                 }
             }
+
+            // 3. EF Core persiste todo en una sola transacción
             await _context.SaveChangesAsync();
         }
 
