@@ -22,7 +22,7 @@ function App() {
   const [datos, setDatos] = useState(progresoGuardado?.datos ?? null);
   const [respuestas, setRespuestas] = useState(progresoGuardado?.respuestas ?? {});
   const [seccionesCache, setSeccionesCache] = useState(progresoGuardado?.seccionesCache ?? {});
-  const wizard = useWizardInspeccion(datos?.secciones ?? [], progresoGuardado?.indiceWizard ?? 0);
+  const wizard = useWizardInspeccion(datos?.secciones ?? [], progresoGuardado?.indiceWizard ?? 0, progresoGuardado?.maxAlcanzado ?? progresoGuardado?.indiceWizard ?? 0);
 
   const actualizarRespuestas = useCallback((actualizar) => {
     setRespuestas((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
@@ -50,8 +50,8 @@ function App() {
       limpiarProgreso();
       return;
     }
-    guardarProgreso({ datos, respuestas, seccionesCache, indiceWizard: wizard.indice });
-  }, [datos, respuestas, seccionesCache, wizard.indice]);
+    guardarProgreso({ datos, respuestas, seccionesCache, indiceWizard: wizard.indice, maxAlcanzado: wizard.maxAlcanzado });
+  }, [datos, respuestas, seccionesCache, wizard.indice, wizard.maxAlcanzado]);
 
   // Al cambiar de sección (o subsección) llevar la vista al inicio de la página.
   useEffect(() => {
@@ -92,6 +92,10 @@ function App() {
         onRespuestasChange={actualizarRespuestas}
         seccionInicial={seccionesCache[wizard.vistaActual?.codigo]}
         onSeccionCargada={registrarSeccion}
+        onIrAVista={wizard.irAVista}
+        maxAlcanzado={wizard.maxAlcanzado}
+        indiceActual={wizard.indice}
+        vistas={wizard.vistas}
       />
     );
   }
@@ -107,6 +111,10 @@ function App() {
       onRespuestasChange={actualizarRespuestas}
       seccionesCache={seccionesCache}
       onSeccionCargada={registrarSeccion}
+      onIrAVista={wizard.irAVista}
+      maxAlcanzado={wizard.maxAlcanzado}
+      indiceActual={wizard.indice}
+      vistas={wizard.vistas}
     />
   );
 }

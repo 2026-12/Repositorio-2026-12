@@ -7,3 +7,13 @@ export function obtenerSeccionesRenderizables(secciones = []) {
     .filter((seccion) => CODIGOS_RENDERIZABLES.has(seccion.codigo))
     .sort((a, b) => a.orden - b.orden);
 }
+export const nombresVistas = {
+  A: 'Aspectos Generales',
+  B: 'Cocina y Preparación',
+  C: 'Bodega de Insumos',
+  D: 'Medidas de Saneamiento',
+  E: 'Manejo de Desechos',
+  F: 'Área de Consumo',
+  G: 'Servicio a Domicilio',
+}
+

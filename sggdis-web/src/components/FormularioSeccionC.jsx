@@ -2,11 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
 import './formulario.css';
-
-const TABS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
+import { nombresVistas } from '../config/inspeccion';
 
 const OPCIONES = [
   { valor: 'Cumple', icono: '✓' },
@@ -14,7 +10,7 @@ const OPCIONES = [
   { valor: 'N/A', icono: '—' },
 ];
 
-function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada }) {
+function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0,indiceActual = 0, vistas = [] }) {
   const codigos = useMemo(
     () => ['C1', 'C2'].filter((codigo) => datos.secciones?.some((seccion) => seccion.codigo === codigo)),
     [datos.secciones],
@@ -256,11 +252,25 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       </header>
 
       <nav className="tabs">
-        {TABS.map((tab, i) => (
-          <span key={tab} className={`tabs__item ${i === 0 ? 'tabs__item--activo' : ''}`}>
-            {tab}
-          </span>
-        ))}
+        {vistas.map((vista, i) => {
+          const bloqueada = i > maxAlcanzado;
+
+          return (
+            <button
+              key={vista.codigo}
+              type="button"
+              disabled={bloqueada}
+              onClick={() => onIrAVista?.(i)}
+              className={`tabs__item ${
+                i === indiceActual ? 'tabs__item--activo' : ''
+              } ${
+                bloqueada ? 'tabs__item--bloqueado' : ''
+              }`}
+            >
+              {nombresVistas[vista.codigo] ?? vista.codigo}
+            </button>
+          );
+        })}
       </nav>
 
       <main className="tarjeta">
@@ -288,7 +298,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
         {itemsSinResponder === 0 && totalItems > 0 && (
           <div className="mensaje-progreso-validacion mensaje-progreso-validacion--completo">
-            <span>✅ ¡Excelente! Completaste los {totalItems} ítems de esta sección.</span>
+            <span>✅ Completaste los {totalItems} ítems de esta sección.</span>
           </div>
         )}
 
