@@ -5,6 +5,11 @@ using SGGDIS_Api.Models.Dtos;
 
 namespace SGGDIS_Api.Services
 {
+    public class ConsecutivoDuplicadoException : Exception
+    {
+        public ConsecutivoDuplicadoException() : base("El número consecutivo ya está registrado.") { }
+    }
+
     public class InspeccionService : IInspeccionService
     {
         private readonly SggdisDbContext _context;
@@ -16,18 +21,42 @@ namespace SGGDIS_Api.Services
 
         public async Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto)
         {
+            var consecutivoExiste = await _context.Inspecciones
+                .AnyAsync(inspeccion => inspeccion.Consecutivo == dto.Consecutivo);
+            if (consecutivoExiste)
+            {
+                throw new ConsecutivoDuplicadoException();
+            }
+
             var inspeccion = new InsInspeccion
             {
                 IdGuia = dto.IdGuia,
                 IdTipoEstablecimiento = dto.IdTipoEstablecimiento,
                 NombreEstablecimiento = dto.NombreEstablecimiento,
                 Consecutivo = dto.Consecutivo,
-                Fecha = DateTime.Now,
+                Fecha = dto.Fecha,
                 Estado = "EN_PROCESO"
             };
             _context.Inspecciones.Add(inspeccion);
             await _context.SaveChangesAsync();
             return inspeccion;
+        }
+
+        public async Task<bool> EliminarInspeccionAsync(int idInspeccion)
+        {
+            var inspeccion = await _context.Inspecciones.FindAsync(idInspeccion);
+            if (inspeccion is null)
+            {
+                return false;
+            }
+
+            var respuestas = await _context.Respuestas
+                .Where(respuesta => respuesta.IdInspeccion == idInspeccion)
+                .ToListAsync();
+            _context.Respuestas.RemoveRange(respuestas);
+            _context.Inspecciones.Remove(inspeccion);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         // MERGE (upsert) en vez de "buscar y luego insertar/actualizar": evita filas

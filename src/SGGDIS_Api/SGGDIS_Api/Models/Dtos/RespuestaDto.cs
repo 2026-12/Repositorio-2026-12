@@ -13,5 +13,6 @@
         public int IdTipoEstablecimiento { get; set; }
         public string NombreEstablecimiento { get; set; } = string.Empty;
         public string Consecutivo { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; }
     }
 }

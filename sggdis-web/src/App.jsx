@@ -5,7 +5,7 @@ import FormularioSeccionC from './components/FormularioSeccionC';
 import FormularioSeccionGenerico from './components/FormularioSeccionGenerico';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
-import { guardarRespuestas } from './services/inspeccionesService';
+import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesService';
 
 const COMPONENTES_POR_CODIGO = {
   A: FormularioSeccionGenerico,
@@ -82,16 +82,24 @@ function App() {
 
   // En la Sección A (primer paso del wizard) no hay una sección previa a la
   // cual retroceder, así que "Anterior" regresa a la pantalla de inicio.
-  const volverAlInicio = useCallback(() => {
+  const volverAlInicio = useCallback(async () => {
     if (!window.confirm('¿Deseás volver al inicio? Se perderá el progreso de esta inspección.')) {
       return;
+    }
+    if (datos?.idInspeccion) {
+      try {
+        await eliminarInspeccion(datos.idInspeccion);
+      } catch (error) {
+        window.alert(`No se pudo eliminar la inspección: ${error.message}`);
+        return;
+      }
     }
     setDatos(null);
     setRespuestas({});
     setRespuestasGuardadas({});
     setSeccionesCache({});
     wizard.reiniciar();
-  }, [wizard]);
+  }, [datos?.idInspeccion, wizard]);
 
   if (!datos) {
     return <SeleccionEstablecimiento onComenzar={setDatos} />;

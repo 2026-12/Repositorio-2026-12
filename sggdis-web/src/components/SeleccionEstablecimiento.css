@@ -62,6 +62,27 @@
   margin: 0 0 24px 0;
 }
 
+.alerta-error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -8px 0 24px;
+  padding: 14px 16px;
+  border: 2px solid #A31621;
+  border-left-width: 8px;
+  border-radius: 8px;
+  background: #FFF0F1;
+  color: #7A0710;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.alerta-error strong {
+  color: #A31621;
+  font-size: 1rem;
+}
+
 .campo-fila {
   display: flex;
   gap: 16px;
