@@ -3,6 +3,7 @@ import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
 import FormularioSeccionB from './components/FormularioSeccionB';
 import FormularioSeccionC from './components/FormularioSeccionC';
 import FormularioSeccionGenerico from './components/FormularioSeccionGenerico';
+import FormularioSeccionH from './components/FormularioSeccionH';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
 import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesService';
@@ -15,6 +16,7 @@ const COMPONENTES_POR_CODIGO = {
   E: FormularioSeccionGenerico,
   F: FormularioSeccionGenerico,
   G: FormularioSeccionGenerico,
+  H: FormularioSeccionH,
 };
 
 function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
@@ -38,6 +40,11 @@ function App() {
   const [respuestasGuardadas, setRespuestasGuardadas] = useState(progresoGuardado?.respuestasGuardadas ?? {});
   const [seccionesCache, setSeccionesCache] = useState(progresoGuardado?.seccionesCache ?? {});
   const wizard = useWizardInspeccion(datos?.secciones ?? [], progresoGuardado?.indiceWizard ?? 0);
+  const [observaciones, setObservaciones] = useState(progresoGuardado?.observaciones ?? {});
+
+const actualizarObservaciones = useCallback((actualizar) => {
+  setObservaciones((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
+}, []);
 
   const actualizarRespuestas = useCallback((actualizar) => {
     setRespuestas((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
@@ -67,13 +74,13 @@ function App() {
   }, [datos?.idInspeccion, respuestas, respuestasGuardadas, wizard]);
 
   // Guarda el progreso en cada cambio para poder continuar sin conexión o tras recargar la página.
-  useEffect(() => {
-    if (!datos) {
-      limpiarProgreso();
-      return;
-    }
-    guardarProgreso({ datos, respuestas, respuestasGuardadas, seccionesCache, indiceWizard: wizard.indice });
-  }, [datos, respuestas, respuestasGuardadas, seccionesCache, wizard.indice]);
+useEffect(() => {
+  if (!datos) {
+    limpiarProgreso();
+    return;
+  }
+  guardarProgreso({ datos, respuestas, respuestasGuardadas, seccionesCache, observaciones, indiceWizard: wizard.indice });
+}, [datos, respuestas, respuestasGuardadas, seccionesCache, observaciones, wizard.indice]);
 
   // Al cambiar de sección (o subsección) llevar la vista al inicio de la página.
   useEffect(() => {
@@ -94,11 +101,12 @@ function App() {
         return;
       }
     }
-    setDatos(null);
-    setRespuestas({});
-    setRespuestasGuardadas({});
-    setSeccionesCache({});
-    wizard.reiniciar();
+  setDatos(null);
+  setRespuestas({});
+  setRespuestasGuardadas({});
+  setSeccionesCache({});
+  setObservaciones({});
+  wizard.reiniciar();
   }, [datos?.idInspeccion, wizard]);
 
   if (!datos) {
@@ -136,6 +144,10 @@ function App() {
       puedeAvanzar={wizard.puedeAvanzar}
       respuestas={respuestas}
       onRespuestasChange={actualizarRespuestas}
+      observaciones={observaciones}
+      onObservacionesChange={actualizarObservaciones}
+      paso={wizard.indice + 1}
+      totalPasos={wizard.vistas.length}
       seccionesCache={seccionesCache}
       onSeccionCargada={registrarSeccion}
     />

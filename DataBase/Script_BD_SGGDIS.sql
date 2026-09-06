@@ -603,18 +603,18 @@ INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, OR
 INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
 ((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'G'), 'Transporte para servicio a domicilio - Art. 56', 'Los contenedores termicos del vehiculo cuenta con cierre hermetico y seguro', 1, 'N', 3);
 -- Seccion H
-INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
-((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Vehiculos que transportan alimentos se mantienen en buenas condiciones de higiene', 1, 'N', 1);
-INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
-((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Cuentan con carroceria cerrada de forma que impidan el ingreso de contaminantes externos', 1, 'N', 2);
-INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
-((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los contenedores termicos destinados al transporte de alimentos calientes los mantienen a 60C', 2, 'N', 3);
-INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
-((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los recipientes utilizados que tengan contacto directo con los alimentos deben ser de materiales resistentes, de facil limpieza y desinfeccion y no transmitir sustancias toxicas, olores o sabores a los mismos.', 1, 'N', 4);
-INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
-((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los alimentos frios se mantienen a temperatura igual o inferior a 5C', 2, 'N', 5);
-INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, ORDEN) VALUES
-((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los utensilios y manteleria se transportan debidamente protegidos de posibles contaminantes.', 1, 'N', 6);
+INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, PERMITE_NO_APLICA, ORDEN) VALUES
+((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Vehiculos que transportan alimentos se mantienen en buenas condiciones de higiene', 1, 'N', 'N', 1);
+INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, PERMITE_NO_APLICA, ORDEN) VALUES
+((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Cuentan con carroceria cerrada de forma que impidan el ingreso de contaminantes externos', 1, 'N', 'N', 2);
+INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, PERMITE_NO_APLICA, ORDEN) VALUES
+((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los contenedores termicos destinados al transporte de alimentos calientes los mantienen a 60C', 2, 'N', 'N', 3);
+INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, PERMITE_NO_APLICA, ORDEN) VALUES
+((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los recipientes utilizados que tengan contacto directo con los alimentos deben ser de materiales resistentes, de facil limpieza y desinfeccion y no transmitir sustancias toxicas, olores o sabores a los mismos.', 1, 'N', 'N', 4);
+INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, PERMITE_NO_APLICA, ORDEN) VALUES
+((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los alimentos frios se mantienen a temperatura igual o inferior a 5C', 2, 'N', 'N', 5);
+INSERT INTO INS_ITEM (ID_SECCION, ARTICULO, DESCRIPCION, PUNTAJE, ES_CRITICO, PERMITE_NO_APLICA, ORDEN) VALUES
+((SELECT ID_SECCION FROM INS_SECCION WHERE CODIGO = 'H'), 'Transporte para servicio de catering - Art. 55', 'Los utensilios y manteleria se transportan debidamente protegidos de posibles contaminantes.', 1, 'N', 'S', 6);
 
 -- ============================================================
 -- 11. Tablas transaccionales nuevas: guardado real de inspecciones
