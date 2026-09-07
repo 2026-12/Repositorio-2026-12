@@ -2,26 +2,33 @@ import { useEffect, useState } from 'react';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
+import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import './formulario.css';
 import { obtenerPendientes } from '../domain/validacionSeccion';
 
-const OPCIONES = [
-  { valor: 'Cumple', icono: '✓' },
-  { valor: 'No cumple', icono: '✗' },
-  { valor: 'N/A', icono: '—' },
-];
+const MARCA_POR_DEFECTO = { logo: 'IN', tituloGuia: 'Guía de Inspección' };
 
-const TABS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
+const TEXTO_ADVERTENCIA_CRITICO_POR_DEFECTO =
+  'Este ítem es crítico: su incumplimiento requiere atención inmediata.';
 
+// Núcleo visual reutilizable para cualquier guía de inspección por
+// secciones. No conoce textos ni reglas de una guía en particular: cada
+// guía (p. ej. alimentos) los provee vía props o mediante un componente
+// adaptador que envuelva a este.
 export default function FormularioSeccionGenerico({
   datos,
   codigo,
   titulo,
   paso,
+  totalPasos,
   tabActivo = 0,
+  tabs = [],
+  marca = MARCA_POR_DEFECTO,
+  opciones = OPCIONES_ESTANDAR,
+  obtenerOpcionesItem = (_item, opcionesDisponibles) => opcionesDisponibles,
+  obtenerPuntosItem = (item) => Array.from({ length: item.valor + 1 }, (_, puntos) => puntos),
+  renderizarContenidoItem,
+  textoAdvertenciaCritico = TEXTO_ADVERTENCIA_CRITICO_POR_DEFECTO,
   onAnterior,
   onSiguiente,
   puedeRetroceder,
@@ -97,9 +104,9 @@ export default function FormularioSeccionGenerico({
     <div className="pagina">
       <header className="cabecera">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">MS</div>
+          <div className="cabecera__logo">{marca.logo}</div>
           <div>
-            <h1>Guía de Inspección — Servicios de Alimentación al Público</h1>
+            <h1>{marca.tituloGuia}</h1>
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
           </div>
         </div>
@@ -109,9 +116,11 @@ export default function FormularioSeccionGenerico({
         </div>
       </header>
 
-      <nav className="tabs">
-        {TABS.map((tab, indice) => <span key={tab} className={`tabs__item ${indice === tabActivo ? 'tabs__item--activo' : ''}`}>{tab}</span>)}
-      </nav>
+      {tabs.length > 0 && (
+        <nav className="tabs">
+          {tabs.map((tab, indice) => <span key={tab} className={`tabs__item ${indice === tabActivo ? 'tabs__item--activo' : ''}`}>{tab}</span>)}
+        </nav>
+      )}
 
       <main className="tarjeta">
         <div className="tarjeta__encabezado">
@@ -142,17 +151,20 @@ export default function FormularioSeccionGenerico({
               const respuesta = respuestasActuales[item.id];
               const incumplido = item.critico && respuesta?.estado === 'No cumple';
               const esPendiente = mostrarAlerta && !respuesta;
+              const opcionesItem = obtenerOpcionesItem(item, opciones);
+              const puntosItem = obtenerPuntosItem(item);
               return (
                 <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id}>
                   {item.critico && <span className="item__tag">⚠ PUNTO CRÍTICO</span>}
                   <div className="item__fila">
                     <div className="item__texto"><p>{item.texto}</p><span className="item__valor">Valor: {item.valor} pts</span></div>
                     <div className="item__opciones">
-                      {OPCIONES.map((opcion) => <button key={opcion.valor} type="button" className={`opcion opcion--${opcion.valor === 'Cumple' ? 'cumple' : opcion.valor === 'No cumple' ? 'no-cumple' : 'na'} ${respuesta?.estado === opcion.valor ? 'opcion--activa' : ''}`} onClick={() => alternarRespuesta(item.id, opcion.valor, item.valor)}>{opcion.icono} {opcion.valor}</button>)}
+                      {opcionesItem.map((opcion) => <button key={opcion.valor} type="button" className={`opcion opcion--${opcion.valor === 'Cumple' ? 'cumple' : opcion.valor === 'No cumple' ? 'no-cumple' : 'na'} ${respuesta?.estado === opcion.valor ? 'opcion--activa' : ''}`} onClick={() => alternarRespuesta(item.id, opcion.valor, item.valor)}>{opcion.icono} {opcion.valor}</button>)}
                     </div>
                   </div>
-                  {respuesta?.estado === 'Cumple' && <div className="item__puntos"><span className="item__puntos-label">Puntos otorgados:</span><div className="item__puntos-opciones">{Array.from({ length: item.valor + 1 }, (_, puntos) => <button key={puntos} type="button" className={`punto-opcion ${respuesta.puntos === puntos ? 'punto-opcion--activa' : ''}`} onClick={() => actualizarPuntos(item.id, puntos)}>{puntos} pt{puntos !== 1 ? 's' : ''}</button>)}</div></div>}
-                  {incumplido && <p className="item__advertencia">🛡 Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.</p>}
+                  {respuesta?.estado === 'Cumple' && <div className="item__puntos"><span className="item__puntos-label">Puntos otorgados:</span><div className="item__puntos-opciones">{puntosItem.map((puntos) => <button key={puntos} type="button" className={`punto-opcion ${respuesta.puntos === puntos ? 'punto-opcion--activa' : ''}`} onClick={() => actualizarPuntos(item.id, puntos)}>{puntos} pt{puntos !== 1 ? 's' : ''}</button>)}</div></div>}
+                  {incumplido && <p className="item__advertencia">{textoAdvertenciaCritico}</p>}
+                  {renderizarContenidoItem?.({ item, respuesta })}
                 </div>
               );
             })}
@@ -162,7 +174,7 @@ export default function FormularioSeccionGenerico({
 
       <footer className="pie">
         <button type="button" className="boton boton--secundario" onClick={onAnterior} disabled={!puedeRetroceder}>← Anterior</button>
-        <span>Paso {paso} de 9</span>
+        <span>Paso {paso}{totalPasos ? ` de ${totalPasos}` : ''}</span>
         <button type="button" className="boton boton--primario" onClick={manejarSiguiente}>Siguiente →</button>
       </footer>
     </div>

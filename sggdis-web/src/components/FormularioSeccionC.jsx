@@ -1,18 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
+import { obtenerPendientes } from '../domain/validacionSeccion';
+import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
+import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
+import {
+  MARCA_ALIMENTOS,
+  TABS_ALIMENTOS,
+  TOTAL_PASOS_ALIMENTOS,
+  TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
+} from '../config/inspeccionAlimentos';
 import './formulario.css';
-
-const TABS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
-
-const OPCIONES = [
-  { valor: 'Cumple', icono: '✓' },
-  { valor: 'No cumple', icono: '✗' },
-  { valor: 'N/A', icono: '—' },
-];
 
 function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada }) {
   const codigos = useMemo(
@@ -25,8 +23,6 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const [gruposC2, setGruposC2] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-
-  // Cada respuesta guarda { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
 
   // Controla si se debe mostrar la alerta roja de "faltan ítems" (solo
   // aparece después de un intento fallido de avanzar, no desde el inicio).
@@ -65,70 +61,10 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
   // Todos los grupos combinados (C1 + C2), usado para puntaje y validación.
   const todosLosGrupos = useMemo(() => [...gruposC1, ...gruposC2], [gruposC1, gruposC2]);
-
-  // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
-  const manejarSeleccion = (itemId, opcion, valorMaximo) => {
-    onRespuestasChange?.((prev) => {
-      const actual = prev[itemId];
-      if (actual && actual.estado === opcion) {
-        const copia = { ...prev };
-        delete copia[itemId];
-        return copia;
-      }
-      return {
-        ...prev,
-        [itemId]: {
-          estado: opcion,
-          // Al marcar "Cumple" se asignan los puntos completos por defecto;
-          // el inspector puede bajarlos con el selector de puntos.
-          puntos: opcion === 'Cumple' ? valorMaximo : 0,
-        },
-      };
-    });
-  };
-
-  // Ajustar el puntaje parcial de un ítem ya marcado como "Cumple" (0..valor máximo).
-  const manejarPuntos = (itemId, puntos) => {
-    onRespuestasChange?.((prev) => ({
-      ...prev,
-      [itemId]: { ...prev[itemId], puntos },
-    }));
-  };
-
-  // Los ítems marcados N/A no cuentan ni en el puntaje obtenido ni en el
-  // máximo posible (regla 4 de la guía oficial). "Cumple" suma los puntos
-  // parciales elegidos por el inspector, no siempre el valor completo.
-  const { obtenidos, maximo, criticosIncumplidos } = useMemo(() => {
-    let obtenidos = 0;
-    let maximo = 0;
-    let criticosIncumplidos = 0;
-    todosLosGrupos.forEach((grupo) => {
-      grupo.items.forEach((item) => {
-        const respuesta = respuestas[item.id];
-        if (respuesta?.estado === 'N/A') return;
-        maximo += item.valor;
-        if (respuesta?.estado === 'Cumple') obtenidos += respuesta.puntos ?? 0;
-        if (item.critico && respuesta?.estado === 'No cumple') criticosIncumplidos += 1;
-      });
-    });
-    return { obtenidos, maximo, criticosIncumplidos };
-  }, [respuestas, todosLosGrupos]);
-
-  // Cuenta los ítems totales y los pendientes de responder (entre C1 y C2
-  // juntas), para la validación de obligatoriedad (issue #107).
-  const { totalItems, itemsSinResponder } = useMemo(() => {
-    let total = 0;
-    let sinResponder = 0;
-    todosLosGrupos.forEach((grupo) => {
-      grupo.items.forEach((item) => {
-        total++;
-        if (!respuestas[item.id]) {
-          sinResponder++;
-        }
-      });
-    });
-    return { totalItems: total, itemsSinResponder: sinResponder };
-  }, [respuestas, todosLosGrupos]);
+  const { alternarRespuesta, actualizarPuntos, resumen } = useRespuestasInspeccion(todosLosGrupos, respuestas, onRespuestasChange);
+  const { obtenidos, maximo, criticosIncumplidos } = resumen;
+  const totalItems = todosLosGrupos.reduce((total, grupo) => total + grupo.items.length, 0);
+  const itemsSinResponder = obtenerPendientes(todosLosGrupos, respuestas).length;
 
   // Al hacer clic en "Siguiente": si faltan ítems por responder, no avanza
   // y muestra la alerta con scroll hacia arriba. Si todo está respondido,
@@ -194,12 +130,12 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                   <span className="item__valor">Valor: {item.valor} pts</span>
                 </div>
                 <div className="item__opciones">
-                  {OPCIONES.map((op) => (
+                  {OPCIONES_ESTANDAR.map((op) => (
                     <button
                       key={op.valor}
                       type="button"
                       className={`opcion opcion--${op.valor === 'Cumple' ? 'cumple' : op.valor === 'No cumple' ? 'no-cumple' : 'na'} ${respuesta?.estado === op.valor ? 'opcion--activa' : ''}`}
-                      onClick={() => manejarSeleccion(item.id, op.valor, item.valor)}
+                      onClick={() => alternarRespuesta(item.id, op.valor, item.valor)}
                     >
                       {op.icono} {op.valor}
                     </button>
@@ -216,7 +152,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                         key={n}
                         type="button"
                         className={`punto-opcion ${respuesta.puntos === n ? 'punto-opcion--activa' : ''}`}
-                        onClick={() => manejarPuntos(item.id, n)}
+                        onClick={() => actualizarPuntos(item.id, n)}
                       >
                         {n} pt{n !== 1 ? 's' : ''}
                       </button>
@@ -226,9 +162,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
               )}
 
               {incumplido && (
-                <p className="item__advertencia">
-                  🛡 Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.
-                </p>
+                <p className="item__advertencia">{TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS}</p>
               )}
             </div>
           );
@@ -241,9 +175,9 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
     <div className="pagina">
       <header className="cabecera">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">MS</div>
+          <div className="cabecera__logo">{MARCA_ALIMENTOS.logo}</div>
           <div>
-            <h1>Guía de Inspección — Servicios de Alimentación al Público</h1>
+            <h1>{MARCA_ALIMENTOS.tituloGuia}</h1>
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
           </div>
         </div>
@@ -256,7 +190,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       </header>
 
       <nav className="tabs">
-        {TABS.map((tab, i) => (
+        {TABS_ALIMENTOS.map((tab, i) => (
           <span key={tab} className={`tabs__item ${i === 0 ? 'tabs__item--activo' : ''}`}>
             {tab}
           </span>
@@ -303,7 +237,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
       <footer className="pie">
         <button type="button" className="boton boton--secundario" onClick={onAnterior} disabled={!puedeRetroceder}>← Anterior</button>
-        <span>Paso 3 de 9</span>
+        <span>Paso 3 de {TOTAL_PASOS_ALIMENTOS}</span>
         <button type="button" className="boton boton--primario" onClick={manejarSiguiente}>
           Siguiente →
         </button>

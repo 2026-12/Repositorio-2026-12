@@ -1,18 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
+import { calcularResumen } from '../domain/calculoPuntaje';
+import { obtenerPendientes } from '../domain/validacionSeccion';
+import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
+import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
+import {
+  MARCA_ALIMENTOS,
+  TABS_ALIMENTOS,
+  TOTAL_PASOS_ALIMENTOS,
+  TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
+} from '../config/inspeccionAlimentos';
 import './formulario.css';
-
-const TABS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
-
-const OPCIONES = [
-  { valor: 'Cumple', icono: '✓' },
-  { valor: 'No cumple', icono: '✗' },
-  { valor: 'N/A', icono: '—' },
-];
 
 // En el backend la Sección B viene dividida en tres subsecciones con código propio.
 const SUBSECCIONES = [
@@ -30,11 +29,6 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const [gruposPorSubseccion, setGruposPorSubseccion] = useState({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-
-  // Cada subsección (B1, B2, B3) guarda su propio mapa de respuestas, para no
-  // perder el progreso al cambiar de pestaña. Cada respuesta es
-  // { estado: 'Cumple'|'No cumple'|'N/A', puntos: number }
-  const respuestasPorSubseccion = respuestas;
 
   // Al cambiar de subsección llevar la vista al inicio de la página.
   useEffect(() => {
@@ -67,72 +61,18 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
     cargarSeccionB();
   }, [datos.idGuia, datos.idTipoEstablecimiento, onSeccionCargada, seccionesCache, subsecciones]);
 
+  // Los grupos de la subsección activa se usan para renderizar y validar;
+  // el puntaje y la validación reutilizan el mismo dominio que las demás secciones.
   const grupos = useMemo(
     () => gruposPorSubseccion[subSeccionActiva] ?? [],
     [gruposPorSubseccion, subSeccionActiva],
   );
-  // Marcar una opción; si ya estaba marcada, se desmarca (toggle).
-  const manejarSeleccion = (itemId, opcion, valorMaximo) => {
-    onRespuestasChange?.((prev) => {
-      const actual = prev[itemId];
-      if (actual && actual.estado === opcion) {
-        const copia = { ...prev };
-        delete copia[itemId];
-        return copia;
-      }
-      return {
-        ...prev,
-        [itemId]: {
-          estado: opcion,
-          puntos: opcion === 'Cumple' ? valorMaximo : 0,
-        },
-      };
-    });
-  };
-
-  // Ajustar el puntaje parcial de un ítem ya marcado como "Cumple" (0..valor máximo).
-  const manejarPuntos = (itemId, puntos) => {
-    onRespuestasChange?.((prev) => ({
-      ...prev,
-      [itemId]: { ...prev[itemId], puntos },
-    }));
-  };
-
-  // Los ítems marcados N/A no cuentan ni en el puntaje obtenido ni en el
-  // máximo posible (regla 4 de la guía oficial). "Cumple" suma los puntos
-  // parciales elegidos por el inspector, no siempre el valor completo.
-  const { obtenidos, maximo, criticosIncumplidos } = useMemo(() => {
-    let obtenidos = 0;
-    let maximo = 0;
-    let criticosIncumplidos = 0;
-    grupos.forEach((grupo) => {
-      grupo.items.forEach((item) => {
-        const respuesta = respuestas[item.id];
-        if (respuesta?.estado === 'N/A') return;
-        maximo += item.valor;
-        if (respuesta?.estado === 'Cumple') obtenidos += respuesta.puntos ?? 0;
-        if (item.critico && respuesta?.estado === 'No cumple') criticosIncumplidos += 1;
-      });
-    });
-    return { obtenidos, maximo, criticosIncumplidos };
-  }, [respuestas, grupos]);
+  const { alternarRespuesta, actualizarPuntos, resumen } = useRespuestasInspeccion(grupos, respuestas, onRespuestasChange);
+  const { obtenidos, maximo, criticosIncumplidos } = resumen;
 
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
-
-  // Contar los ítems totales y los pendientes en la subsección activa
-  const { totalItemsEnSubseccion, itemsSinResponder } = useMemo(() => {
-    let total = 0;
-    let sinResponder = 0;
-    grupos.forEach((grupo) => {
-      grupo.items.forEach((item) => {
-        total++;
-        if (!respuestas[item.id]) {
-          sinResponder++;
-        }
-      });
-    });
-    return { totalItemsEnSubseccion: total, itemsSinResponder: sinResponder };
-  }, [respuestas, grupos]);
+  const totalItemsEnSubseccion = grupos.reduce((total, grupo) => total + grupo.items.length, 0);
+  const itemsSinResponder = obtenerPendientes(grupos, respuestas).length;
 
   // Navegación en el footer
   const manejarAnterior = () => {
@@ -154,7 +94,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       return;
     }
     setMostrarAlerta(false);
-    
+
     const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
     if (index < subsecciones.length - 1) {
       setSubSeccionActiva(subsecciones[index + 1].codigo);
@@ -196,9 +136,9 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
     <div className="pagina">
       <header className="cabecera">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">MS</div>
+          <div className="cabecera__logo">{MARCA_ALIMENTOS.logo}</div>
           <div>
-            <h1>Guía de Inspección — Servicios de Alimentación al Público</h1>
+            <h1>{MARCA_ALIMENTOS.tituloGuia}</h1>
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
           </div>
         </div>
@@ -211,7 +151,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       </header>
 
       <nav className="tabs">
-        {TABS.map((tab, i) => (
+        {TABS_ALIMENTOS.map((tab, i) => (
           <span key={tab} className={`tabs__item ${i === 1 ? 'tabs__item--activo' : ''}`}>
             {tab}
           </span>
@@ -221,13 +161,12 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       <nav className="subtabs">
         {subsecciones.map((sub) => {
           const subGrupos = gruposPorSubseccion[sub.codigo] ?? [];
-          const subRespuestas = respuestasPorSubseccion;
           let total = 0;
           let contestados = 0;
           subGrupos.forEach((grupo) => {
             grupo.items.forEach((item) => {
               total++;
-              if (subRespuestas[item.id]) {
+              if (respuestas[item.id]) {
                 contestados++;
               }
             });
@@ -294,12 +233,12 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                       <span className="item__valor">Valor: {item.valor} pts</span>
                     </div>
                     <div className="item__opciones">
-                      {OPCIONES.map((op) => (
+                      {OPCIONES_ESTANDAR.map((op) => (
                         <button
                           key={op.valor}
                           type="button"
                           className={`opcion opcion--${op.valor === 'Cumple' ? 'cumple' : op.valor === 'No cumple' ? 'no-cumple' : 'na'} ${respuesta?.estado === op.valor ? 'opcion--activa' : ''}`}
-                          onClick={() => manejarSeleccion(item.id, op.valor, item.valor)}
+                          onClick={() => alternarRespuesta(item.id, op.valor, item.valor)}
                         >
                           {op.icono} {op.valor}
                         </button>
@@ -316,7 +255,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                             key={n}
                             type="button"
                             className={`punto-opcion ${respuesta.puntos === n ? 'punto-opcion--activa' : ''}`}
-                            onClick={() => manejarPuntos(item.id, n)}
+                            onClick={() => actualizarPuntos(item.id, n)}
                           >
                             {n} pt{n !== 1 ? 's' : ''}
                           </button>
@@ -326,9 +265,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                   )}
 
                   {incumplido && (
-                    <p className="item__advertencia">
-                      🛡 Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.
-                    </p>
+                    <p className="item__advertencia">{TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS}</p>
                   )}
                 </div>
               );
@@ -349,7 +286,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
         >
           ← Anterior
         </button>
-        <span>Paso 2 de 9 (Subsección {subSeccionActiva})</span>
+        <span>Paso 2 de {TOTAL_PASOS_ALIMENTOS} (Subsección {subSeccionActiva})</span>
         <button 
           type="button" 
           className="boton boton--primario"

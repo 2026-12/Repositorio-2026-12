@@ -1,5 +1,5 @@
-import FormularioSeccionGenerico from './FormularioSeccionGenerico';
+import FormularioSeccionAlimentos from './FormularioSeccionAlimentos';
 
 export default function FormularioSeccionA(props) {
-  return <FormularioSeccionGenerico {...props} codigo="A" titulo="Condiciones Físicas y Sanitarias Generales de las Instalaciones" paso={1} />;
+  return <FormularioSeccionAlimentos {...props} codigo="A" titulo="Condiciones Físicas y Sanitarias Generales de las Instalaciones" paso={1} />;
 }

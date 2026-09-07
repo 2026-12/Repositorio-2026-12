@@ -1,5 +1,5 @@
-import FormularioSeccionGenerico from './FormularioSeccionGenerico';
+import FormularioSeccionAlimentos from './FormularioSeccionAlimentos';
 
 export default function FormularioSeccionF(props) {
-  return <FormularioSeccionGenerico {...props} codigo="F" titulo="Área de Consumo (Comedor)" paso={6} tabActivo={5} />;
+  return <FormularioSeccionAlimentos {...props} codigo="F" titulo="Área de Consumo (Comedor)" paso={6} tabActivo={5} />;
 }
