@@ -4,6 +4,7 @@ import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
 import './formulario.css';
 import { obtenerPendientes } from '../domain/validacionSeccion';
+import { nombresVistas } from '../config/inspeccion';
 
 const OPCIONES = [
   { valor: 'Cumple', icono: '✓' },
@@ -11,17 +12,12 @@ const OPCIONES = [
   { valor: 'N/A', icono: '—' },
 ];
 
-const TABS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
 
 export default function FormularioSeccionGenerico({
   datos,
   codigo,
   titulo,
   paso,
-  tabActivo = 0,
   onAnterior,
   onSiguiente,
   puedeRetroceder,
@@ -29,6 +25,10 @@ export default function FormularioSeccionGenerico({
   onRespuestasChange,
   seccionInicial,
   onSeccionCargada,
+  onIrAVista,
+  maxAlcanzado = 0,
+  indiceActual = 0,
+  vistas = [],
 }) {
   const [grupos, setGrupos] = useState(seccionInicial ? agruparPorArticulo(seccionInicial.items) : []);
   const [cargando, setCargando] = useState(!seccionInicial);
@@ -110,7 +110,25 @@ export default function FormularioSeccionGenerico({
       </header>
 
       <nav className="tabs">
-        {TABS.map((tab, indice) => <span key={tab} className={`tabs__item ${indice === tabActivo ? 'tabs__item--activo' : ''}`}>{tab}</span>)}
+        {vistas.map((vista, i) => {
+          const bloqueada = i > maxAlcanzado;
+
+          return (
+            <button
+              key={vista.codigo}
+              type="button"
+              disabled={bloqueada}
+              onClick={() => onIrAVista?.(i)}
+              className={`tabs__item ${
+                i === indiceActual ? 'tabs__item--activo' : ''
+              } ${
+                bloqueada ? 'tabs__item--bloqueado' : ''
+              }`}
+            >
+              {nombresVistas[vista.codigo] ?? vista.codigo}
+            </button>
+          );
+        })}
       </nav>
 
       <main className="tarjeta">

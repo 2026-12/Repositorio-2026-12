@@ -2,11 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
 import './formulario.css';
-
-const TABS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
+import { nombresVistas } from '../config/inspeccion';
 
 const OPCIONES = [
   { valor: 'Cumple', icono: '✓' },
@@ -21,7 +17,7 @@ const SUBSECCIONES = [
   { codigo: 'B3', titulo: 'Área de Preparación de Alimentos (Cocina) — Operaciones de Preparación de los Alimentos' },
 ];
 
-function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada }) {
+function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [] }) {
   const subsecciones = useMemo(
     () => SUBSECCIONES.filter((sub) => datos.secciones?.some((seccion) => seccion.codigo === sub.codigo)),
     [datos.secciones],
@@ -211,11 +207,25 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       </header>
 
       <nav className="tabs">
-        {TABS.map((tab, i) => (
-          <span key={tab} className={`tabs__item ${i === 1 ? 'tabs__item--activo' : ''}`}>
-            {tab}
-          </span>
-        ))}
+        {vistas.map((vista, i) => {
+          const bloqueada = i > maxAlcanzado;
+
+          return (
+            <button
+              key={vista.codigo}
+              type="button"
+              disabled={bloqueada}
+              onClick={() => onIrAVista?.(i)}
+              className={`tabs__item ${
+                i === indiceActual ? 'tabs__item--activo' : ''
+              } ${
+                bloqueada ? 'tabs__item--bloqueado' : ''
+              }`}
+            >
+              {nombresVistas[vista.codigo] ?? vista.codigo}
+            </button>
+          );
+        })}
       </nav>
 
       <nav className="subtabs">
@@ -273,7 +283,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
         {itemsSinResponder === 0 && totalItemsEnSubseccion > 0 && (
           <div className="mensaje-progreso-validacion mensaje-progreso-validacion--completo">
-            <span>✅ ¡Excelente! Completaste los {totalItemsEnSubseccion} ítems de esta subsección.</span>
+            <span>✅ Completaste los {totalItemsEnSubseccion} ítems de esta subsección.</span>
           </div>
         )}
 
