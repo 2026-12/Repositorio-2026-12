@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { obtenerSeccion } from '../services/guiasInspeccionService';
 import { agruparPorArticulo } from '../domain/agrupacionItems';
+import { obtenerPendientes } from '../domain/validacionSeccion';
+import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
+import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
+import {
+  MARCA_ALIMENTOS,
+  TABS_ALIMENTOS,
+  TOTAL_PASOS_ALIMENTOS,
+  TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
+} from '../config/inspeccionAlimentos';
 import './formulario.css';
 import { nombresVistas } from '../config/inspeccion';
 

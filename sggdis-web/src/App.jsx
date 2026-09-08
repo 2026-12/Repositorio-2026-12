@@ -2,20 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
 import FormularioSeccionB from './components/FormularioSeccionB';
 import FormularioSeccionC from './components/FormularioSeccionC';
-import FormularioSeccionGenerico from './components/FormularioSeccionGenerico';
+import FormularioSeccionAlimentos from './components/FormularioSeccionAlimentos';
 import FormularioSeccionH from './components/FormularioSeccionH';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
 import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesService';
 
 const COMPONENTES_POR_CODIGO = {
-  A: FormularioSeccionGenerico,
+  A: FormularioSeccionAlimentos,
   B: FormularioSeccionB,
   C: FormularioSeccionC,
-  D: FormularioSeccionGenerico,
-  E: FormularioSeccionGenerico,
-  F: FormularioSeccionGenerico,
-  G: FormularioSeccionGenerico,
+  D: FormularioSeccionAlimentos,
+  E: FormularioSeccionAlimentos,
+  F: FormularioSeccionAlimentos,
+  G: FormularioSeccionAlimentos,
   H: FormularioSeccionH,
 };
 
@@ -113,10 +113,10 @@ useEffect(() => {
     return <SeleccionEstablecimiento onComenzar={setDatos} />;
   }
 
-  const Formulario = COMPONENTES_POR_CODIGO[wizard.vistaActual?.codigo] ?? FormularioSeccionGenerico;
+  const Formulario = COMPONENTES_POR_CODIGO[wizard.vistaActual?.codigo] ?? FormularioSeccionAlimentos;
   const manejarAnterior = wizard.indice === 0 ? volverAlInicio : wizard.retroceder;
 
-  if (Formulario === FormularioSeccionGenerico) {
+  if (Formulario === FormularioSeccionAlimentos) {
     return (
       <Formulario
         datos={datos}
