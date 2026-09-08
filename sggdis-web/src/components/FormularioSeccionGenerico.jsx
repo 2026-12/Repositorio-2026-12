@@ -5,11 +5,10 @@ import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
 import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import './formulario.css';
 import { obtenerPendientes } from '../domain/validacionSeccion';
+import { nombresVistas } from '../config/inspeccion';
 
 const MARCA_POR_DEFECTO = { logo: 'IN', tituloGuia: 'Guía de Inspección' };
 
-const TEXTO_ADVERTENCIA_CRITICO_POR_DEFECTO =
-  'Este ítem es crítico: su incumplimiento requiere atención inmediata.';
 
 // Núcleo visual reutilizable para cualquier guía de inspección por
 // secciones. No conoce textos ni reglas de una guía en particular: cada
@@ -20,15 +19,6 @@ export default function FormularioSeccionGenerico({
   codigo,
   titulo,
   paso,
-  totalPasos,
-  tabActivo = 0,
-  tabs = [],
-  marca = MARCA_POR_DEFECTO,
-  opciones = OPCIONES_ESTANDAR,
-  obtenerOpcionesItem = (_item, opcionesDisponibles) => opcionesDisponibles,
-  obtenerPuntosItem = (item) => Array.from({ length: item.valor + 1 }, (_, puntos) => puntos),
-  renderizarContenidoItem,
-  textoAdvertenciaCritico = TEXTO_ADVERTENCIA_CRITICO_POR_DEFECTO,
   onAnterior,
   onSiguiente,
   puedeRetroceder,
@@ -36,6 +26,10 @@ export default function FormularioSeccionGenerico({
   onRespuestasChange,
   seccionInicial,
   onSeccionCargada,
+  onIrAVista,
+  maxAlcanzado = 0,
+  indiceActual = 0,
+  vistas = [],
 }) {
   const [grupos, setGrupos] = useState(seccionInicial ? agruparPorArticulo(seccionInicial.items) : []);
   const [cargando, setCargando] = useState(!seccionInicial);
@@ -116,11 +110,27 @@ export default function FormularioSeccionGenerico({
         </div>
       </header>
 
-      {tabs.length > 0 && (
-        <nav className="tabs">
-          {tabs.map((tab, indice) => <span key={tab} className={`tabs__item ${indice === tabActivo ? 'tabs__item--activo' : ''}`}>{tab}</span>)}
-        </nav>
-      )}
+      <nav className="tabs">
+        {vistas.map((vista, i) => {
+          const bloqueada = i > maxAlcanzado;
+
+          return (
+            <button
+              key={vista.codigo}
+              type="button"
+              disabled={bloqueada}
+              onClick={() => onIrAVista?.(i)}
+              className={`tabs__item ${
+                i === indiceActual ? 'tabs__item--activo' : ''
+              } ${
+                bloqueada ? 'tabs__item--bloqueado' : ''
+              }`}
+            >
+              {nombresVistas[vista.codigo] ?? vista.codigo}
+            </button>
+          );
+        })}
+      </nav>
 
       <main className="tarjeta">
         <div className="tarjeta__encabezado">

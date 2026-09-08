@@ -131,6 +131,10 @@ useEffect(() => {
         onRespuestasChange={actualizarRespuestas}
         seccionInicial={seccionesCache[wizard.vistaActual?.codigo]}
         onSeccionCargada={registrarSeccion}
+        onIrAVista={wizard.irAVista}
+        maxAlcanzado={wizard.maxAlcanzado}
+        indiceActual={wizard.indice}
+        vistas={wizard.vistas}
       />
     );
   }
@@ -150,6 +154,10 @@ useEffect(() => {
       totalPasos={wizard.vistas.length}
       seccionesCache={seccionesCache}
       onSeccionCargada={registrarSeccion}
+      onIrAVista={wizard.irAVista}
+      maxAlcanzado={wizard.maxAlcanzado}
+      indiceActual={wizard.indice}
+      vistas={wizard.vistas}
     />
   );
 }

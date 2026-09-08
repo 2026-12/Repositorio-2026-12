@@ -12,6 +12,13 @@ import {
   TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
 } from '../config/inspeccionAlimentos';
 import './formulario.css';
+import { nombresVistas } from '../config/inspeccion';
+
+const OPCIONES = [
+  { valor: 'Cumple', icono: '✓' },
+  { valor: 'No cumple', icono: '✗' },
+  { valor: 'N/A', icono: '—' },
+];
 
 // En el backend la Sección B viene dividida en tres subsecciones con código propio.
 const SUBSECCIONES = [
@@ -20,7 +27,7 @@ const SUBSECCIONES = [
   { codigo: 'B3', titulo: 'Área de Preparación de Alimentos (Cocina) — Operaciones de Preparación de los Alimentos' },
 ];
 
-function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada }) {
+function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [] }) {
   const subsecciones = useMemo(
     () => SUBSECCIONES.filter((sub) => datos.secciones?.some((seccion) => seccion.codigo === sub.codigo)),
     [datos.secciones],
@@ -212,7 +219,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
         {itemsSinResponder === 0 && totalItemsEnSubseccion > 0 && (
           <div className="mensaje-progreso-validacion mensaje-progreso-validacion--completo">
-            <span>✅ ¡Excelente! Completaste los {totalItemsEnSubseccion} ítems de esta subsección.</span>
+            <span>✅ Completaste los {totalItemsEnSubseccion} ítems de esta subsección.</span>
           </div>
         )}
 
