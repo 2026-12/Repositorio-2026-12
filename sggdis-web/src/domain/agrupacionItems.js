@@ -4,12 +4,20 @@ export function agruparPorArticulo(items = []) {
     if (!ultimoGrupo || ultimoGrupo.articulo !== item.articulo) {
       grupos.push({ articulo: item.articulo, items: [] });
     }
+
+    const permiteNoAplica =
+      item.permiteNoAplica === true ||
+      item.permiteNoAplica === 'S' ||
+      item.permiteNoAplica === 's';
+
     grupos[grupos.length - 1].items.push({
       id: item.idItem,
       texto: item.descripcion,
       valor: item.puntaje,
       critico: item.esCritico,
+      noAplica: permiteNoAplica,
     });
+
     return grupos;
   }, []);
 }

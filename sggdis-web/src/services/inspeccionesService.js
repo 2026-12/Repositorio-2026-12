@@ -4,7 +4,8 @@ async function solicitarJson(url, opciones) {
   try {
     const respuesta = await fetch(url, opciones);
     if (!respuesta.ok) {
-      throw new Error('La API respondió con un error.');
+      const mensaje = await respuesta.text();
+      throw new Error(mensaje || 'La API respondió con un error.');
     }
     return respuesta.status === 204 ? null : await respuesta.json();
   } catch (error) {
@@ -15,11 +16,17 @@ async function solicitarJson(url, opciones) {
   }
 }
 
-export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo }) {
+export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha }) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo }),
+    body: JSON.stringify({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha }),
+  });
+}
+
+export function eliminarInspeccion(idInspeccion) {
+  return solicitarJson(`${API_BASE_URL}/api/inspecciones/${idInspeccion}`, {
+    method: 'DELETE',
   });
 }
 

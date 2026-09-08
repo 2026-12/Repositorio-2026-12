@@ -52,6 +52,7 @@ function SeleccionEstablecimiento({ onComenzar }) {
         idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
         nombreEstablecimiento: nombre,
         consecutivo,
+        fecha: fecha.toLocaleDateString('en-CA'),
       });
       onComenzar({
         nombre,
@@ -63,8 +64,8 @@ function SeleccionEstablecimiento({ onComenzar }) {
         secciones: tipoSeleccionado.secciones ?? [],
         idInspeccion,
       });
-    } catch {
-      setErrorCreacion('No se pudo crear la inspección. Verificá que el backend esté corriendo e intentá de nuevo.');
+    } catch (error) {
+      setErrorCreacion(error.message);
     } finally {
       setCreando(false);
     }
@@ -86,6 +87,12 @@ function SeleccionEstablecimiento({ onComenzar }) {
         <div className="tarjeta-inicio__logo">MS</div>
         <p className="tarjeta-inicio__institucion">MINISTERIO DE SALUD · COSTA RICA</p>
         <h2>Nueva inspección: Servicios de Alimentación</h2>
+        {(errorCreacion || error) && (
+          <div className="alerta-error" role="alert">
+            <strong>No se pudo continuar</strong>
+            <span>{errorCreacion || error}</span>
+          </div>
+        )}
 
         <div className="campo-fila">
           <div className="campo">
@@ -94,6 +101,7 @@ function SeleccionEstablecimiento({ onComenzar }) {
               id="fecha"
               selected={fecha}
               onChange={(date) => setFecha(date)}
+              minDate={new Date()}
               dateFormat="dd/MM/yyyy"
               locale="es"
               placeholderText="Seleccioná una fecha"
@@ -131,7 +139,6 @@ function SeleccionEstablecimiento({ onComenzar }) {
 
         <p className="campo-titulo">Seleccione el tipo de establecimiento *</p>
         {cargando && <p className="ayuda-obligatorio">Cargando tipos de establecimiento...</p>}
-        {error && <p className="ayuda-obligatorio">{error}</p>}
         {!cargando && !error && <div className="tipos-grid">
           {tipos.map((tipo) => (
             <button
@@ -161,9 +168,6 @@ function SeleccionEstablecimiento({ onComenzar }) {
           <p className="ayuda-obligatorio">
             Completá la fecha, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
           </p>
-        )}
-        {errorCreacion && (
-          <p className="ayuda-obligatorio" style={{ color: 'var(--rojo, #B00020)' }}>{errorCreacion}</p>
         )}
       </main>
     </div>

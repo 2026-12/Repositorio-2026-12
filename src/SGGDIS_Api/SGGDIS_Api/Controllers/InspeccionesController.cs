@@ -18,14 +18,37 @@ namespace SGGDIS_Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearInspeccion([FromBody] CrearInspeccionDto dto)
         {
+            if (dto.Fecha.Date < DateTime.Today)
+            {
+                return BadRequest("La fecha de inspección no puede ser anterior a la de día de hoy.");
+            }
+
             try
             {
                 var inspeccion = await _inspeccionService.CrearInspeccionAsync(dto);
                 return Ok(new { idInspeccion = inspeccion.IdInspeccion });
             }
+            catch (ConsecutivoDuplicadoException ex)
+            {
+                return Conflict(ex.Message);
+            }
             catch (Exception)
             {
                 return StatusCode(500, "Ocurrio un error al crear la inspeccion.");
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> EliminarInspeccion(int id)
+        {
+            try
+            {
+                var eliminada = await _inspeccionService.EliminarInspeccionAsync(id);
+                return eliminada ? NoContent() : NotFound();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ocurrio un error al eliminar la inspeccion.");
             }
         }
 

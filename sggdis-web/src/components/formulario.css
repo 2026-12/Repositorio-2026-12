@@ -704,3 +704,36 @@ body {
     padding: 12px 14px;
   }
 }
+
+/* ============================================================================
+   OBSERVACIÓN POR ÍTEM (Sección H)
+   ============================================================================ */
+
+   .item__observacion {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item__observacion label {
+  font-size: 0.75rem;
+  color: #5b6470;
+  font-weight: 600;
+}
+
+.item__observacion textarea {
+  resize: vertical;
+  min-height: 44px;
+  border: 1px solid var(--gris);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--azul-oscuro);
+}
+
+.item__observacion textarea:focus {
+  outline: none;
+  border-color: var(--azul-acero);
+}

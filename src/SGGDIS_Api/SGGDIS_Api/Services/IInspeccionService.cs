@@ -6,6 +6,7 @@ namespace SGGDIS_Api.Services
     public interface IInspeccionService
     {
         Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto);
+        Task<bool> EliminarInspeccionAsync(int idInspeccion);
         Task GuardarRespuestasAsync(int idInspeccion, List<RespuestaDto> respuestas);
         Task<List<InsRespuesta>> ObtenerRespuestasAsync(int idInspeccion);
     }
