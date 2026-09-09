@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import PantallaInicio from './components/PantallaInicio';
 import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
 import FormularioSeccionB from './components/FormularioSeccionB';
 import FormularioSeccionC from './components/FormularioSeccionC';
@@ -34,6 +35,7 @@ function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
 }
 
 function App() {
+  const [pantallaActual, setPantallaActual] = useState('inicio');
   const [progresoGuardado] = useState(cargarProgreso);
   const [datos, setDatos] = useState(progresoGuardado?.datos ?? null);
   const [respuestas, setRespuestas] = useState(progresoGuardado?.respuestas ?? {});
@@ -41,6 +43,7 @@ function App() {
   const [seccionesCache, setSeccionesCache] = useState(progresoGuardado?.seccionesCache ?? {});
   const wizard = useWizardInspeccion(datos?.secciones ?? [], progresoGuardado?.indiceWizard ?? 0);
   const [observaciones, setObservaciones] = useState(progresoGuardado?.observaciones ?? {});
+
 
 const actualizarObservaciones = useCallback((actualizar) => {
   setObservaciones((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
@@ -107,7 +110,25 @@ useEffect(() => {
   setSeccionesCache({});
   setObservaciones({});
   wizard.reiniciar();
+  setPantallaActual('inicio');
   }, [datos?.idInspeccion, wizard]);
+
+  if (pantallaActual === 'inicio') {
+  return (
+    <PantallaInicio
+      onNuevaInspeccion={() => setPantallaActual('inspeccion')}
+      onHistorial={() => {
+        console.log('Historial pendiente de implementar');
+      }}
+      onReportes={() => {
+        console.log('Reportes pendiente de implementar');
+      }}
+      onCerrarSesion={() => {
+        console.log('Cerrar sesión pendiente de conectar');
+      }}
+    />
+  );
+  }
 
   if (!datos) {
     return <SeleccionEstablecimiento onComenzar={setDatos} />;
