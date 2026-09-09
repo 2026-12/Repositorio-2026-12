@@ -130,6 +130,7 @@ useEffect(() => {
         respuestas={respuestas}
         onRespuestasChange={actualizarRespuestas}
         seccionInicial={seccionesCache[wizard.vistaActual?.codigo]}
+        seccionesCache={seccionesCache}
         onSeccionCargada={registrarSeccion}
         onIrAVista={wizard.irAVista}
         maxAlcanzado={wizard.maxAlcanzado}

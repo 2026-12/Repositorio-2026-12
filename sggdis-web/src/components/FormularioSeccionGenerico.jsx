@@ -5,6 +5,7 @@ import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
 import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import './formulario.css';
 import { obtenerPendientes } from '../domain/validacionSeccion';
+import { esVistaCompleta } from '../domain/progresoVistas';
 import { nombresVistas } from '../config/inspeccion';
 
 const MARCA_POR_DEFECTO = { logo: 'IN', tituloGuia: 'Guía de Inspección' };
@@ -19,6 +20,7 @@ export default function FormularioSeccionGenerico({
   codigo,
   titulo,
   paso,
+  totalPasos,
   onAnterior,
   onSiguiente,
   puedeRetroceder,
@@ -30,6 +32,13 @@ export default function FormularioSeccionGenerico({
   maxAlcanzado = 0,
   indiceActual = 0,
   vistas = [],
+  seccionesCache = {},
+  marca = MARCA_POR_DEFECTO,
+  textoAdvertenciaCritico,
+  opciones = OPCIONES_ESTANDAR,
+  obtenerOpcionesItem = (item, opcionesBase) => opcionesBase,
+  obtenerPuntosItem = (item) => Array.from({ length: item.valor + 1 }, (_, n) => n),
+  renderizarContenidoItem,
 }) {
   const [grupos, setGrupos] = useState(seccionInicial ? agruparPorArticulo(seccionInicial.items) : []);
   const [cargando, setCargando] = useState(!seccionInicial);
@@ -113,6 +122,7 @@ export default function FormularioSeccionGenerico({
       <nav className="tabs">
         {vistas.map((vista, i) => {
           const bloqueada = i > maxAlcanzado;
+          const completa = esVistaCompleta(vista, seccionesCache, respuestas);
 
           return (
             <button
@@ -124,9 +134,11 @@ export default function FormularioSeccionGenerico({
                 i === indiceActual ? 'tabs__item--activo' : ''
               } ${
                 bloqueada ? 'tabs__item--bloqueado' : ''
+              } ${
+                completa ? 'tabs__item--completo' : ''
               }`}
             >
-              {nombresVistas[vista.codigo] ?? vista.codigo}
+              {nombresVistas[vista.codigo] ?? vista.codigo} {completa ? '✓' : ''}
             </button>
           );
         })}
@@ -144,13 +156,7 @@ export default function FormularioSeccionGenerico({
         {mostrarAlerta && pendientes > 0 && (
           <div className="alerta-validacion-error">
             <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
-            <span>No se puede avanzar. Faltan responder {pendientes} de los {totalItems} ítems:</span>
-            <ul className="alerta-validacion-error__lista">
-              {itemsPendientes.slice(0, 6).map((item) => (
-                <li key={item.id}>{item.articulo} — {item.texto}</li>
-              ))}
-              {pendientes > 6 && <li>y {pendientes - 6} ítem{pendientes - 6 !== 1 ? 's' : ''} más…</li>}
-            </ul>
+            <span>No se puede avanzar. Faltan responder {pendientes} de los {totalItems} ítems. Complete los campos marcados en rojo.</span>
           </div>
         )}
 
