@@ -4,6 +4,7 @@ import { agruparPorArticulo } from '../domain/agrupacionItems';
 import { obtenerPendientes } from '../domain/validacionSeccion';
 import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
+import { esVistaCompleta } from '../domain/progresoVistas';
 import {
   MARCA_ALIMENTOS,
   TABS_ALIMENTOS,
@@ -129,34 +130,14 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
     const [mostrarAlerta, setMostrarAlerta] = useState(false);
 
-    // Contar los ítems totales y los pendientes en la subsección activa
-    const { totalItemsEnSubseccion, itemsSinResponder } = useMemo(() => {
-        let total = 0;
-        let sinResponder = 0;
-        grupos.forEach((grupo) => {
-            grupo.items.forEach((item) => {
-                total++;
-                if (!respuestas[item.id]) {
-                    sinResponder++;
-                }
-            });
-        });
-        return { totalItemsEnSubseccion: total, itemsSinResponder: sinResponder };
-    }, [respuestas, grupos]);
-
-    // Lista de ítems pendientes en la subsección activa, con su artículo, para
-    // mostrarlos en el mensaje de validación (igual que en las demás secciones).
-    const itemsPendientesDetalle = useMemo(() => {
-        const pendientes = [];
-        grupos.forEach((grupo) => {
-            grupo.items.forEach((item) => {
-                if (!respuestas[item.id]) {
-                    pendientes.push({ id: item.id, articulo: grupo.articulo, texto: item.texto });
-                }
-            });
-        });
-        return pendientes;
-    }, [respuestas, grupos]);
+    // Misma validación que usa FormularioSeccionGenerico: cuenta y detalle de
+    // pendientes de la subsección activa, vía el dominio compartido.
+    const itemsPendientesDetalle = useMemo(() => obtenerPendientes(grupos, respuestas), [grupos, respuestas]);
+    const itemsSinResponder = itemsPendientesDetalle.length;
+    const totalItemsEnSubseccion = useMemo(
+        () => grupos.reduce((total, grupo) => total + grupo.items.length, 0),
+        [grupos],
+    );
 
     // Navegación en el footer
     const manejarAnterior = () => {
@@ -236,6 +217,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
             <nav className="tabs">
                 {vistas.map((vista, i) => {
                     const bloqueada = i > maxAlcanzado;
+                    const completa = esVistaCompleta(vista, seccionesCache, respuestas);
 
                     return (
                         <button
@@ -245,9 +227,10 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                             onClick={() => onIrAVista?.(i)}
                             className={`tabs__item ${i === indiceActual ? 'tabs__item--activo' : ''
                                 } ${bloqueada ? 'tabs__item--bloqueado' : ''
+                                } ${completa ? 'tabs__item--completo' : ''
                                 }`}
                         >
-                            {nombresVistas[vista.codigo] ?? vista.codigo}
+                            {nombresVistas[vista.codigo] ?? vista.codigo} {completa ? '✓' : ''}
                         </button>
                     );
                 })}
@@ -276,18 +259,11 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                     </div>
                 </div>
 
-                {/* --- Mensajes de validación / progreso en tiempo real --- */}
+                {/* --- Mensaje de validación en tiempo real --- */}
                 {mostrarAlerta && itemsSinResponder > 0 && (
                     <div className="alerta-validacion-error">
                         <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
-                        <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItemsEnSubseccion} ítems:</span>
-                        <ul className="alerta-validacion-error__lista">
-                            {itemsPendientesDetalle.map((pendiente) => (
-                                <li key={pendiente.id}>
-                                    {pendiente.articulo} — {pendiente.texto}
-                                </li>
-                            ))}
-                        </ul>
+                        <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItemsEnSubseccion} ítems. Complete los campos marcados en rojo.</span>
                     </div>
                 )}
 
