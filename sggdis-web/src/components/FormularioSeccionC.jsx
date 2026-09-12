@@ -5,6 +5,7 @@ import { obtenerPendientes } from '../domain/validacionSeccion';
 import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
 import { esVistaCompleta } from '../domain/progresoVistas';
+import mapaDorado from '../assets/mapa-dorado.png';
 import {
   MARCA_ALIMENTOS,
   TABS_ALIMENTOS,
@@ -200,7 +201,9 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
         <div className="pagina">
             <header className="cabecera">
                 <div className="cabecera__marca">
-                    <div className="cabecera__logo">MS</div>
+                    <div className="cabecera__logo cabecera__logo--imagen">
+                        <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+                    </div>
                     <div>
                         <h1>Guía de Inspección — Servicios de Alimentación al Público</h1>
                         <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
@@ -230,7 +233,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, puedeRetroceder, r
                                 } ${completa ? 'tabs__item--completo' : ''
                                 }`}
                         >
-                            {nombresVistas[vista.codigo] ?? vista.codigo} {completa ? '✓' : ''}
+                            {nombresVistas[vista.codigo] ?? vista.codigo}
                         </button>
                     );
                 })}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import PantallaInicio from './components/PantallaInicio';
 import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
 import FormularioSeccionB from './components/FormularioSeccionB';
 import FormularioSeccionC from './components/FormularioSeccionC';
@@ -24,6 +25,7 @@ const COMPONENTES_POR_CODIGO = {
 
 function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
   const modificadas = {};
+
   for (const [idItem, respuesta] of Object.entries(respuestasActuales)) {
     const guardada = respuestasGuardadas[idItem];
     const cambioEstado = !guardada || guardada.estado !== respuesta.estado;
@@ -33,10 +35,12 @@ function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
       modificadas[idItem] = respuesta;
     }
   }
+
   return modificadas;
 }
 
 function App() {
+  const [pantallaActual, setPantallaActual] = useState('inicio');
   const [progresoGuardado] = useState(cargarProgreso);
   const [datos, setDatos] = useState(progresoGuardado?.datos ?? null);
   const [respuestas, setRespuestas] = useState(progresoGuardado?.respuestas ?? {});
@@ -63,14 +67,10 @@ function App() {
     setSeccionesCache((actuales) => (actuales[codigo] === seccion ? actuales : { ...actuales, [codigo]: seccion }));
   }, []);
 
-  // Al pasar de sección se guardan únicamente las respuestas modificadas en el backend.
-  // No se bloquea el avance si falla (soporte sin conexión: el progreso ya quedó
-  // en localStorage y se reintentará en el próximo cambio de sección).
-  // Si ya no hay más secciones (última vista), en vez de "avanzar" se
-  // habilita la pantalla de cierre.
   const avanzarYGuardar = useCallback(() => {
     if (datos?.idInspeccion) {
       const delta = obtenerRespuestasModificadas(respuestas, respuestasGuardadas);
+
       if (Object.keys(delta).length > 0) {
         guardarRespuestas(datos.idInspeccion, delta)
           .then(() => {
@@ -81,6 +81,7 @@ function App() {
           });
       }
     }
+
     if (wizard.puedeAvanzar) {
       wizard.avanzar();
     } else {
@@ -88,17 +89,16 @@ function App() {
     }
   }, [datos?.idInspeccion, respuestas, respuestasGuardadas, wizard]);
 
-  // Regresar de la pantalla de cierre a la última sección del wizard.
   const volverDeCierre = useCallback(() => {
     setCierreActivo(false);
   }, []);
 
-  // Guarda el progreso en cada cambio para poder continuar sin conexión o tras recargar la página.
   useEffect(() => {
     if (!datos) {
       limpiarProgreso();
       return;
     }
+
     guardarProgreso({
       datos,
       respuestas,
@@ -107,21 +107,19 @@ function App() {
       observaciones,
       indiceWizard: wizard.indice,
       cierreActivo,
-      datosCierre, 
+      datosCierre,
     });
   }, [datos, respuestas, respuestasGuardadas, seccionesCache, observaciones, wizard.indice, cierreActivo, datosCierre]);
 
-  // Al cambiar de sección (o subsección) llevar la vista al inicio de la página.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [wizard.indice, cierreActivo]);
 
-  // En la Sección A (primer paso del wizard) no hay una sección previa a la
-  // cual retroceder, así que "Anterior" regresa a la pantalla de inicio.
   const volverAlInicio = useCallback(async () => {
     if (!window.confirm('¿Deseás volver al inicio? Se perderá el progreso de esta inspección.')) {
       return;
     }
+
     if (datos?.idInspeccion) {
       try {
         await eliminarInspeccion(datos.idInspeccion);
@@ -130,6 +128,7 @@ function App() {
         return;
       }
     }
+
     setDatos(null);
     setRespuestas({});
     setRespuestasGuardadas({});
@@ -138,10 +137,9 @@ function App() {
     setCierreActivo(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     wizard.reiniciar();
+    setPantallaActual('inicio');
   }, [datos?.idInspeccion, wizard]);
 
-  // Al confirmar el cierre en el servidor, se limpia todo el estado
-  // (la inspección ya quedó FINALIZADA, no se elimina) para permitir una nueva.
   const manejarInspeccionFinalizada = useCallback(() => {
     setDatos(null);
     setRespuestas({});
@@ -151,13 +149,30 @@ function App() {
     setCierreActivo(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     wizard.reiniciar();
+    setPantallaActual('inicio');
   }, [wizard]);
 
-  if (!datos) {
-    return <SeleccionEstablecimiento onComenzar={setDatos} />;
+  if (pantallaActual === 'inicio') {
+    return (
+      <PantallaInicio
+        onNuevaInspeccion={() => setPantallaActual('inspeccion')}
+        onHistorial={() => {
+          console.log('Historial pendiente de implementar');
+        }}
+        onReportes={() => {
+          console.log('Reportes pendiente de implementar');
+        }}
+        onCerrarSesion={() => {
+          console.log('Cerrar sesión pendiente de conectar');
+        }}
+      />
+    );
   }
 
-  // Pantalla de cierre, último paso del wizard.
+  if (!datos) {
+    return <SeleccionEstablecimiento onComenzar={setDatos} onVolverInicio={() => setPantallaActual('inicio')} />;
+  }
+
   if (cierreActivo) {
     return (
       <FormularioCierreInspeccion

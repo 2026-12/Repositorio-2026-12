@@ -35,7 +35,18 @@ body {
 
 .pagina {
   font-family: 'Segoe UI', Inter, Helvetica, Baskerville, sans-serif;
-  background: var(--azul-oscuro);
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgba(63, 137, 201, 0.45),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      #021a53 0%,
+      #073873 55%,
+      #0c4f8a 100%
+    );
   min-height: 100vh;
   padding-bottom: 24px;
 }
@@ -51,14 +62,20 @@ body {
   align-items: center;
   padding: 12px 24px;
   border-bottom: 3px solid var(--azul-medio);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  min-height: 84px;
+  box-shadow: 0 3px 12px rgba(0, 20, 60, 0.08);
 }
 
 .cabecera__marca {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .cabecera__logo {
@@ -72,6 +89,23 @@ body {
   justify-content: center;
   font-weight: 700;
   font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.cabecera__logo--imagen {
+  width: 58px;
+  height: 58px;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.cabecera__logo--imagen img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
 }
 
 .cabecera__marca h1 {
@@ -90,6 +124,7 @@ body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 /* ============================================================================
@@ -134,6 +169,11 @@ body {
   padding: 8px 24px;
   flex-wrap: wrap;
   border-bottom: 1px solid var(--gris);
+  position: sticky;
+  top: 84px;
+  z-index: 999;
+  box-shadow: 0 2px 8px rgba(0, 20, 60, 0.06);
+  overflow: visible;
 }
 
 .tabs__item {
@@ -141,7 +181,11 @@ body {
   padding: 6px 14px;
   border-radius: 999px;
   color: #5b6470;
-  cursor: default;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .tabs__item--activo {
@@ -160,6 +204,16 @@ body {
   color: var(--blanco);
 }
 
+.tabs__item:not(:disabled):not(.tabs__item--activo):hover {
+  background: #EEF1F4;
+}
+
+.tabs__item--bloqueado,
+.tabs__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ============================================================================
    NAVEGACIÓN SECUNDARIA (SUBTABS - Para secciones B y C)
    ============================================================================ */
@@ -167,10 +221,16 @@ body {
 .subtabs {
   display: flex;
   gap: 8px;
-  max-width: 860px;
+  max-width: 1180px;
   margin: 16px auto 0;
   padding: 0 24px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  position: sticky;
+  top: 129px;
+  z-index: 998;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: transparent;
 }
 
 .subtabs__item {
@@ -183,6 +243,7 @@ body {
   border-radius: 10px 10px 0 0;
   cursor: pointer;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .subtabs__item:hover {
@@ -201,10 +262,11 @@ body {
 
 .tarjeta {
   background: var(--blanco);
-  max-width: 860px;
+  max-width: 1180px;
+  width: calc(100% - 48px);
   margin: 0 auto 24px;
   border-radius: 12px;
-  padding: 24px;
+  padding: 24px 30px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -549,7 +611,8 @@ body {
    ============================================================================ */
 
 .pie {
-  max-width: 860px;
+  max-width: 1180px;
+  width: calc(100% - 48px);
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -616,17 +679,65 @@ body {
    RESPONSIVE DESIGN
    ============================================================================ */
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .cabecera {
-    padding: 12px 16px;
+    padding: 10px 16px;
+    min-height: 84px;
+  }
+
+  .cabecera__marca {
+    flex: 1;
+    min-width: 0;
   }
 
   .cabecera__marca h1 {
     font-size: 0.9rem;
   }
 
+  .cabecera__estado {
+    flex-shrink: 0;
+  }
+
+  .tabs {
+    top: 84px;
+    padding: 8px 16px;
+    flex-wrap: wrap;
+  }
+
+  .subtabs {
+    top: 129px;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cabecera {
+    padding: 10px 16px;
+    min-height: 108px;
+    flex-wrap: wrap;
+  }
+
+  .cabecera__marca {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .cabecera__logo--imagen {
+    width: 50px;
+    height: 50px;
+  }
+
+  .cabecera__marca h1 {
+    font-size: 0.9rem;
+  }
+
+  .cabecera__estado {
+    width: 100%;
+  }
+
   .tarjeta {
-    margin: 12px;
+    width: calc(100% - 24px);
+    margin: 0 auto 16px;
     padding: 16px;
   }
 
@@ -648,6 +759,7 @@ body {
   }
 
   .pie {
+    width: calc(100% - 24px);
     padding: 0 16px;
     flex-direction: column;
     gap: 12px;
@@ -659,17 +771,24 @@ body {
   }
 
   .tabs {
+    top: 108px;
     padding: 8px 16px;
+    flex-wrap: wrap;
   }
 
   .subtabs {
+    top: 153px;
     padding: 0 16px;
   }
 }
 
 @media (max-width: 480px) {
+  .cabecera {
+    min-height: 108px;
+  }
+
   .cabecera__marca {
-    flex-direction: column;
+    flex-direction: row;
     width: 100%;
   }
 
@@ -679,19 +798,40 @@ body {
     font-size: 0.7rem;
   }
 
+  .cabecera__logo--imagen {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cabecera__marca h1 {
+    font-size: 0.82rem;
+  }
+
+  .cabecera__marca p {
+    font-size: 0.7rem;
+  }
+
   .tarjeta {
-    margin: 8px;
+    width: calc(100% - 16px);
+    margin: 0 auto 12px;
     padding: 12px;
   }
 
   .tabs {
+    top: 108px;
     gap: 4px;
     padding: 6px 12px;
+    flex-wrap: wrap;
   }
 
   .tabs__item {
     font-size: 0.7rem;
     padding: 4px 10px;
+  }
+
+  .subtabs {
+    top: 145px;
+    padding: 0 12px;
   }
 
   .boton {
@@ -719,7 +859,7 @@ body {
    OBSERVACIÓN POR ÍTEM (Sección H)
    ============================================================================ */
 
-   .item__observacion {
+.item__observacion {
   margin-top: 10px;
   display: flex;
   flex-direction: column;

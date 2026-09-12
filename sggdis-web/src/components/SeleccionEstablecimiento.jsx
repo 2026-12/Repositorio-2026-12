@@ -6,6 +6,8 @@ import { crearInspeccion } from '../services/inspeccionesService';
 import { ID_GUIA_ACTIVA } from '../config/inspeccion';
 import 'react-datepicker/dist/react-datepicker.css';
 import './SeleccionEstablecimiento.css';
+import mapa from '../assets/mapa.png';
+import mapaDorado from '../assets/mapa-dorado.png';
 
 registerLocale('es', es);
 
@@ -26,7 +28,7 @@ function generarConsecutivo() {
   return `MS-DRRSCS-ARS-T-AI-${correlativo}-${anio}`;
 }
 
-function SeleccionEstablecimiento({ onComenzar }) {
+function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   const [fecha, setFecha] = useState(null);
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
@@ -76,16 +78,29 @@ function SeleccionEstablecimiento({ onComenzar }) {
     <div className="pagina-inicio">
       <header className="cabecera-simple">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">MS</div>
+          <div className="cabecera__logo cabecera__logo--imagen">
+            <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+          </div>
+
           <div>
             <h1>Guía de Inspección — Servicios de Alimentación al Público</h1>
             <p>Ministerio de Salud de Costa Rica</p>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="boton-volver-menu"
+          onClick={onVolverInicio}
+        >
+          ← Volver al menú
+        </button>
       </header>
 
       <main className="tarjeta-inicio">
-        <div className="tarjeta-inicio__logo">MS</div>
+        <div className="tarjeta-inicio__mapa">
+          <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+        </div>
         <p className="tarjeta-inicio__institucion">MINISTERIO DE SALUD · COSTA RICA</p>
         <h2>Nueva inspección: Servicios de Alimentación</h2>
         {(errorCreacion || error) && (
