@@ -131,7 +131,8 @@ useEffect(() => {
   }
 
   if (!datos) {
-    return <SeleccionEstablecimiento onComenzar={setDatos} />;
+    return <SeleccionEstablecimiento onComenzar={setDatos} 
+            onVolverInicio={() => setPantallaActual('inicio')}/>;
   }
 
   const Formulario = COMPONENTES_POR_CODIGO[wizard.vistaActual?.codigo] ?? FormularioSeccionAlimentos;

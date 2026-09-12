@@ -7,6 +7,7 @@ import './formulario.css';
 import { obtenerPendientes } from '../domain/validacionSeccion';
 import { esVistaCompleta } from '../domain/progresoVistas';
 import { nombresVistas } from '../config/inspeccion';
+import mapaDorado from '../assets/mapa-dorado.png';
 
 const MARCA_POR_DEFECTO = { logo: 'IN', tituloGuia: 'Guía de Inspección' };
 
@@ -107,7 +108,9 @@ export default function FormularioSeccionGenerico({
     <div className="pagina">
       <header className="cabecera">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">{marca.logo}</div>
+          <div className="cabecera__logo cabecera__logo--imagen">
+            <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+          </div>
           <div>
             <h1>{marca.tituloGuia}</h1>
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
@@ -138,7 +141,7 @@ export default function FormularioSeccionGenerico({
                 completa ? 'tabs__item--completo' : ''
               }`}
             >
-              {nombresVistas[vista.codigo] ?? vista.codigo} {completa ? '✓' : ''}
+              {nombresVistas[vista.codigo] ?? vista.codigo}
             </button>
           );
         })}

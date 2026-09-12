@@ -6,6 +6,7 @@ import { obtenerPendientes } from '../domain/validacionSeccion';
 import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
 import { esVistaCompleta } from '../domain/progresoVistas';
+import mapaDorado from '../assets/mapa-dorado.png';
 import {
   MARCA_ALIMENTOS,
   TOTAL_PASOS_ALIMENTOS,
@@ -78,8 +79,6 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const { obtenidos, maximo, criticosIncumplidos } = resumen;
 
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
-  // Misma validación que usa FormularioSeccionGenerico: cuenta y detalle de
-  // pendientes de la subsección activa, vía el dominio compartido.
   const itemsPendientesDetalle = useMemo(() => obtenerPendientes(grupos, respuestas), [grupos, respuestas]);
   const itemsSinResponder = itemsPendientesDetalle.length;
   const totalItemsEnSubseccion = grupos.reduce((total, grupo) => total + grupo.items.length, 0);
@@ -96,7 +95,6 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const manejarSiguiente = () => {
     if (itemsSinResponder > 0) {
       setMostrarAlerta(true);
-      // Hacer scroll suave hacia arriba de la tarjeta para mostrar la alerta
       const tarjeta = document.querySelector('.tarjeta');
       if (tarjeta) {
         tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -145,7 +143,9 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
     <div className="pagina">
       <header className="cabecera">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">{MARCA_ALIMENTOS.logo}</div>
+          <div className="cabecera__logo cabecera__logo--imagen">
+            <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+          </div>
           <div>
             <h1>{MARCA_ALIMENTOS.tituloGuia}</h1>
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
@@ -172,39 +172,23 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
               onClick={() => onIrAVista?.(i)}
               className={`tabs__item ${i === indiceActual ? 'tabs__item--activo' : ''} ${bloqueada ? 'tabs__item--bloqueado' : ''} ${completa ? 'tabs__item--completo' : ''}`}
             >
-              {nombresVistas[vista.codigo] ?? vista.codigo} {completa ? '✓' : ''}
+              {nombresVistas[vista.codigo] ?? vista.codigo}
             </button>
           );
         })}
       </nav>
 
       <nav className="subtabs">
-        {subsecciones.map((sub) => {
-          const subGrupos = gruposPorSubseccion[sub.codigo] ?? [];
-          let total = 0;
-          let contestados = 0;
-          subGrupos.forEach((grupo) => {
-            grupo.items.forEach((item) => {
-              total++;
-              if (respuestas[item.id]) {
-                contestados++;
-              }
-            });
-          });
-          const esCompleto = total > 0 && contestados === total;
-          const esIniciado = contestados > 0 && contestados < total;
-
-          return (
-            <button
-              key={sub.codigo}
-              type="button"
-              className={`subtabs__item ${sub.codigo === subSeccionActiva ? 'subtabs__item--activo' : ''}`}
-              onClick={() => setSubSeccionActiva(sub.codigo)}
-            >
-              {sub.codigo} {esCompleto ? '✓' : esIniciado ? `(${contestados}/${total})` : ''}
-            </button>
-          );
-        })}
+        {subsecciones.map((sub) => (
+          <button
+            key={sub.codigo}
+            type="button"
+            className={`subtabs__item ${sub.codigo === subSeccionActiva ? 'subtabs__item--activo' : ''}`}
+            onClick={() => setSubSeccionActiva(sub.codigo)}
+          >
+            {sub.codigo}
+          </button>
+        ))}
       </nav>
 
       <main className="tarjeta">
@@ -216,7 +200,6 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
           </div>
         </div>
 
-        {/* --- Mensaje de validación, igual al de FormularioSeccionGenerico/C --- */}
         {mostrarAlerta && itemsSinResponder > 0 && (
           <div className="alerta-validacion-error">
             <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
@@ -283,9 +266,9 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       </main>
 
       <footer className="pie">
-        <button 
-          type="button" 
-          className="boton boton--secundario" 
+        <button
+          type="button"
+          className="boton boton--secundario"
           onClick={() => {
             if (subSeccionActiva === subsecciones[0]?.codigo) onAnterior?.();
             else manejarAnterior();
@@ -295,12 +278,12 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
           ← Anterior
         </button>
         <span>Paso 2 de {TOTAL_PASOS_ALIMENTOS} (Subsección {subSeccionActiva})</span>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="boton boton--primario"
           onClick={manejarSiguiente}
         >
-          {subSeccionActiva === subsecciones[subsecciones.length - 1]?.codigo ? 'Finalizar Sección B ✓' : 'Siguiente →'}
+          Siguiente →
         </button>
       </footer>
     </div>
