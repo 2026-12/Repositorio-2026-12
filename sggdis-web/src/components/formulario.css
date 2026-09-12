@@ -150,6 +150,16 @@ body {
   font-weight: 600;
 }
 
+.tabs__item--completo {
+  box-shadow: inset 0 0 0 2px var(--verde);
+  color: var(--verde);
+}
+
+.tabs__item--completo.tabs__item--activo {
+  background: var(--verde);
+  color: var(--blanco);
+}
+
 /* ============================================================================
    NAVEGACIÓN SECUNDARIA (SUBTABS - Para secciones B y C)
    ============================================================================ */

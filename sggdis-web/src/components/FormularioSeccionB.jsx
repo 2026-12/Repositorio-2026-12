@@ -5,9 +5,9 @@ import { calcularResumen } from '../domain/calculoPuntaje';
 import { obtenerPendientes } from '../domain/validacionSeccion';
 import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
 import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
+import { esVistaCompleta } from '../domain/progresoVistas';
 import {
   MARCA_ALIMENTOS,
-  TABS_ALIMENTOS,
   TOTAL_PASOS_ALIMENTOS,
   TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
 } from '../config/inspeccionAlimentos';
@@ -78,8 +78,11 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const { obtenidos, maximo, criticosIncumplidos } = resumen;
 
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
+  // Misma validación que usa FormularioSeccionGenerico: cuenta y detalle de
+  // pendientes de la subsección activa, vía el dominio compartido.
+  const itemsPendientesDetalle = useMemo(() => obtenerPendientes(grupos, respuestas), [grupos, respuestas]);
+  const itemsSinResponder = itemsPendientesDetalle.length;
   const totalItemsEnSubseccion = grupos.reduce((total, grupo) => total + grupo.items.length, 0);
-  const itemsSinResponder = obtenerPendientes(grupos, respuestas).length;
 
   // Navegación en el footer
   const manejarAnterior = () => {
@@ -106,7 +109,6 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
     if (index < subsecciones.length - 1) {
       setSubSeccionActiva(subsecciones[index + 1].codigo);
     } else {
-      alert('¡Sección B completada con éxito! Todos los ítems fueron respondidos.');
       onSiguiente?.();
     }
   };
@@ -158,11 +160,22 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
       </header>
 
       <nav className="tabs">
-        {TABS_ALIMENTOS.map((tab, i) => (
-          <span key={tab} className={`tabs__item ${i === 1 ? 'tabs__item--activo' : ''}`}>
-            {tab}
-          </span>
-        ))}
+        {vistas.map((vista, i) => {
+          const bloqueada = i > maxAlcanzado;
+          const completa = esVistaCompleta(vista, seccionesCache, respuestas);
+
+          return (
+            <button
+              key={vista.codigo}
+              type="button"
+              disabled={bloqueada}
+              onClick={() => onIrAVista?.(i)}
+              className={`tabs__item ${i === indiceActual ? 'tabs__item--activo' : ''} ${bloqueada ? 'tabs__item--bloqueado' : ''} ${completa ? 'tabs__item--completo' : ''}`}
+            >
+              {nombresVistas[vista.codigo] ?? vista.codigo} {completa ? '✓' : ''}
+            </button>
+          );
+        })}
       </nav>
 
       <nav className="subtabs">
@@ -203,23 +216,11 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
           </div>
         </div>
 
-        {/* --- Mensajes de validación / progreso en tiempo real --- */}
+        {/* --- Mensaje de validación, igual al de FormularioSeccionGenerico/C --- */}
         {mostrarAlerta && itemsSinResponder > 0 && (
           <div className="alerta-validacion-error">
-            <span className="alerta-validacion-error__titulo">⚠️ Validación de Formulario</span>
-            <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItemsEnSubseccion} ítems en esta subsección. Por favor complete los campos marcados en rojo.</span>
-          </div>
-        )}
-
-        {!mostrarAlerta && itemsSinResponder > 0 && (
-          <div className="mensaje-progreso-validacion">
-            <span>📝 Subsección en progreso: Has respondido {totalItemsEnSubseccion - itemsSinResponder} de {totalItemsEnSubseccion} ítems. Faltan {itemsSinResponder} por completar.</span>
-          </div>
-        )}
-
-        {itemsSinResponder === 0 && totalItemsEnSubseccion > 0 && (
-          <div className="mensaje-progreso-validacion mensaje-progreso-validacion--completo">
-            <span>✅ Completaste los {totalItemsEnSubseccion} ítems de esta subsección.</span>
+            <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
+            <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItemsEnSubseccion} ítems. Complete los campos marcados en rojo.</span>
           </div>
         )}
 
