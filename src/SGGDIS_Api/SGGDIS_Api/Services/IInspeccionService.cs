@@ -9,5 +9,6 @@ namespace SGGDIS_Api.Services
         Task<bool> EliminarInspeccionAsync(int idInspeccion);
         Task GuardarRespuestasAsync(int idInspeccion, List<RespuestaDto> respuestas);
         Task<List<InsRespuesta>> ObtenerRespuestasAsync(int idInspeccion);
+        Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion);
     }
 }

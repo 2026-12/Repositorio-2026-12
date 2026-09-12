@@ -15,4 +15,14 @@
         public string Consecutivo { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
     }
+
+    /// Resultado devuelto al cerrar una inspección: puntaje, porcentaje y clasificación.
+    /// No incluye datos de inspector/representante/observaciones: esos quedan solo en el cliente.
+    public class ResumenCierreDto
+    {
+        public int PuntajeObtenido { get; set; }
+        public int PuntajeMaximo { get; set; }
+        public decimal Porcentaje { get; set; }
+        public string Clasificacion { get; set; } = string.Empty;
+    }
 }

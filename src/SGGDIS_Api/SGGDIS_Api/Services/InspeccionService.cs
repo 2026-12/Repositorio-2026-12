@@ -10,13 +10,22 @@ namespace SGGDIS_Api.Services
         public ConsecutivoDuplicadoException() : base("El número consecutivo ya está registrado.") { }
     }
 
+    // Se lanza si aún hay ítems obligatorios sin responder al intentar cerrar.
+    public class SeccionesIncompletasException : Exception
+    {
+        public SeccionesIncompletasException()
+            : base("No se puede cerrar la inspección: hay secciones obligatorias sin completar.") { }
+    }
+
     public class InspeccionService : IInspeccionService
     {
         private readonly SggdisDbContext _context;
+        private readonly ILogger<InspeccionService> _logger;
 
-        public InspeccionService(SggdisDbContext context)
+        public InspeccionService(SggdisDbContext context, ILogger<InspeccionService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto)
@@ -59,21 +68,16 @@ namespace SGGDIS_Api.Services
             return true;
         }
 
-        // MERGE (upsert) en vez de "buscar y luego insertar/actualizar": evita filas
-        // duplicadas en INS_RESPUESTA cuando llegan guardados concurrentes para el
-        // mismo item, aprovechando el indice unico (ID_INSPECCION, ID_ITEM).
         public async Task GuardarRespuestasAsync(int idInspeccion, List<RespuestaDto> respuestas)
         {
             if (respuestas == null || respuestas.Count == 0) return;
 
             var idsItems = respuestas.Select(r => r.IdItem).ToList();
 
-            // 1. Carga en memoria solo las respuestas modificadas que ya existen
             var existentes = await _context.Respuestas
                 .Where(x => x.IdInspeccion == idInspeccion && idsItems.Contains(x.IdItem))
                 .ToDictionaryAsync(x => x.IdItem);
 
-            // 2. Modifica o crea nuevas entidades
             foreach (var r in respuestas)
             {
                 if (existentes.TryGetValue(r.IdItem, out var entidad))
@@ -93,7 +97,6 @@ namespace SGGDIS_Api.Services
                 }
             }
 
-            // 3. EF Core persiste todo en una sola transacción
             await _context.SaveChangesAsync();
         }
 
@@ -102,6 +105,69 @@ namespace SGGDIS_Api.Services
             return await _context.Respuestas
                 .Where(r => r.IdInspeccion == idInspeccion)
                 .ToListAsync();
+        }
+
+
+        public async Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion)
+        {
+            var inspeccion = await _context.Inspecciones
+                .Include(i => i.TipoEstablecimiento)
+                .FirstOrDefaultAsync(i => i.IdInspeccion == idInspeccion);
+
+            if (inspeccion is null)
+            {
+                throw new KeyNotFoundException("La inspección no existe.");
+            }
+
+
+            var idsItemsObligatorios = await _context.Items
+                .Where(item => item.Seccion!.TiposEstablecimiento
+                    .Any(tipo => tipo.IdTipoEstablecimiento == inspeccion.IdTipoEstablecimiento))
+                .Select(item => item.IdItem)
+                .ToListAsync();
+
+            var respuestas = await _context.Respuestas
+                .Where(r => r.IdInspeccion == idInspeccion)
+                .ToListAsync();
+
+            var idsRespondidos = respuestas.Select(r => r.IdItem).ToHashSet();
+            var haySeccionesIncompletas = idsItemsObligatorios.Except(idsRespondidos).Any();
+            if (haySeccionesIncompletas)
+            {
+                throw new SeccionesIncompletasException();
+            }
+
+            var puntajeObtenido = respuestas
+                .Where(r => r.Estado == "Cumple")
+                .Sum(r => r.PuntosOtorgados ?? 0);
+
+            var puntajeMaximo = inspeccion.TipoEstablecimiento?.PuntajeMaximo ?? 0;
+            var porcentaje = puntajeMaximo > 0
+                ? Math.Round((decimal)puntajeObtenido / puntajeMaximo * 100, 2)
+                : 0;
+            var clasificacion = ClasificarPorcentaje(porcentaje);
+
+            inspeccion.Estado = "FINALIZADA";
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Cierre de inspección {IdInspeccion}: puntaje={Puntaje}/{Maximo} ({Porcentaje}%), clasificación={Clasificacion}.",
+                idInspeccion, puntajeObtenido, puntajeMaximo, porcentaje, clasificacion);
+
+            return new ResumenCierreDto
+            {
+                PuntajeObtenido = puntajeObtenido,
+                PuntajeMaximo = puntajeMaximo,
+                Porcentaje = porcentaje,
+                Clasificacion = clasificacion,
+            };
+        }
+
+        private static string ClasificarPorcentaje(decimal porcentaje)
+        {
+            if (porcentaje <= 69) return "Condiciones inaceptables";
+            if (porcentaje <= 80) return "Condiciones deficientes";
+            return "Buenas condiciones";
         }
     }
 }
