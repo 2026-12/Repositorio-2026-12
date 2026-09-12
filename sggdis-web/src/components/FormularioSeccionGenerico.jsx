@@ -24,6 +24,7 @@ export default function FormularioSeccionGenerico({
   totalPasos,
   onAnterior,
   onSiguiente,
+  onVolverInicio,
   puedeRetroceder,
   respuestas,
   onRespuestasChange,
@@ -40,10 +41,12 @@ export default function FormularioSeccionGenerico({
   obtenerOpcionesItem = (item, opcionesBase) => opcionesBase,
   obtenerPuntosItem = (item) => Array.from({ length: item.valor + 1 }, (_, n) => n),
   renderizarContenidoItem,
+  guardando = false,
 }) {
   const [grupos, setGrupos] = useState(seccionInicial ? agruparPorArticulo(seccionInicial.items) : []);
   const [cargando, setCargando] = useState(!seccionInicial);
   const [error, setError] = useState(null);
+  const [mostrarPendientes, setMostrarPendientes] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -63,7 +66,7 @@ export default function FormularioSeccionGenerico({
         }
       })
       .catch(() => {
-        if (activo) setError(`No se pudo cargar la Sección ${codigo}. Verificá que el backend esté corriendo.`);
+        if (activo) setError(`No se pudo cargar la Sección ${codigo}. Verifique que el backend esté disponible.`);
       })
       .finally(() => {
         if (activo) setCargando(false);
@@ -73,31 +76,54 @@ export default function FormularioSeccionGenerico({
 
   const gruposActuales = seccionInicial ? agruparPorArticulo(seccionInicial.items) : grupos;
   const { respuestas: respuestasActuales, alternarRespuesta, actualizarPuntos, resumen } = useRespuestasInspeccion(gruposActuales, respuestas, onRespuestasChange);
-  const [mostrarAlerta, setMostrarAlerta] = useState(false);
-  const totalItems = gruposActuales.reduce((total, grupo) => total + grupo.items.length, 0);
   const itemsPendientes = obtenerPendientes(gruposActuales, respuestasActuales);
   const pendientes = itemsPendientes.length;
+  const porcentajeProgreso = vistas.length > 0 ? ((indiceActual + 1) / vistas.length) * 100 : 0;
 
   const manejarSiguiente = () => {
     if (pendientes > 0) {
-      setMostrarAlerta(true);
-      const tarjeta = document.querySelector('.tarjeta');
-      if (tarjeta) {
-        tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      setMostrarPendientes(true);
+
+      requestAnimationFrame(() => {
+        const primerPendiente = document.querySelector('.item--pendiente');
+
+        if (primerPendiente) {
+          primerPendiente.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          setTimeout(() => {
+            primerPendiente.focus();
+          }, 450);
+        }
+      });
+
       return;
     }
-    setMostrarAlerta(false);
+
+    setMostrarPendientes(false);
     onSiguiente?.();
   };
 
-  if (cargando || error) {
+  if (cargando) {
+    return (
+      <div className="pagina">
+        <div className="skeleton-contenedor">
+          <div className="skeleton skeleton--titulo"></div>
+          <div className="skeleton skeleton--linea"></div>
+          <div className="skeleton skeleton--linea"></div>
+          <div className="skeleton skeleton--linea"></div>
+          <div className="skeleton skeleton--linea"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
     return (
       <div className="pagina">
         <div className="tarjeta-estado">
-          <div className={`estado-mensaje ${error ? 'estado-mensaje--error' : ''}`}>
-            <span className="estado-mensaje__icono">{error ? '⚠' : '⏳'}</span>
-            <p>{error ?? `Cargando Sección ${codigo}…`}</p>
+          <div className="estado-mensaje estado-mensaje--error">
+            <span className="estado-mensaje__icono">⚠</span>
+            <p>{error}</p>
           </div>
         </div>
       </div>
@@ -116,13 +142,24 @@ export default function FormularioSeccionGenerico({
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
           </div>
         </div>
-        <div className="cabecera__estado">
-          {resumen.criticosIncumplidos > 0 && <span className="chip chip--alerta">⚠ {resumen.criticosIncumplidos} punto crítico detectado</span>}
-          <span className="chip chip--info">{datos.tipoLabel}</span>
+
+        <div className="cabecera__acciones">
+          <div className="cabecera__estado">
+            {resumen.criticosIncumplidos > 0 && <span className="chip chip--alerta">⚠ {resumen.criticosIncumplidos} punto crítico detectado</span>}
+            <span className="chip chip--info">{datos.tipoLabel}</span>
+          </div>
+
+          <button type="button" className="boton-volver-menu-inspeccion" onClick={onVolverInicio}>← Volver al menú</button>
         </div>
       </header>
 
-      <nav className="tabs">
+      <div className="progreso-inspeccion">
+        <div className="progreso-inspeccion__barra">
+          <div className="progreso-inspeccion__avance" style={{ width: `${porcentajeProgreso}%` }}></div>
+        </div>
+      </div>
+
+      <nav className="tabs tabs--con-progreso">
         {vistas.map((vista, i) => {
           const bloqueada = i > maxAlcanzado;
           const completa = esVistaCompleta(vista, seccionesCache, respuestas);
@@ -156,25 +193,18 @@ export default function FormularioSeccionGenerico({
           </div>
         </div>
 
-        {mostrarAlerta && pendientes > 0 && (
-          <div className="alerta-validacion-error">
-            <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
-            <span>No se puede avanzar. Faltan responder {pendientes} de los {totalItems} ítems. Complete los campos marcados en rojo.</span>
-          </div>
-        )}
-
         {gruposActuales.map((grupo) => (
           <div className="grupo" key={grupo.articulo}>
             <span className="grupo__etiqueta">{grupo.articulo}</span>
             {grupo.items.map((item) => {
               const respuesta = respuestasActuales[item.id];
               const incumplido = item.critico && respuesta?.estado === 'No cumple';
-              const esPendiente = mostrarAlerta && !respuesta;
+              const esPendiente = mostrarPendientes && !respuesta;
               const opcionesItem = obtenerOpcionesItem(item, opciones);
               const puntosItem = obtenerPuntosItem(item);
               return (
-                <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id}>
-                  {item.critico && <span className="item__tag">⚠ PUNTO CRÍTICO</span>}
+                <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id} tabIndex={esPendiente ? -1 : undefined}>
+                  {item.critico && <div className="item__critico-encabezado"><span className="item__tag">⚠ PUNTO CRÍTICO</span><span className="item__ayuda-critico">El incumplimiento de este criterio puede requerir la emisión de una Orden Sanitaria.</span></div>}
                   <div className="item__fila">
                     <div className="item__texto"><p>{item.texto}</p><span className="item__valor">Valor: {item.valor} pts</span></div>
                     <div className="item__opciones">
@@ -191,10 +221,10 @@ export default function FormularioSeccionGenerico({
         ))}
       </main>
 
-      <footer className="pie">
-        <button type="button" className="boton boton--secundario" onClick={onAnterior} disabled={!puedeRetroceder}>← Anterior</button>
+      <footer className="pie pie--fijo">
+        <button type="button" className="boton boton--secundario" onClick={onAnterior}>← Anterior</button>
         <span>Paso {paso}{totalPasos ? ` de ${totalPasos}` : ''}</span>
-        <button type="button" className="boton boton--primario" onClick={manejarSiguiente}>Siguiente →</button>
+        <button type="button" className="boton boton--secundario" onClick={manejarSiguiente} disabled={guardando}>{guardando ? 'Guardando…' : 'Siguiente →'}</button>
       </footer>
     </div>
   );

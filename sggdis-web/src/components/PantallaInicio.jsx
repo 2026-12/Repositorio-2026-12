@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import './PantallaInicio.css';
 import logoMinisterio from '../assets/logo-ministerio-salud.png';
 import mapaCostaRica from '../assets/mapa.png';
@@ -8,12 +9,28 @@ export default function PantallaInicio({
   onReportes,
   onCerrarSesion,
 }) {
+  const [mostrarAyuda, setMostrarAyuda] = useState(false);
+
   const manejarTecla = (event, accion) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       accion?.();
     }
   };
+
+  useEffect(() => {
+    const manejarEscape = (event) => {
+      if (event.key === 'Escape') {
+        setMostrarAyuda(false);
+      }
+    };
+
+    document.addEventListener('keydown', manejarEscape);
+
+    return () => {
+      document.removeEventListener('keydown', manejarEscape);
+    };
+  }, []);
 
   return (
     <div className="inicio">
@@ -52,6 +69,14 @@ export default function PantallaInicio({
             onClick={onReportes}
           >
             Reportes
+          </button>
+
+          <button
+            type="button"
+            className="inicio__navLink"
+            onClick={() => setMostrarAyuda(true)}
+          >
+            Ayuda
           </button>
 
           <button
@@ -345,6 +370,109 @@ export default function PantallaInicio({
         </small>
 
       </footer>
+
+
+      {/* AYUDA */}
+      {mostrarAyuda && (
+        <div
+          className="inicio__ayudaOverlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setMostrarAyuda(false);
+            }
+          }}
+        >
+          <section
+            className="inicio__ayudaModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-ayuda"
+          >
+
+            <div className="inicio__ayudaEncabezado">
+
+              <div>
+                <span className="inicio__ayudaEtiqueta">
+                  AYUDA
+                </span>
+
+                <h2 id="titulo-ayuda">
+                  Preguntas frecuentes
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="inicio__ayudaCerrar"
+                onClick={() => setMostrarAyuda(false)}
+                aria-label="Cerrar ayuda"
+              >
+                ×
+              </button>
+
+            </div>
+
+            <div className="inicio__ayudaContenido">
+
+              <details
+                className="inicio__pregunta"
+                open
+              >
+                <summary>
+                  ¿Qué significa Cumple, No cumple y N/A?
+                </summary>
+
+                <div className="inicio__respuesta">
+
+                  <p>
+                    <strong>Cumple:</strong>{' '}
+                    el establecimiento satisface el requisito evaluado.
+                  </p>
+
+                  <p>
+                    <strong>No cumple:</strong>{' '}
+                    se identifica un incumplimiento del requisito evaluado.
+                  </p>
+
+                  <p>
+                    <strong>N/A:</strong>{' '}
+                    el requisito no aplica al establecimiento inspeccionado.
+                  </p>
+
+                </div>
+              </details>
+
+              <details className="inicio__pregunta">
+                <summary>
+                  ¿Qué es un punto crítico?
+                </summary>
+
+                <div className="inicio__respuesta">
+                  <p>
+                    Es un criterio de especial importancia dentro de la
+                    inspección. Si un punto crítico se marca como
+                    <strong> No cumple</strong>, puede generar una acción
+                    sanitaria según la normativa aplicable, como la emisión
+                    de una Orden Sanitaria.
+                  </p>
+                </div>
+              </details>
+
+            </div>
+
+            <div className="inicio__ayudaPie">
+              <button
+                type="button"
+                className="inicio__ayudaBoton"
+                onClick={() => setMostrarAyuda(false)}
+              >
+                Cerrar
+              </button>
+            </div>
+
+          </section>
+        </div>
+      )}
 
     </div>
   );

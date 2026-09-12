@@ -15,12 +15,6 @@ import {
 import './formulario.css';
 import { nombresVistas } from '../config/inspeccion';
 
-const OPCIONES = [
-  { valor: 'Cumple', icono: '✓' },
-  { valor: 'No cumple', icono: '✗' },
-  { valor: 'N/A', icono: '—' },
-];
-
 // En el backend la Sección B viene dividida en tres subsecciones con código propio.
 const SUBSECCIONES = [
   { codigo: 'B1', titulo: 'Área de Preparación de Alimentos (Cocina) — Condiciones Físicas y Sanitarias' },
@@ -28,7 +22,7 @@ const SUBSECCIONES = [
   { codigo: 'B3', titulo: 'Área de Preparación de Alimentos (Cocina) — Operaciones de Preparación de los Alimentos' },
 ];
 
-function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [] }) {
+function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [], paso, totalPasos, guardando = false }) {
   const subsecciones = useMemo(
     () => SUBSECCIONES.filter((sub) => datos.secciones?.some((seccion) => seccion.codigo === sub.codigo)),
     [datos.secciones],
@@ -37,6 +31,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const [gruposPorSubseccion, setGruposPorSubseccion] = useState({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [mostrarPendientes, setMostrarPendientes] = useState(false);
 
   // Al cambiar de subsección llevar la vista al inicio de la página.
   useEffect(() => {
@@ -60,7 +55,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
         setGruposPorSubseccion(nuevosGrupos);
       } catch (err) {
         console.error('Error al cargar la Sección B:', err);
-        setError('No se pudo cargar la Sección B. Verificá que el backend esté corriendo.');
+        setError('No se pudo cargar la Sección B. Verifique que el backend esté disponible.');
       } finally {
         setCargando(false);
       }
@@ -78,14 +73,23 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   const { alternarRespuesta, actualizarPuntos, resumen } = useRespuestasInspeccion(grupos, respuestas, onRespuestasChange);
   const { obtenidos, maximo, criticosIncumplidos } = resumen;
 
-  const [mostrarAlerta, setMostrarAlerta] = useState(false);
   const itemsPendientesDetalle = useMemo(() => obtenerPendientes(grupos, respuestas), [grupos, respuestas]);
   const itemsSinResponder = itemsPendientesDetalle.length;
-  const totalItemsEnSubseccion = grupos.reduce((total, grupo) => total + grupo.items.length, 0);
+  const porcentajeProgreso = vistas.length > 0 ? ((indiceActual + 1) / vistas.length) * 100 : 0;
+
+  const subseccionesCompletas = useMemo(() => {
+    const completas = {};
+    subsecciones.forEach((sub) => {
+      const gruposSubseccion = gruposPorSubseccion[sub.codigo] ?? [];
+      const totalItems = gruposSubseccion.reduce((total, grupo) => total + grupo.items.length, 0);
+      completas[sub.codigo] = totalItems > 0 && obtenerPendientes(gruposSubseccion, respuestas).length === 0;
+    });
+    return completas;
+  }, [gruposPorSubseccion, respuestas, subsecciones]);
 
   // Navegación en el footer
   const manejarAnterior = () => {
-    setMostrarAlerta(false);
+    setMostrarPendientes(false);
     const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
     if (index > 0) {
       setSubSeccionActiva(subsecciones[index - 1].codigo);
@@ -94,14 +98,24 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
 
   const manejarSiguiente = () => {
     if (itemsSinResponder > 0) {
-      setMostrarAlerta(true);
-      const tarjeta = document.querySelector('.tarjeta');
-      if (tarjeta) {
-        tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      setMostrarPendientes(true);
+
+      requestAnimationFrame(() => {
+        const primerPendiente = document.querySelector('.item--pendiente');
+
+        if (primerPendiente) {
+          primerPendiente.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          setTimeout(() => {
+            primerPendiente.focus();
+          }, 450);
+        }
+      });
+
       return;
     }
-    setMostrarAlerta(false);
+
+    setMostrarPendientes(false);
 
     const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
     if (index < subsecciones.length - 1) {
@@ -114,11 +128,12 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
   if (cargando) {
     return (
       <div className="pagina">
-        <div className="tarjeta-estado">
-          <div className="estado-mensaje">
-            <span className="estado-mensaje__icono">⏳</span>
-            <p>Cargando Sección B…</p>
-          </div>
+        <div className="skeleton-contenedor">
+          <div className="skeleton skeleton--titulo"></div>
+          <div className="skeleton skeleton--linea"></div>
+          <div className="skeleton skeleton--linea"></div>
+          <div className="skeleton skeleton--linea"></div>
+          <div className="skeleton skeleton--linea"></div>
         </div>
       </div>
     );
@@ -151,15 +166,26 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
           </div>
         </div>
-        <div className="cabecera__estado">
-          {criticosIncumplidos > 0 && (
-            <span className="chip chip--alerta">⚠ {criticosIncumplidos} punto{criticosIncumplidos > 1 ? 's' : ''} crítico{criticosIncumplidos > 1 ? 's' : ''} detectado{criticosIncumplidos > 1 ? 's' : ''}</span>
-          )}
-          <span className="chip chip--info">{datos.tipoLabel}</span>
+
+        <div className="cabecera__acciones">
+          <div className="cabecera__estado">
+            {criticosIncumplidos > 0 && (
+              <span className="chip chip--alerta">⚠ {criticosIncumplidos} punto{criticosIncumplidos > 1 ? 's' : ''} crítico{criticosIncumplidos > 1 ? 's' : ''} detectado{criticosIncumplidos > 1 ? 's' : ''}</span>
+            )}
+            <span className="chip chip--info">{datos.tipoLabel}</span>
+          </div>
+
+          <button type="button" className="boton-volver-menu-inspeccion" onClick={onVolverInicio}>← Volver al menú</button>
         </div>
       </header>
 
-      <nav className="tabs">
+      <div className="progreso-inspeccion">
+        <div className="progreso-inspeccion__barra">
+          <div className="progreso-inspeccion__avance" style={{ width: `${porcentajeProgreso}%` }}></div>
+        </div>
+      </div>
+
+      <nav className="tabs tabs--con-progreso">
         {vistas.map((vista, i) => {
           const bloqueada = i > maxAlcanzado;
           const completa = esVistaCompleta(vista, seccionesCache, respuestas);
@@ -183,7 +209,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
           <button
             key={sub.codigo}
             type="button"
-            className={`subtabs__item ${sub.codigo === subSeccionActiva ? 'subtabs__item--activo' : ''}`}
+            className={`subtabs__item ${sub.codigo === subSeccionActiva ? 'subtabs__item--activo' : ''} ${subseccionesCompletas[sub.codigo] ? 'subtabs__item--completo' : ''}`}
             onClick={() => setSubSeccionActiva(sub.codigo)}
           >
             {sub.codigo}
@@ -200,13 +226,6 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
           </div>
         </div>
 
-        {mostrarAlerta && itemsSinResponder > 0 && (
-          <div className="alerta-validacion-error">
-            <span className="alerta-validacion-error__titulo">Validación de Formulario</span>
-            <span>No se puede avanzar. Faltan responder {itemsSinResponder} de los {totalItemsEnSubseccion} ítems. Complete los campos marcados en rojo.</span>
-          </div>
-        )}
-
         {grupos.map((grupo) => (
           <div className="grupo" key={grupo.articulo}>
             <span className="grupo__etiqueta">{grupo.articulo}</span>
@@ -214,10 +233,10 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
               const respuesta = respuestas[item.id];
               const esCritico = item.critico;
               const incumplido = esCritico && respuesta?.estado === 'No cumple';
-              const esPendiente = mostrarAlerta && !respuesta;
+              const esPendiente = mostrarPendientes && !respuesta;
               return (
-                <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id}>
-                  {esCritico && <span className="item__tag">⚠ PUNTO CRÍTICO</span>}
+                <div className={`item ${incumplido ? 'item--critico' : ''} ${esPendiente ? 'item--pendiente' : ''}`} key={item.id} tabIndex={esPendiente ? -1 : undefined}>
+                  {esCritico && <div className="item__critico-encabezado"><span className="item__tag">⚠ PUNTO CRÍTICO</span><span className="item__ayuda-critico">El incumplimiento de este criterio puede requerir la emisión de una Orden Sanitaria.</span></div>}
                   <div className="item__fila">
                     <div className="item__texto">
                       <p>{item.texto}</p>
@@ -265,7 +284,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
         ))}
       </main>
 
-      <footer className="pie">
+      <footer className="pie pie--fijo">
         <button
           type="button"
           className="boton boton--secundario"
@@ -273,17 +292,17 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, puedeRetroceder, r
             if (subSeccionActiva === subsecciones[0]?.codigo) onAnterior?.();
             else manejarAnterior();
           }}
-          disabled={subSeccionActiva === subsecciones[0]?.codigo && !puedeRetroceder}
         >
           ← Anterior
         </button>
-        <span>Paso 2 de {TOTAL_PASOS_ALIMENTOS} (Subsección {subSeccionActiva})</span>
+        <span>Paso {paso}{totalPasos ? ` de ${totalPasos}` : ` de ${TOTAL_PASOS_ALIMENTOS}`} (Subsección {subSeccionActiva})</span>
         <button
           type="button"
-          className="boton boton--primario"
+          className="boton boton--secundario"
           onClick={manejarSiguiente}
+          disabled={guardando}
         >
-          Siguiente →
+          {guardando ? 'Guardando…' : 'Siguiente →'}
         </button>
       </footer>
     </div>

@@ -1,6 +1,6 @@
 /* ============================================================================
    ESTILOS UNIFICADOS PARA FORMULARIOS DE INSPECCIÓN
-   Archivo único para todas las secciones (A, B, C, D, E, F, G)
+   Archivo único para todas las secciones (A, B, C, D, E, F, G, H)
    ============================================================================ */
 
 :root {
@@ -22,6 +22,10 @@
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -48,7 +52,7 @@ body {
       #0c4f8a 100%
     );
   min-height: 100vh;
-  padding-bottom: 24px;
+  padding-bottom: 100px;
 }
 
 /* ============================================================================
@@ -61,7 +65,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 12px 24px;
-  border-bottom: 3px solid var(--azul-medio);
+  border-bottom: none;
   flex-wrap: nowrap;
   gap: 12px;
   position: sticky;
@@ -127,8 +131,37 @@ body {
   flex-shrink: 0;
 }
 
+.cabecera__acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 /* ============================================================================
-   CHIPS (ETIQUETAS PEQUEÑAS)
+   BOTÓN VOLVER AL MENÚ
+   ============================================================================ */
+
+.boton-volver-menu-inspeccion {
+  border: 1px solid var(--azul-acero);
+  background: var(--blanco);
+  color: var(--azul-acero);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.boton-volver-menu-inspeccion:hover {
+  background: #EEF4FA;
+}
+
+/* ============================================================================
+   CHIPS
    ============================================================================ */
 
 .chip {
@@ -159,7 +192,37 @@ body {
 }
 
 /* ============================================================================
-   NAVEGACIÓN PRINCIPAL (TABS)
+   BARRA DE PROGRESO
+   ============================================================================ */
+
+.progreso-inspeccion {
+  width: 100%;
+  height: 6px;
+  background: var(--blanco);
+  position: sticky;
+  top: 84px;
+  z-index: 999;
+}
+
+.progreso-inspeccion__barra {
+  width: 100%;
+  height: 4px;
+  background: #E8EBEF;
+  overflow: hidden;
+}
+
+.progreso-inspeccion__avance {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--azul-acero),
+    var(--dorado)
+  );
+  transition: width 0.3s ease;
+}
+
+/* ============================================================================
+   NAVEGACIÓN PRINCIPAL
    ============================================================================ */
 
 .tabs {
@@ -171,9 +234,13 @@ body {
   border-bottom: 1px solid var(--gris);
   position: sticky;
   top: 84px;
-  z-index: 999;
+  z-index: 998;
   box-shadow: 0 2px 8px rgba(0, 20, 60, 0.06);
   overflow: visible;
+}
+
+.tabs--con-progreso {
+  top: 90px;
 }
 
 .tabs__item {
@@ -215,7 +282,7 @@ body {
 }
 
 /* ============================================================================
-   NAVEGACIÓN SECUNDARIA (SUBTABS - Para secciones B y C)
+   SUBTABS B Y C
    ============================================================================ */
 
 .subtabs {
@@ -226,8 +293,8 @@ body {
   padding: 0 24px;
   flex-wrap: nowrap;
   position: sticky;
-  top: 129px;
-  z-index: 998;
+  top: 135px;
+  z-index: 997;
   overflow-x: auto;
   overflow-y: hidden;
   background: transparent;
@@ -256,8 +323,20 @@ body {
   border-color: var(--azul-acero);
 }
 
+.subtabs__item--completo {
+  border-color: var(--verde);
+  color: var(--verde);
+  box-shadow: inset 0 0 0 1px var(--verde);
+}
+
+.subtabs__item--completo.subtabs__item--activo {
+  background: var(--verde);
+  color: var(--blanco);
+  border-color: var(--verde);
+}
+
 /* ============================================================================
-   TARJETA PRINCIPAL (CONTENEDOR DE FORMULARIO)
+   TARJETA PRINCIPAL
    ============================================================================ */
 
 .tarjeta {
@@ -297,7 +376,7 @@ body {
 }
 
 /* ============================================================================
-   TARJETA DE ESTADO (Para carga y errores)
+   ESTADOS DE CARGA Y ERROR
    ============================================================================ */
 
 .tarjeta-estado {
@@ -328,7 +407,7 @@ body {
 }
 
 /* ============================================================================
-   GRUPOS DE ÍTEMS
+   GRUPOS
    ============================================================================ */
 
 .grupo {
@@ -353,7 +432,7 @@ body {
 }
 
 /* ============================================================================
-   ITEMS (PREGUNTAS/CRITERIOS DE INSPECCIÓN)
+   ITEMS
    ============================================================================ */
 
 .item {
@@ -374,9 +453,14 @@ body {
 }
 
 .item--pendiente {
-  border-color: var(--rojo);
-  box-shadow: 0 0 0 1px var(--rojo);
-  background-color: #fdf5f5;
+  border: 2px solid var(--rojo);
+  box-shadow: 0 0 0 1px rgba(179, 38, 30, 0.08);
+  background: #FFF9F9;
+}
+
+.item--pendiente:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.14);
 }
 
 .item__tag {
@@ -388,6 +472,22 @@ body {
   padding: 2px 8px;
   border-radius: 999px;
   margin-bottom: 8px;
+}
+
+.item__critico-encabezado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.item__ayuda-critico {
+  display: block;
+  margin: 0;
+  color: #745700;
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .item__fila {
@@ -417,7 +517,7 @@ body {
 }
 
 /* ============================================================================
-   OPCIONES DE RESPUESTA (Cumple, No cumple, N/A)
+   OPCIONES DE RESPUESTA
    ============================================================================ */
 
 .item__opciones {
@@ -440,7 +540,7 @@ body {
 
 .opcion:hover {
   border-color: var(--azul-acero);
-  background-color: #f5f7fa;
+  background: #F5F7FA;
 }
 
 .opcion--activa.opcion--cumple {
@@ -465,7 +565,7 @@ body {
 }
 
 /* ============================================================================
-   SELECTOR DE PUNTOS (Para respuestas "Cumple")
+   PUNTOS
    ============================================================================ */
 
 .item__puntos {
@@ -514,7 +614,7 @@ body {
 }
 
 /* ============================================================================
-   ADVERTENCIAS Y MENSAJES
+   ADVERTENCIA
    ============================================================================ */
 
 .item__advertencia {
@@ -526,88 +626,12 @@ body {
   padding: 8px 12px;
   margin: 8px 0 0 0;
   font-size: 0.78rem;
-  color: #7a5b00;
+  color: #7A5B00;
   line-height: 1.4;
 }
 
-/* --- Mensajes de validación y progreso --- */
-
-.mensaje-progreso-validacion {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background-color: var(--amarillo-fondo);
-  border: 1px solid var(--dorado);
-  border-radius: 8px;
-  color: #7a5b00;
-  font-size: 0.88rem;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
-.mensaje-progreso-validacion--completo {
-  background-color: #E6F4EA;
-  border-color: var(--verde);
-  color: var(--verde);
-}
-
-.alerta-validacion-error {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 18px;
-  background-color: #fcebeb;
-  border-left: 5px solid var(--rojo);
-  border-radius: 8px;
-  color: var(--rojo);
-  font-size: 0.9rem;
-  margin-bottom: 20px;
-  animation: shake 0.3s ease-in-out;
-}
-
-.alerta-validacion-error__titulo {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.alerta-validacion-error__lista {
-  margin: 4px 0 0 0;
-  padding-left: 20px;
-  list-style: disc;
-}
-
-.alerta-validacion-error__lista li {
-  margin-bottom: 2px;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
 /* ============================================================================
-   TÍTULOS DE SUBSECCIÓN (Sección C: C1 / C2)
-   ============================================================================ */
-
-.subseccion-titulo {
-  color: var(--dorado);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  margin: 28px 0 8px 0;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--dorado);
-}
-
-.subseccion-titulo:first-of-type {
-  margin-top: 8px;
-}
-
-/* ============================================================================
-   PIE DE PÁGINA (NAVEGACIÓN)
+   PIE DE PÁGINA
    ============================================================================ */
 
 .pie {
@@ -627,6 +651,63 @@ body {
 
 .pie span {
   flex-shrink: 0;
+}
+
+/* ============================================================================
+   FOOTER FIJO
+   ============================================================================ */
+
+.pie--fijo {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-width: none;
+  min-height: 74px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px max(7%, 30px);
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgba(63, 137, 201, 0.45),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      #021a53 0%,
+      #073873 55%,
+      #0c4f8a 100%
+    );
+  border-top: none;
+  box-shadow: none;
+}
+
+.pie--fijo > span {
+  flex: 1;
+  color: var(--blanco);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.pie__centro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.pie__paso {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pie__pendientes {
+  display: none;
 }
 
 /* ============================================================================
@@ -675,188 +756,26 @@ body {
   cursor: not-allowed;
 }
 
-/* ============================================================================
-   RESPONSIVE DESIGN
-   ============================================================================ */
-
-@media (max-width: 1100px) {
-  .cabecera {
-    padding: 10px 16px;
-    min-height: 84px;
-  }
-
-  .cabecera__marca {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .cabecera__marca h1 {
-    font-size: 0.9rem;
-  }
-
-  .cabecera__estado {
-    flex-shrink: 0;
-  }
-
-  .tabs {
-    top: 84px;
-    padding: 8px 16px;
-    flex-wrap: wrap;
-  }
-
-  .subtabs {
-    top: 129px;
-    padding: 0 16px;
-  }
+.pie--fijo .boton--secundario {
+  min-width: 118px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: transparent;
+  color: var(--blanco);
 }
 
-@media (max-width: 768px) {
-  .cabecera {
-    padding: 10px 16px;
-    min-height: 108px;
-    flex-wrap: wrap;
-  }
-
-  .cabecera__marca {
-    flex-direction: row;
-    width: 100%;
-  }
-
-  .cabecera__logo--imagen {
-    width: 50px;
-    height: 50px;
-  }
-
-  .cabecera__marca h1 {
-    font-size: 0.9rem;
-  }
-
-  .cabecera__estado {
-    width: 100%;
-  }
-
-  .tarjeta {
-    width: calc(100% - 24px);
-    margin: 0 auto 16px;
-    padding: 16px;
-  }
-
-  .tarjeta__titulo-fila {
-    flex-direction: column;
-  }
-
-  .tarjeta__titulo-fila h2 {
-    font-size: 1.1rem;
-  }
-
-  .item__fila {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .item__opciones {
-    width: 100%;
-  }
-
-  .pie {
-    width: calc(100% - 24px);
-    padding: 0 16px;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .pie > span {
-    text-align: center;
-    width: 100%;
-  }
-
-  .tabs {
-    top: 108px;
-    padding: 8px 16px;
-    flex-wrap: wrap;
-  }
-
-  .subtabs {
-    top: 153px;
-    padding: 0 16px;
-  }
+.pie--fijo .boton--secundario:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
-@media (max-width: 480px) {
-  .cabecera {
-    min-height: 108px;
-  }
-
-  .cabecera__marca {
-    flex-direction: row;
-    width: 100%;
-  }
-
-  .cabecera__logo {
-    width: 36px;
-    height: 36px;
-    font-size: 0.7rem;
-  }
-
-  .cabecera__logo--imagen {
-    width: 44px;
-    height: 44px;
-  }
-
-  .cabecera__marca h1 {
-    font-size: 0.82rem;
-  }
-
-  .cabecera__marca p {
-    font-size: 0.7rem;
-  }
-
-  .tarjeta {
-    width: calc(100% - 16px);
-    margin: 0 auto 12px;
-    padding: 12px;
-  }
-
-  .tabs {
-    top: 108px;
-    gap: 4px;
-    padding: 6px 12px;
-    flex-wrap: wrap;
-  }
-
-  .tabs__item {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-  }
-
-  .subtabs {
-    top: 145px;
-    padding: 0 12px;
-  }
-
-  .boton {
-    padding: 8px 16px;
-    font-size: 0.8rem;
-  }
-
-  .item__puntos-opciones {
-    width: 100%;
-  }
-
-  .punto-opcion {
-    flex: 1;
-    min-width: 35px;
-    text-align: center;
-  }
-
-  .alerta-validacion-error {
-    font-size: 0.85rem;
-    padding: 12px 14px;
-  }
+.pie--fijo .boton--secundario:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ============================================================================
-   OBSERVACIÓN POR ÍTEM (Sección H)
+   OBSERVACIÓN POR ÍTEM
    ============================================================================ */
 
 .item__observacion {
@@ -868,7 +787,7 @@ body {
 
 .item__observacion label {
   font-size: 0.75rem;
-  color: #5b6470;
+  color: #5B6470;
   font-weight: 600;
 }
 
@@ -889,7 +808,7 @@ body {
 }
 
 /* ============================================================================
-   CAMPOS DE FORMULARIO (Cierre de inspección y otros formularios de texto)
+   CAMPOS
    ============================================================================ */
 
 .campo-fila {
@@ -909,7 +828,7 @@ body {
 
 .campo label {
   font-size: 0.78rem;
-  color: #5b6470;
+  color: #5B6470;
   font-weight: 600;
 }
 
@@ -935,7 +854,7 @@ body {
 }
 
 /* ============================================================================
-   CIERRE DE INSPECCIÓN (Sección I)
+   CIERRE
    ============================================================================ */
 
 .cierre__resumen {
@@ -964,7 +883,7 @@ body {
 
 .cierre__resumen-total {
   font-size: 1rem;
-  color: #5b6470;
+  color: #5B6470;
   font-weight: 600;
 }
 
@@ -1033,16 +952,346 @@ body {
 .cierre__orden-sanitaria-texto {
   margin: 8px 0 0 26px;
   font-size: 0.78rem;
-  color: #7a2a26;
+  color: #7A2A26;
+}
+
+/* ============================================================================
+   NOTIFICACIONES
+   ============================================================================ */
+
+.notificacion-global {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 5000;
+  max-width: 440px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+  font-size: 0.82rem;
+}
+
+.notificacion-global div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notificacion-global button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.notificacion-global--exito {
+  background: #E6F4EA;
+  color: var(--verde);
+  border: 1px solid var(--verde);
+}
+
+.notificacion-global--error {
+  background: #FBEAE9;
+  color: var(--rojo);
+  border: 1px solid var(--rojo);
+}
+
+.notificacion-global--error button {
+  color: var(--rojo);
+}
+
+/* ============================================================================
+   SKELETON
+   ============================================================================ */
+
+.skeleton-contenedor {
+  max-width: 1180px;
+  width: calc(100% - 48px);
+  margin: 32px auto;
+  padding: 28px 30px;
+  background: var(--blanco);
+  border-radius: 14px;
+  box-shadow: 0 6px 22px rgba(2, 26, 83, 0.14);
+}
+
+.skeleton {
+  border-radius: 7px;
+  background: linear-gradient(
+    90deg,
+    #EDF0F4 25%,
+    #F7F8FA 50%,
+    #EDF0F4 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-carga 1.3s infinite;
+}
+
+.skeleton--titulo {
+  width: 45%;
+  height: 25px;
+  margin-bottom: 24px;
+}
+
+.skeleton--linea {
+  width: 100%;
+  height: 72px;
+  margin-bottom: 12px;
+}
+
+@keyframes skeleton-carga {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================================================
+   MODAL
+   ============================================================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 26, 83, 0.55);
+}
+
+.modal-confirmacion {
+  width: 100%;
+  max-width: 600px;
+  background: var(--blanco);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 16px 40px rgba(2, 26, 83, 0.28);
+}
+
+.modal-confirmacion h2 {
+  margin: 0 0 12px 0;
+  color: var(--azul-oscuro);
+  font-size: 1.35rem;
+}
+
+.modal-confirmacion p {
+  margin: 0 0 28px 0;
+  color: #5B6470;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.modal-confirmacion__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.boton-modal {
+  min-width: 130px;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.boton-modal--secundario {
+  border: 1px solid var(--azul-acero);
+  background: var(--blanco);
+  color: var(--azul-acero);
+}
+
+.boton-modal--secundario:hover:not(:disabled) {
+  background: #EEF4FA;
+}
+
+.boton-modal--primario {
+  border: 1px solid var(--azul-acero);
+  background: var(--azul-acero);
+  color: var(--blanco);
+}
+
+.boton-modal--primario:hover:not(:disabled) {
+  background: var(--azul-medio);
+}
+
+.boton-modal:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.modal-error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--rojo);
+  border-radius: 8px;
+  background: #FBEAE9;
+  color: var(--rojo);
+  font-size: 0.8rem;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1100px) {
+  .cabecera {
+    padding: 10px 16px;
+    min-height: 84px;
+  }
+
+  .tabs--con-progreso {
+    top: 90px;
+    padding: 8px 16px;
+  }
+
+  .subtabs {
+    top: 135px;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .cabecera__estado {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
-  .campo-fila {
+  .cabecera {
+    padding: 10px 16px;
+    min-height: 108px;
+    flex-wrap: wrap;
+  }
+
+  .progreso-inspeccion {
+    top: 108px;
+  }
+
+  .tabs--con-progreso {
+    top: 114px;
+    padding: 8px 16px;
+  }
+
+  .subtabs {
+    top: 159px;
+    padding: 0 16px;
+  }
+
+  .tarjeta {
+    width: calc(100% - 24px);
+    margin: 0 auto 16px;
+    padding: 16px;
+  }
+
+  .tarjeta__titulo-fila {
     flex-direction: column;
   }
 
-  .cierre__resumen {
+  .item__fila {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .pie--fijo {
+    min-height: 70px;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .pie--fijo > span {
+    width: auto;
+    flex: 1;
+  }
+
+  .pie--fijo .boton--secundario {
+    min-width: auto;
+  }
+
+  .modal-confirmacion__acciones {
+    flex-direction: column-reverse;
+  }
+
+  .boton-modal {
+    width: 100%;
+  }
+
+  .skeleton-contenedor {
+    width: calc(100% - 24px);
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 700px) {
+  .cabecera {
+    align-items: flex-start;
+  }
+
+  .boton-volver-menu-inspeccion {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .boton-volver-menu-inspeccion::after {
+    content: "←";
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .progreso-inspeccion {
+    top: 108px;
+  }
+
+  .tabs--con-progreso {
+    top: 114px;
+    gap: 4px;
+    padding: 6px 12px;
+  }
+
+  .tabs__item {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+  .subtabs {
+    top: 151px;
+    padding: 0 12px;
+  }
+
+  .tarjeta {
+    width: calc(100% - 16px);
+    margin: 0 auto 12px;
+    padding: 12px;
+  }
+
+  .pie--fijo {
+    padding: 10px 8px;
+  }
+
+  .pie--fijo > span {
+    font-size: 0.7rem;
+  }
+
+  .pie--fijo .boton--secundario {
+    padding: 8px 10px;
+    font-size: 0.75rem;
   }
 }
