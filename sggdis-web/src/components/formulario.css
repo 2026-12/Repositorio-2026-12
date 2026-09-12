@@ -35,7 +35,18 @@ body {
 
 .pagina {
   font-family: 'Segoe UI', Inter, Helvetica, Baskerville, sans-serif;
-  background: var(--azul-oscuro);
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgba(63, 137, 201, 0.45),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      #021a53 0%,
+      #073873 55%,
+      #0c4f8a 100%
+    );
   min-height: 100vh;
   padding-bottom: 24px;
 }
@@ -219,7 +230,7 @@ body {
   z-index: 998;
   overflow-x: auto;
   overflow-y: hidden;
-  background: var(--azul-oscuro);
+  background: transparent;
 }
 
 .subtabs__item {
@@ -848,7 +859,7 @@ body {
    OBSERVACIÓN POR ÍTEM (Sección H)
    ============================================================================ */
 
-   .item__observacion {
+.item__observacion {
   margin-top: 10px;
   display: flex;
   flex-direction: column;
