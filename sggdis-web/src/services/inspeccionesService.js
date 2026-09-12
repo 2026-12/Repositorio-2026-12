@@ -44,3 +44,12 @@ export function guardarRespuestas(idInspeccion, respuestas) {
     body: JSON.stringify(cuerpo),
   });
 }
+
+// Marca la inspección como FINALIZADA en el backend, previa validación de que
+// todas las secciones estén completas. Los datos de inspector/representante/
+// observaciones/orden sanitaria NO se envían: quedan solo en el cliente.
+export function cerrarInspeccion(idInspeccion) {
+  return solicitarJson(`${API_BASE_URL}/api/inspecciones/${idInspeccion}/cierre`, {
+    method: 'PUT',
+  });
+}

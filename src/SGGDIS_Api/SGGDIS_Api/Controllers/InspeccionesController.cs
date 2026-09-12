@@ -79,5 +79,27 @@ namespace SGGDIS_Api.Controllers
                 return StatusCode(500, "Ocurrio un error al obtener las respuestas.");
             }
         }
+
+        [HttpPut("{id}/cierre")]
+        public async Task<IActionResult> CerrarInspeccion(int id)
+        {
+            try
+            {
+                var resumen = await _inspeccionService.CerrarInspeccionAsync(id);
+                return Ok(resumen);
+            }
+            catch (SeccionesIncompletasException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ocurrió un error al cerrar la inspección.");
+            }
+        }
     }
 }

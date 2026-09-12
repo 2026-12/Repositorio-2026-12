@@ -4,9 +4,12 @@ import FormularioSeccionB from './components/FormularioSeccionB';
 import FormularioSeccionC from './components/FormularioSeccionC';
 import FormularioSeccionAlimentos from './components/FormularioSeccionAlimentos';
 import FormularioSeccionH from './components/FormularioSeccionH';
+import FormularioCierreInspeccion from './components/FormularioCierreInspeccion';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
 import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesService';
+import { TOTAL_PASOS_ALIMENTOS } from './config/inspeccionAlimentos';
+import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
 
 const COMPONENTES_POR_CODIGO = {
   A: FormularioSeccionAlimentos,
@@ -41,13 +44,19 @@ function App() {
   const [seccionesCache, setSeccionesCache] = useState(progresoGuardado?.seccionesCache ?? {});
   const wizard = useWizardInspeccion(datos?.secciones ?? [], progresoGuardado?.indiceWizard ?? 0);
   const [observaciones, setObservaciones] = useState(progresoGuardado?.observaciones ?? {});
+  const [cierreActivo, setCierreActivo] = useState(progresoGuardado?.cierreActivo ?? false);
+  const [datosCierre, setDatosCierre] = useState(progresoGuardado?.datosCierre ?? DATOS_CIERRE_INICIALES);
 
-const actualizarObservaciones = useCallback((actualizar) => {
-  setObservaciones((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
-}, []);
+  const actualizarObservaciones = useCallback((actualizar) => {
+    setObservaciones((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
+  }, []);
 
   const actualizarRespuestas = useCallback((actualizar) => {
     setRespuestas((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
+  }, []);
+
+  const actualizarDatosCierre = useCallback((actualizar) => {
+    setDatosCierre((actuales) => (typeof actualizar === 'function' ? actualizar(actuales) : actualizar));
   }, []);
 
   const registrarSeccion = useCallback((codigo, seccion) => {
@@ -57,6 +66,8 @@ const actualizarObservaciones = useCallback((actualizar) => {
   // Al pasar de sección se guardan únicamente las respuestas modificadas en el backend.
   // No se bloquea el avance si falla (soporte sin conexión: el progreso ya quedó
   // en localStorage y se reintentará en el próximo cambio de sección).
+  // Si ya no hay más secciones (última vista), en vez de "avanzar" se
+  // habilita la pantalla de cierre.
   const avanzarYGuardar = useCallback(() => {
     if (datos?.idInspeccion) {
       const delta = obtenerRespuestasModificadas(respuestas, respuestasGuardadas);
@@ -70,22 +81,40 @@ const actualizarObservaciones = useCallback((actualizar) => {
           });
       }
     }
-    wizard.avanzar();
+    if (wizard.puedeAvanzar) {
+      wizard.avanzar();
+    } else {
+      setCierreActivo(true);
+    }
   }, [datos?.idInspeccion, respuestas, respuestasGuardadas, wizard]);
 
+  // Regresar de la pantalla de cierre a la última sección del wizard.
+  const volverDeCierre = useCallback(() => {
+    setCierreActivo(false);
+  }, []);
+
   // Guarda el progreso en cada cambio para poder continuar sin conexión o tras recargar la página.
-useEffect(() => {
-  if (!datos) {
-    limpiarProgreso();
-    return;
-  }
-  guardarProgreso({ datos, respuestas, respuestasGuardadas, seccionesCache, observaciones, indiceWizard: wizard.indice });
-}, [datos, respuestas, respuestasGuardadas, seccionesCache, observaciones, wizard.indice]);
+  useEffect(() => {
+    if (!datos) {
+      limpiarProgreso();
+      return;
+    }
+    guardarProgreso({
+      datos,
+      respuestas,
+      respuestasGuardadas,
+      seccionesCache,
+      observaciones,
+      indiceWizard: wizard.indice,
+      cierreActivo,
+      datosCierre, 
+    });
+  }, [datos, respuestas, respuestasGuardadas, seccionesCache, observaciones, wizard.indice, cierreActivo, datosCierre]);
 
   // Al cambiar de sección (o subsección) llevar la vista al inicio de la página.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [wizard.indice]);
+  }, [wizard.indice, cierreActivo]);
 
   // En la Sección A (primer paso del wizard) no hay una sección previa a la
   // cual retroceder, así que "Anterior" regresa a la pantalla de inicio.
@@ -101,16 +130,49 @@ useEffect(() => {
         return;
       }
     }
-  setDatos(null);
-  setRespuestas({});
-  setRespuestasGuardadas({});
-  setSeccionesCache({});
-  setObservaciones({});
-  wizard.reiniciar();
+    setDatos(null);
+    setRespuestas({});
+    setRespuestasGuardadas({});
+    setSeccionesCache({});
+    setObservaciones({});
+    setCierreActivo(false);
+    setDatosCierre(DATOS_CIERRE_INICIALES);
+    wizard.reiniciar();
   }, [datos?.idInspeccion, wizard]);
+
+  // Al confirmar el cierre en el servidor, se limpia todo el estado
+  // (la inspección ya quedó FINALIZADA, no se elimina) para permitir una nueva.
+  const manejarInspeccionFinalizada = useCallback(() => {
+    setDatos(null);
+    setRespuestas({});
+    setRespuestasGuardadas({});
+    setSeccionesCache({});
+    setObservaciones({});
+    setCierreActivo(false);
+    setDatosCierre(DATOS_CIERRE_INICIALES);
+    wizard.reiniciar();
+  }, [wizard]);
 
   if (!datos) {
     return <SeleccionEstablecimiento onComenzar={setDatos} />;
+  }
+
+  // Pantalla de cierre, último paso del wizard.
+  if (cierreActivo) {
+    return (
+      <FormularioCierreInspeccion
+        datos={datos}
+        vistas={wizard.vistas}
+        seccionesCache={seccionesCache}
+        respuestas={respuestas}
+        datosCierre={datosCierre}
+        onDatosCierreChange={actualizarDatosCierre}
+        onAnterior={volverDeCierre}
+        onFinalizado={manejarInspeccionFinalizada}
+        paso={TOTAL_PASOS_ALIMENTOS}
+        totalPasos={TOTAL_PASOS_ALIMENTOS}
+      />
+    );
   }
 
   const Formulario = COMPONENTES_POR_CODIGO[wizard.vistaActual?.codigo] ?? FormularioSeccionAlimentos;

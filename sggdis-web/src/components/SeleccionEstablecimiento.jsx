@@ -61,6 +61,7 @@ function SeleccionEstablecimiento({ onComenzar }) {
         tipoLabel: tipoSeleccionado.nombre,
         idGuia: ID_GUIA_ACTIVA,
         idTipoEstablecimiento: tipoSeleccionado.idTipoEstablecimiento,
+        puntajeMaximo: tipoSeleccionado.puntajeMaximo,
         secciones: tipoSeleccionado.secciones ?? [],
         idInspeccion,
       });

@@ -17,3 +17,13 @@ export const nombresVistas = {
   G: 'Servicio a Domicilio',
 }
 
+// Rangos de clasificación según el porcentaje de cumplimiento (Art. 65 del Reglamento).
+export const RANGOS_CLASIFICACION = [
+  { hasta: 69, etiqueta: 'Condiciones inaceptables', clase: 'inaceptable', icono: '✕' },
+  { hasta: 80, etiqueta: 'Condiciones deficientes', clase: 'deficiente', icono: '⚠' },
+  { hasta: 100, etiqueta: 'Buenas condiciones', clase: 'buena', icono: '✓' },
+];
+
+export const TEXTO_ORDEN_SANITARIA =
+  'Disponible siempre que se identifique una situación que atente contra la salud pública ' +
+  '(Art. 65 del Reglamento), sin importar el puntaje total obtenido en la inspección.';
