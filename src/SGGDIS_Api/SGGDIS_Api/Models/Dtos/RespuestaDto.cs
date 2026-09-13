@@ -16,12 +16,25 @@
         public DateTime Fecha { get; set; }
     }
 
-    /// Resultado devuelto al cerrar una inspección: puntaje, porcentaje y clasificación.
-    /// No incluye datos de inspector/representante/observaciones: esos quedan solo en el cliente.
+    // Datos capturados en la pantalla de cierre de la inspección.
+    // No incluye "nombre del representante": se usa NOMBRE_ESTABLECIMIENTO,
+    // ya registrado al crear la inspección, para no duplicar el dato (B10).
+    public class CerrarInspeccionDto
+    {
+        public string NombreInspector { get; set; } = string.Empty;
+        public string IdentificacionInspector { get; set; } = string.Empty;
+        public string IdentificacionRepresentante { get; set; } = string.Empty;
+        public string? ObservacionesFinales { get; set; }
+        public bool RegistrarOrdenSanitaria { get; set; }
+    }
+
+    // Resultado devuelto al cerrar una inspección: puntaje, porcentaje y clasificación.
+    // PuntajeMaximoReferencia es el fijo de catálogo, solo para mostrar de dónde partió.
     public class ResumenCierreDto
     {
         public int PuntajeObtenido { get; set; }
         public int PuntajeMaximo { get; set; }
+        public int PuntajeMaximoReferencia { get; set; }
         public decimal Porcentaje { get; set; }
         public string Clasificacion { get; set; } = string.Empty;
     }

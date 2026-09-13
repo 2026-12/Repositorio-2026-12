@@ -81,12 +81,16 @@ namespace SGGDIS_Api.Controllers
         }
 
         [HttpPut("{id}/cierre")]
-        public async Task<IActionResult> CerrarInspeccion(int id)
+        public async Task<IActionResult> CerrarInspeccion(int id, [FromBody] CerrarInspeccionDto dto)
         {
             try
             {
-                var resumen = await _inspeccionService.CerrarInspeccionAsync(id);
+                var resumen = await _inspeccionService.CerrarInspeccionAsync(id, dto);
                 return Ok(resumen);
+            }
+            catch (CamposCierreIncompletosException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (SeccionesIncompletasException ex)
             {

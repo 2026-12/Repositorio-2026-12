@@ -31,6 +31,44 @@ namespace SGGDIS_Api.Models
         [MaxLength(20)]
         public string Estado { get; set; } = "EN_PROCESO";
 
+        // Cierre de inspección
+
+        [Column("NOMBRE_INSPECTOR")]
+        [MaxLength(150)]
+        public string? NombreInspector { get; set; }
+
+        [Column("IDENTIFICACION_INSPECTOR")]
+        [MaxLength(30)]
+        public string? IdentificacionInspector { get; set; }
+
+        [Column("IDENTIFICACION_REPRESENTANTE")]
+        [MaxLength(30)]
+        public string? IdentificacionRepresentante { get; set; }
+
+        [Column("OBSERVACIONES_FINALES")]
+        [MaxLength(2000)]
+        public string? ObservacionesFinales { get; set; }
+
+        [MaxLength(1)]
+        [Column("ORDEN_SANITARIA")]
+        public string OrdenSanitaria { get; set; } = "N";
+
+        [Column("PUNTAJE_OBTENIDO")]
+        public int? PuntajeObtenido { get; set; }
+
+        [Column("PORCENTAJE_CUMPLIMIENTO")]
+        public decimal? PorcentajeCumplimiento { get; set; }
+
+        [Column("CLASIFICACION")]
+        [MaxLength(30)]
+        public string? Clasificacion { get; set; }
+
+        [Column("FECHA_CIERRE")]
+        public DateTime? FechaCierre { get; set; }
+
+        [Column("PUNTAJE_MAXIMO_APLICADO")]
+        public int? PuntajeMaximoAplicado { get; set; }
+
         [ForeignKey(nameof(IdGuia))]
         public InsGuia? Guia { get; set; }
 

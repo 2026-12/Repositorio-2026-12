@@ -45,11 +45,14 @@ export function guardarRespuestas(idInspeccion, respuestas) {
   });
 }
 
-// Marca la inspección como FINALIZADA en el backend, previa validación de que
-// todas las secciones estén completas. Los datos de inspector/representante/
-// observaciones/orden sanitaria NO se envían: quedan solo en el cliente.
-export function cerrarInspeccion(idInspeccion) {
+// Envía los datos de cierre (inspector, identificación del representante,
+// observaciones y orden sanitaria) y marca la inspección como FINALIZADA en
+// el backend. El nombre del representante no se envía: el backend
+// usa el nombre del establecimiento ya registrado.
+export function cerrarInspeccion(idInspeccion, datosCierre) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones/${idInspeccion}/cierre`, {
     method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datosCierre),
   });
 }

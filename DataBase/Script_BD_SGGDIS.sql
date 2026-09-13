@@ -648,6 +648,29 @@ CREATE TABLE INS_RESPUESTA (
   CONSTRAINT CK_RESPUESTA_ESTADO CHECK (ESTADO IN ('Cumple','No cumple','N/A'))
 );
 
+-- ============================================================
+-- Agrega a INS_INSPECCION las columnas necesarias para
+-- persistir la información de cierre (inspector, representante,
+-- observaciones, orden sanitaria) y el resultado final calculado
+-- (puntaje, porcentaje, clasificación), sin alterar ni eliminar
+-- columnas existentes. Corresponde al hallazgo H1 de la evaluación
+-- heurística (severidad 4).
+-- ============================================================
+
+ALTER TABLE INS_INSPECCION ADD (
+  NOMBRE_INSPECTOR              VARCHAR2(150),
+  IDENTIFICACION_INSPECTOR      VARCHAR2(30),
+  IDENTIFICACION_REPRESENTANTE  VARCHAR2(30),
+  OBSERVACIONES_FINALES         VARCHAR2(2000),
+  ORDEN_SANITARIA               CHAR(1) DEFAULT 'N' NOT NULL,
+  PUNTAJE_OBTENIDO              NUMBER,
+  PORCENTAJE_CUMPLIMIENTO       NUMBER,
+  CLASIFICACION                 VARCHAR2(30),
+  FECHA_CIERRE                  TIMESTAMP,
+  CONSTRAINT CK_INSPECCION_ORDEN_SANITARIA CHECK (ORDEN_SANITARIA IN ('S','N')),
+  PUNTAJE_MAXIMO_APLICADO NUMBER
+);
+
 COMMIT;
 
 -- ============================================================

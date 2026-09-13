@@ -189,7 +189,7 @@ export default function FormularioSeccionGenerico({
           <span className="tarjeta__etiqueta">SECCIÓN {codigo}</span>
           <div className="tarjeta__titulo-fila">
             <h2>{titulo}</h2>
-            <span className="chip chip--puntos">{resumen.obtenidos}/{resumen.maximo} Puntos</span>
+            <span className="chip chip--puntos">{resumen.obtenidos}/{resumen.maximo} Puntos</span> 
           </div>
         </div>
 

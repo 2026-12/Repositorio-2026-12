@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import {
   calcularResumenTotal,
   calcularPorcentajeCumplimiento,
+  calcularPuntosExcluidosPorNoAplica,
+  calcularPuntajeMaximoAjustado,
   clasificarPorcentaje,
   todasLasSeccionesCompletas,
   obtenerVistasIncompletas,
@@ -9,12 +11,9 @@ import {
   DATOS_CIERRE_INICIALES,
 } from '../domain/cierreInspeccion';
 
-// Encapsula el estado propio del formulario de cierre (datos de inspector y
-// representante, observaciones y orden sanitaria) y los cálculos derivados
-// (puntaje total, porcentaje, clasificación) que dependen de lo respondido
-// en el resto de la inspección. Sigue el mismo patrón controlado/no controlado
-// que useRespuestasInspeccion: si App.jsx pasa datosCierre/onDatosCierreChange,
-// el estado se guarda ahí (y por lo tanto en localStorage); si no, es local.
+// Encapsula el estado propio del formulario de cierre y los cálculos
+// derivados: puntaje obtenido, máximo REALMENTE aplicable (excluyendo ítems
+// N/A, corrige H5), porcentaje y clasificación.
 export function useCierreInspeccion({
   vistas,
   seccionesCache,
@@ -39,9 +38,19 @@ export function useCierreInspeccion({
     [vistas, seccionesCache, respuestas],
   );
 
+  const puntosExcluidosPorNoAplica = useMemo(
+    () => calcularPuntosExcluidosPorNoAplica(vistas, seccionesCache, respuestas),
+    [vistas, seccionesCache, respuestas],
+  );
+
+  const puntajeMaximoAjustado = useMemo(
+    () => calcularPuntajeMaximoAjustado(puntajeMaximoTipo, puntosExcluidosPorNoAplica),
+    [puntajeMaximoTipo, puntosExcluidosPorNoAplica],
+  );
+
   const porcentaje = useMemo(
-    () => calcularPorcentajeCumplimiento(resumen.obtenidos, puntajeMaximoTipo),
-    [resumen.obtenidos, puntajeMaximoTipo],
+    () => calcularPorcentajeCumplimiento(resumen.obtenidos, puntajeMaximoAjustado),
+    [resumen.obtenidos, puntajeMaximoAjustado],
   );
 
   const clasificacion = useMemo(() => clasificarPorcentaje(porcentaje), [porcentaje]);
@@ -67,6 +76,8 @@ export function useCierreInspeccion({
     datosCierre,
     actualizarCampo,
     resumen,
+    puntosExcluidosPorNoAplica,
+    puntajeMaximoAjustado,
     porcentaje,
     clasificacion,
     seccionesCompletas,

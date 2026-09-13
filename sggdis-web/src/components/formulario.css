@@ -1295,3 +1295,157 @@ body {
     font-size: 0.75rem;
   }
 }
+
+/* ============================================================================
+   CAMPO DE SOLO LECTURA (Cierre de inspección)
+   ============================================================================ */
+
+.campo input:read-only {
+  background: #F4F5F6;
+  color: #5b6470;
+  cursor: not-allowed;
+}
+
+.cierre__resumen-nota {
+  width: 100%;
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.boton--ancho {
+  width: 100%;
+}
+
+.boton--destacado {
+  border: 2px solid var(--blanco);
+}
+
+/* ============================================================================
+   CONFIRMACIÓN DE CIERRE — pantalla final tras registrar el cierre
+   ============================================================================ */
+
+.cierre__confirmacion-fondo {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cierre__confirmacion {
+  background: var(--blanco);
+  border-radius: 18px;
+  max-width: 460px;
+  width: 100%;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(0, 18, 55, 0.25);
+}
+
+.cierre__confirmacion-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.cierre__confirmacion-etiqueta {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--azul-acero);
+  margin-bottom: 6px;
+}
+
+.cierre__confirmacion h2 {
+  margin: 4px 0 8px;
+  color: var(--azul-oscuro);
+  font-size: 1.3rem;
+}
+
+.cierre__confirmacion-descripcion {
+  color: #5b6470;
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+}
+
+.cierre__confirmacion-resultado {
+  background: #F5F7FA;
+  border: 1px solid var(--gris);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.cierre__confirmacion-resultado-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #5b6470;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cierre__confirmacion-resultado-numero {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--azul-oscuro);
+}
+
+.cierre__confirmacion-resultado-estado {
+  display: block;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cierre__confirmacion--inaceptable .cierre__confirmacion-check {
+  background: #FBEAE9;
+  color: var(--rojo);
+  border: 2px solid var(--rojo);
+}
+.cierre__confirmacion--inaceptable .cierre__confirmacion-resultado-estado {
+  color: var(--rojo);
+}
+
+.cierre__confirmacion--deficiente .cierre__confirmacion-check {
+  background: var(--amarillo-fondo);
+  color: var(--amarillo);
+  border: 2px solid var(--amarillo);
+}
+.cierre__confirmacion--deficiente .cierre__confirmacion-resultado-estado {
+  color: var(--amarillo);
+}
+
+.cierre__confirmacion--buena .cierre__confirmacion-check {
+  background: #E6F4EA;
+  color: var(--verde);
+  border: 2px solid var(--verde);
+}
+.cierre__confirmacion--buena .cierre__confirmacion-resultado-estado {
+  color: var(--verde);
+}
+
+.cierre__confirmacion-orden {
+  background: #FFF7F6;
+  border: 1px dashed var(--rojo);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--rojo);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 480px) {
+  .cierre__confirmacion {
+    padding: 24px 18px;
+  }
+}

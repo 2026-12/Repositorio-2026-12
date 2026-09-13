@@ -46,28 +46,50 @@ export function obtenerVistasIncompletas(vistas = [], seccionesCache = {}, respu
   return vistas.filter((vista) => !esVistaCompleta(vista, seccionesCache, respuestas));
 }
 
+// Valor inicial del formulario de cierre. No incluye "nombreRepresentante":
+// ese dato ya no se le pide al usuario, se usa datos.nombre (el nombre del
+// establecimiento, capturado al iniciar la inspección en SeleccionEstablecimiento).
+export const DATOS_CIERRE_INICIALES = {
+  nombreInspector: '',
+  identificacionInspector: '',
+  identificacionRepresentante: '',
+  observacionesFinales: '',
+  ordenSanitaria: false,
+};
+
 // Campos obligatorios de la sección de cierre (HU-005I, criterio de aceptación).
 export function obtenerCamposCierrePendientes({
   nombreInspector,
   identificacionInspector,
-  nombreRepresentante,
   identificacionRepresentante,
 }) {
   const pendientes = [];
   if (!nombreInspector?.trim()) pendientes.push('Nombre del inspector');
   if (!identificacionInspector?.trim()) pendientes.push('Identificación del inspector');
-  if (!nombreRepresentante?.trim()) pendientes.push('Nombre del representante del establecimiento');
   if (!identificacionRepresentante?.trim()) pendientes.push('Identificación del representante del establecimiento');
   return pendientes;
 }
 
-// Valor inicial del formulario de cierre; vive 100% en el cliente (localStorage
-// vía progresoInspeccionService), no se envía al backend.
-export const DATOS_CIERRE_INICIALES = {
-  nombreInspector: '',
-  identificacionInspector: '',
-  nombreRepresentante: '',
-  identificacionRepresentante: '',
-  observacionesFinales: '',
-  ordenSanitaria: false,
-};
+// Suma los puntos de los ítems marcados "N/A" en toda la inspección. Un ítem
+// que no aplica no debe contar como falta ni exigirse para llegar al 100%,
+// así que sus puntos deben restarse del máximo, no quedarse fijos.
+export function calcularPuntosExcluidosPorNoAplica(vistas = [], seccionesCache = {}, respuestas = {}) {
+  return vistas.reduce((totalExcluido, vista) => {
+    vista.secciones.forEach((seccionRaw) => {
+      const seccion = seccionesCache[seccionRaw.codigo];
+      if (!seccion) return;
+      seccion.items.forEach((item) => {
+        if (respuestas[item.idItem]?.estado === 'N/A') {
+          totalExcluido += item.puntaje;
+        }
+      });
+    });
+    return totalExcluido;
+  }, 0);
+}
+
+// Puntaje máximo REALMENTE aplicable de la inspección: el fijo del tipo de
+// establecimiento, menos los puntos de los ítems marcados "N/A".
+export function calcularPuntajeMaximoAjustado(puntajeMaximoTipo, puntosExcluidosPorNoAplica) {
+  return Math.max(0, (puntajeMaximoTipo ?? 0) - (puntosExcluidosPorNoAplica ?? 0));
+}
