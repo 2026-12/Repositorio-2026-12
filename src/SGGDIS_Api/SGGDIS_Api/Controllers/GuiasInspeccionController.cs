@@ -14,10 +14,12 @@ namespace SGGDIS_Api.Controllers
     public class GuiasInspeccionController : ControllerBase
     {
         private readonly ISeccionService _seccionService;
+        private readonly ILogger<GuiasInspeccionController> _logger;
 
-        public GuiasInspeccionController(ISeccionService seccionService)
+        public GuiasInspeccionController(ISeccionService seccionService, ILogger<GuiasInspeccionController> logger)
         {
             _seccionService = seccionService;
+            _logger = logger;
         }
 
         // GET /api/guias-inspeccion/{idGuia}/tipos-establecimiento
@@ -45,8 +47,9 @@ namespace SGGDIS_Api.Controllers
                         })
                 }));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener los tipos de establecimiento de la guia {IdGuia}.", idGuia);
                 return StatusCode(500, "Ocurrió un error al obtener los tipos de establecimiento.");
             }
         }
@@ -88,8 +91,9 @@ namespace SGGDIS_Api.Controllers
                     })
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener la seccion {Codigo} de la guia {IdGuia}.", codigo, idGuia);
                 return StatusCode(500, "Ocurrió un error al obtener la sección.");
             }
         }

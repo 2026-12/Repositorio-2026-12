@@ -14,10 +14,12 @@ namespace SGGDIS_Api.Controllers
     public class InspeccionesController : ControllerBase
     {
         private readonly IInspeccionService _inspeccionService;
+        private readonly ILogger<InspeccionesController> _logger;
 
-        public InspeccionesController(IInspeccionService inspeccionService)
+        public InspeccionesController(IInspeccionService inspeccionService, ILogger<InspeccionesController> logger)
         {
             _inspeccionService = inspeccionService;
+            _logger = logger;
         }
 
         // POST /api/inspecciones : crea una nueva inspección "EN_PROCESO".
@@ -39,9 +41,11 @@ namespace SGGDIS_Api.Controllers
                 // Error esperado por el usuario (folio repetido): sí se le puede mostrar el detalle.
                 return Conflict(ex.Message);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Cualquier otro error (ej. de base de datos) se oculta y se muestra un mensaje genérico.
+                // Cualquier otro error (ej. de base de datos) se oculta y se muestra un mensaje genérico,
+                // pero se registra el detalle real en el log para poder diagnosticarlo.
+                _logger.LogError(ex, "Error al crear la inspeccion.");
                 return StatusCode(500, "Ocurrio un error al crear la inspeccion.");
             }
         }
@@ -55,8 +59,9 @@ namespace SGGDIS_Api.Controllers
                 var eliminada = await _inspeccionService.EliminarInspeccionAsync(id);
                 return eliminada ? NoContent() : NotFound();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al eliminar la inspeccion {IdInspeccion}.", id);
                 return StatusCode(500, "Ocurrio un error al eliminar la inspeccion.");
             }
         }
@@ -70,8 +75,9 @@ namespace SGGDIS_Api.Controllers
                 await _inspeccionService.GuardarRespuestasAsync(id, respuestas);
                 return NoContent();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al guardar las respuestas de la inspeccion {IdInspeccion}.", id);
                 return StatusCode(500, "Ocurrio un error al guardar las respuestas.");
             }
         }
@@ -85,8 +91,9 @@ namespace SGGDIS_Api.Controllers
                 var respuestas = await _inspeccionService.ObtenerRespuestasAsync(id);
                 return Ok(respuestas.Select(r => new { r.IdItem, r.Estado, r.PuntosOtorgados }));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener las respuestas de la inspeccion {IdInspeccion}.", id);
                 return StatusCode(500, "Ocurrio un error al obtener las respuestas.");
             }
         }
@@ -112,8 +119,9 @@ namespace SGGDIS_Api.Controllers
             {
                 return NotFound();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al cerrar la inspeccion {IdInspeccion}.", id);
                 return StatusCode(500, "Ocurrió un error al cerrar la inspección.");
             }
         }
