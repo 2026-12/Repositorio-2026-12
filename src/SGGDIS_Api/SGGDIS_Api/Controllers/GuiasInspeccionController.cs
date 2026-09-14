@@ -3,6 +3,12 @@ using SGGDIS_Api.Services;
 
 namespace SGGDIS_Api.Controllers
 {
+    /// <summary>
+    /// Expone los endpoints de solo lectura para consultar el catálogo de una guía
+    /// de inspección: qué tipos de establecimiento existen y qué secciones/ítems
+    /// le corresponden a cada uno. Esta información no cambia con cada inspección,
+    /// se usa para armar el formulario en el frontend.
+    /// </summary>
     [ApiController]
     [Route("api/guias-inspeccion")]
     public class GuiasInspeccionController : ControllerBase
@@ -14,6 +20,8 @@ namespace SGGDIS_Api.Controllers
             _seccionService = seccionService;
         }
 
+        // GET /api/guias-inspeccion/{idGuia}/tipos-establecimiento
+        // Devuelve todos los tipos de establecimiento de una guía, con sus secciones.
         [HttpGet("{idGuia}/tipos-establecimiento")]
         public async Task<IActionResult> ObtenerTiposEstablecimiento(int idGuia)
         {

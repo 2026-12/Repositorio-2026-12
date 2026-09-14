@@ -22,7 +22,14 @@ const SUBSECCIONES = [
   { codigo: 'B3', titulo: 'Área de Preparación de Alimentos (Cocina) — Operaciones de Preparación de los Alimentos' },
 ];
 
+// Componente dedicado para la Sección B: a diferencia de las demás secciones,
+// esta necesita mostrar sub-pestañas (B1, B2, B3) dentro del mismo paso del
+// asistente, así que no puede reutilizar directamente FormularioSeccionGenerico
+// (que asume una sola sección por paso). Repite parte de su misma lógica de
+// renderizado, pero agregando la navegación entre subsecciones.
 function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [], paso, totalPasos, guardando = false }) {
+  // Solo se muestran las subsecciones (B1/B2/B3) que en verdad le aplican al
+  // tipo de establecimiento seleccionado.
   const subsecciones = useMemo(
     () => SUBSECCIONES.filter((sub) => datos.secciones?.some((seccion) => seccion.codigo === sub.codigo)),
     [datos.secciones],
@@ -38,6 +45,9 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, pu
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [subSeccionActiva]);
 
+  // Carga las tres subsecciones en paralelo (Promise.all), reusando la caché
+  // si ya se habían cargado antes, y avisa al padre de cada una para que
+  // quede guardada en la caché general de la app.
   useEffect(() => {
     async function cargarSeccionB() {
       try {
@@ -87,7 +97,8 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, pu
     return completas;
   }, [gruposPorSubseccion, respuestas, subsecciones]);
 
-  // Navegación en el footer
+  // "Anterior" dentro de la Sección B: retrocede a la subsección previa
+  // (B2 → B1), no a la vista anterior del asistente (eso lo maneja el botón de abajo).
   const manejarAnterior = () => {
     setMostrarPendientes(false);
     const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
@@ -96,6 +107,10 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, pu
     }
   };
 
+  // "Siguiente": si faltan ítems de la subsección actual, los resalta igual
+  // que en el formulario genérico. Si ya están completos, avanza a la
+  // siguiente subsección (B1 → B2 → B3) y solo llama a onSiguiente (avanzar
+  // de vista de verdad) cuando ya se completó la última subsección.
   const manejarSiguiente = () => {
     if (itemsSinResponder > 0) {
       setMostrarPendientes(true);

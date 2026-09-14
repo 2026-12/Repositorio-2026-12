@@ -10,11 +10,16 @@ import mapaDorado from '../assets/mapa-dorado.png';
 
 registerLocale('es', es);
 
+// Primera pantalla de una inspección nueva: pide fecha, número consecutivo
+// (folio), nombre del establecimiento y tipo de establecimiento. Al confirmar,
+// crea la inspección real en el backend y le pasa los datos a App.jsx para
+// arrancar el asistente (wizard) de secciones.
 function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   const [fecha, setFecha] = useState(null);
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
 
+  // El consecutivo se compone de un número de 4 dígitos y un año de 4 dígitos.
   const [numeroConsecutivo, setNumeroConsecutivo] = useState('');
   const [anioConsecutivo, setAnioConsecutivo] = useState(
     String(new Date().getFullYear())
@@ -23,6 +28,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   const [creando, setCreando] = useState(false);
   const [errorCreacion, setErrorCreacion] = useState(null);
 
+  // Carga los tipos de establecimiento disponibles para la guía activa.
   const { tipos, cargando, error } =
     useTiposEstablecimiento(ID_GUIA_ACTIVA);
 
@@ -30,9 +36,12 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     (tipo) => tipo.idTipoEstablecimiento === tipoId
   );
 
+  // Folio completo con el prefijo institucional fijo.
   const consecutivo =
     `MS-DRRSCS-ARS-T-AI-${numeroConsecutivo}-${anioConsecutivo}`;
 
+  // El botón "Comenzar inspección" solo se habilita si todos los campos
+  // obligatorios están completos.
   const puedeComenzar =
     fecha !== null &&
     numeroConsecutivo.length === 4 &&
@@ -40,6 +49,8 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     nombre.trim().length > 0 &&
     tipoSeleccionado;
 
+  // Crea la inspección en el backend y, si todo sale bien, avisa al
+  // componente padre (App.jsx) para que arranque el formulario.
   const manejarComenzar = async () => {
     if (!puedeComenzar) return;
 
@@ -268,6 +279,8 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
 
                 <span className="tipo-card__secciones">
                   Secciones:{' '}
+                  {/* La sección "H" (Servicio de Catering) se oculta de este
+                      resumen a propósito, aunque sí forme parte del tipo. */}
                   {tipo.secciones
                     .map(
                       (seccion) =>

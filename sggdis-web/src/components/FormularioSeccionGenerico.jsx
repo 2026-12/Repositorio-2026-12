@@ -48,6 +48,10 @@ export default function FormularioSeccionGenerico({
   const [error, setError] = useState(null);
   const [mostrarPendientes, setMostrarPendientes] = useState(false);
 
+  // Si la sección ya estaba en caché (seccionInicial), la usa directo y no
+  // vuelve a pedirla al backend. Si no, la pide y avisa al padre
+  // (onSeccionCargada) para que la guarde en caché y no tener que repetir la
+  // petición la próxima vez que el usuario visite esta misma sección.
   useEffect(() => {
     let activo = true;
     if (seccionInicial) {
@@ -80,6 +84,11 @@ export default function FormularioSeccionGenerico({
   const pendientes = itemsPendientes.length;
   const porcentajeProgreso = vistas.length > 0 ? ((indiceActual + 1) / vistas.length) * 100 : 0;
 
+  // Al presionar "Siguiente": si quedan ítems sin responder, no avanza —
+  // en vez de eso resalta visualmente el primer ítem pendiente y hace scroll
+  // hasta él para que el usuario sepa exactamente qué le falta.
+  // Si ya no hay pendientes, avanza normalmente (llama a onSiguiente,
+  // que en App.jsx dispara el guardado y el paso a la siguiente vista).
   const manejarSiguiente = () => {
     if (pendientes > 0) {
       setMostrarPendientes(true);
@@ -159,6 +168,8 @@ export default function FormularioSeccionGenerico({
         </div>
       </div>
 
+      {/* Barra de pestañas: una por cada vista del asistente. Una pestaña
+          se bloquea si el usuario todavía no llegó hasta ahí. */}
       <nav className="tabs tabs--con-progreso">
         {vistas.map((vista, i) => {
           const bloqueada = i > maxAlcanzado;
@@ -193,6 +204,9 @@ export default function FormularioSeccionGenerico({
           </div>
         </div>
 
+        {/* Cada grupo es un artículo del reglamento; dentro se listan sus
+            ítems con sus opciones de respuesta (Cumple/No cumple/N/A),
+            el selector de puntos parciales y la advertencia si es crítico. */}
         {gruposActuales.map((grupo) => (
           <div className="grupo" key={grupo.articulo}>
             <span className="grupo__etiqueta">{grupo.articulo}</span>

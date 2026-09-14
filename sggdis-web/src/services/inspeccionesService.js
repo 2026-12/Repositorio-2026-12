@@ -1,5 +1,12 @@
 import { API_BASE_URL } from '../config/inspeccion';
 
+// Helper interno igual en espíritu al de guiasInspeccionService.js, pero además
+// lee el texto del error que manda el backend (para mostrar mensajes como
+// "El número consecutivo ya está registrado") y sabe manejar respuestas 204
+// (sin contenido), que es lo que devuelven varios de estos endpoints.
+// NOTA: esta función está duplicada entre los dos archivos de services/.
+// Se podría mover a un solo archivo compartido (ej. services/httpClient.js)
+// para no mantener la misma lógica en dos lugares.
 async function solicitarJson(url, opciones) {
   try {
     const respuesta = await fetch(url, opciones);
@@ -16,6 +23,7 @@ async function solicitarJson(url, opciones) {
   }
 }
 
+// Crea una nueva inspección en el backend y devuelve su id.
 export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha }) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones`, {
     method: 'POST',
@@ -24,6 +32,7 @@ export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstableci
   });
 }
 
+// Elimina una inspección (y sus respuestas) del backend.
 export function eliminarInspeccion(idInspeccion) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones/${idInspeccion}`, {
     method: 'DELETE',

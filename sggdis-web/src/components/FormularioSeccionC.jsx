@@ -17,7 +17,11 @@ const SUBSECCIONES = [
     { codigo: 'C2', titulo: 'Bodega de Insumos — Condiciones de Almacenamiento' },
 ];
 
+// Componente dedicado para la Sección C: igual que FormularioSeccionB, pero
+// para las subsecciones C1 y C2 (en vez de B1/B2/B3). Repite la misma
+// estructura de sub-pestañas y renderizado por las mismas razones.
 function FormularioSeccionC({ datos, onAnterior, onSiguiente, onVolverInicio, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [], paso, totalPasos, guardando = false }) {
+    // Solo se muestran las subsecciones (C1/C2) que en verdad le aplican al tipo de establecimiento.
     const subsecciones = useMemo(
         () => SUBSECCIONES.filter((sub) => datos.secciones?.some((seccion) => seccion.codigo === sub.codigo)),
         [datos.secciones],
@@ -33,6 +37,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, onVolverInicio, pu
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [subSeccionActiva]);
 
+    // Carga las subsecciones C1 y C2 en paralelo, reusando la caché si ya existía.
     useEffect(() => {
         async function cargarSeccionC() {
             try {
@@ -65,6 +70,14 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, onVolverInicio, pu
         [gruposPorSubseccion, subSeccionActiva],
     );
 
+    // NOTA: a diferencia de FormularioSeccionGenerico y FormularioSeccionB,
+    // aquí NO se usa el hook useRespuestasInspeccion ni calcularResumen de
+    // domain/calculoPuntaje: se reescribió la misma lógica de marcar/desmarcar
+    // un ítem y de sumar el puntaje directamente en este archivo. Funciona
+    // igual, pero si el comportamiento se corrige en un solo lugar (el hook o
+    // el dominio), esta copia no se actualiza automáticamente y puede
+    // desalinearse. Convendría migrar esta sección para reusar el hook, igual
+    // que hacen las demás.
     const manejarSeleccion = (itemId, opcion, valorMaximo) => {
         onRespuestasChange?.((prev) => {
             const actual = prev[itemId];
@@ -90,6 +103,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, onVolverInicio, pu
         }));
     };
 
+    // Mismo cálculo que calcularResumen (domain/calculoPuntaje.js), pero copiado a mano.
     const { obtenidos, maximo, criticosIncumplidos } = useMemo(() => {
         let obtenidos = 0;
         let maximo = 0;
@@ -120,7 +134,7 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, onVolverInicio, pu
         return completas;
     }, [gruposPorSubseccion, respuestas, subsecciones]);
 
-    // Navegación en el footer
+    // "Anterior" dentro de la Sección C: retrocede a la subsección previa (C2 → C1).
     const manejarAnterior = () => {
         setMostrarPendientes(false);
         const index = subsecciones.findIndex((sub) => sub.codigo === subSeccionActiva);
@@ -129,6 +143,8 @@ function FormularioSeccionC({ datos, onAnterior, onSiguiente, onVolverInicio, pu
         }
     };
 
+    // "Siguiente": avanza entre subsecciones (C1 → C2) y solo llama a
+    // onSiguiente cuando ya se completó la última.
     const manejarSiguiente = () => {
         if (itemsSinResponder > 0) {
             setMostrarPendientes(true);

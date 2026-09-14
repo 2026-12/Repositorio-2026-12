@@ -4,6 +4,11 @@ using SGGDIS_Api.Services;
 
 namespace SGGDIS_Api.Controllers
 {
+    /// <summary>
+    /// Expone los endpoints para crear, actualizar, consultar, cerrar y eliminar
+    /// inspecciones reales. Cada acción delega la lógica al IInspeccionService y
+    /// solo se encarga de traducir el resultado (o el error) a una respuesta HTTP.
+    /// </summary>
     [ApiController]
     [Route("api/inspecciones")]
     public class InspeccionesController : ControllerBase
@@ -15,6 +20,7 @@ namespace SGGDIS_Api.Controllers
             _inspeccionService = inspeccionService;
         }
 
+        // POST /api/inspecciones : crea una nueva inspección "EN_PROCESO".
         [HttpPost]
         public async Task<IActionResult> CrearInspeccion([FromBody] CrearInspeccionDto dto)
         {
@@ -30,14 +36,17 @@ namespace SGGDIS_Api.Controllers
             }
             catch (ConsecutivoDuplicadoException ex)
             {
+                // Error esperado por el usuario (folio repetido): sí se le puede mostrar el detalle.
                 return Conflict(ex.Message);
             }
             catch (Exception)
             {
+                // Cualquier otro error (ej. de base de datos) se oculta y se muestra un mensaje genérico.
                 return StatusCode(500, "Ocurrio un error al crear la inspeccion.");
             }
         }
 
+        // DELETE /api/inspecciones/{id} : elimina una inspección y sus respuestas.
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarInspeccion(int id)
         {
@@ -52,6 +61,7 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // PUT /api/inspecciones/{id}/respuestas : guarda (autoguardado) las respuestas del checklist.
         [HttpPut("{id}/respuestas")]
         public async Task<IActionResult> GuardarRespuestas(int id, [FromBody] List<RespuestaDto> respuestas)
         {
@@ -66,6 +76,7 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // GET /api/inspecciones/{id}/respuestas : devuelve las respuestas ya guardadas.
         [HttpGet("{id}/respuestas")]
         public async Task<IActionResult> ObtenerRespuestas(int id)
         {
@@ -80,6 +91,7 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // PUT /api/inspecciones/{id}/cierre : cierra la inspección y calcula el resultado final.
         [HttpPut("{id}/cierre")]
         public async Task<IActionResult> CerrarInspeccion(int id, [FromBody] CerrarInspeccionDto dto)
         {

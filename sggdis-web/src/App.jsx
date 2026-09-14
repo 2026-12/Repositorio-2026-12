@@ -12,6 +12,10 @@ import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesSe
 import { TOTAL_PASOS_ALIMENTOS } from './config/inspeccionAlimentos';
 import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
 
+// Qué componente de formulario usar para cada vista (paso del asistente).
+// La mayoría de las secciones (A, D, E, F, G) se pintan con el componente
+// genérico FormularioSeccionAlimentos; B, C y H tienen su propio componente
+// porque necesitan algo especial en su formulario.
 const COMPONENTES_POR_CODIGO = {
   A: FormularioSeccionAlimentos,
   B: FormularioSeccionB,
@@ -23,6 +27,9 @@ const COMPONENTES_POR_CODIGO = {
   H: FormularioSeccionH,
 };
 
+// Compara las respuestas actuales contra las que ya se guardaron en el
+// backend y devuelve solo las que cambiaron. Así el autoguardado solo manda
+// al servidor lo que realmente cambió, no todas las respuestas cada vez.
 function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
   const modificadas = {};
 
@@ -39,9 +46,18 @@ function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
   return modificadas;
 }
 
+// Componente raíz de la aplicación: decide qué pantalla mostrar (inicio,
+// selección de establecimiento, formulario de una sección, o cierre) y
+// mantiene todo el estado de la inspección en curso, incluyendo el
+// autoguardado tanto en el navegador (localStorage) como en el backend.
 function App() {
+  // Al montar la app, intenta recuperar una inspección que haya quedado a
+  // medias (guardada en localStorage). Se lee una sola vez (useState con función).
   const [progresoGuardado] = useState(cargarProgreso);
 
+  // Si hay una inspección guardada, se retoma directo ahí; si no, se recuerda
+  // en qué pantalla estaba el usuario (guardado en sessionStorage) o se
+  // empieza desde el inicio.
   const [pantallaActual, setPantallaActual] = useState(() => {
     if (progresoGuardado?.datos) {
       return 'inspeccion';
@@ -73,10 +89,12 @@ function App() {
   const [eliminandoInspeccion, setEliminandoInspeccion] = useState(false);
   const [errorSalida, setErrorSalida] = useState(null);
 
+  // Recuerda en qué pantalla está el usuario, para poder restaurarla si recarga la página.
   useEffect(() => {
     sessionStorage.setItem('pantallaActualSGGDIS', pantallaActual);
   }, [pantallaActual]);
 
+  // Actualiza las observaciones libres que se pueden escribir en algunas secciones.
   const actualizarObservaciones = useCallback((actualizar) => {
     setObservaciones((actuales) =>
       typeof actualizar === 'function'
@@ -85,6 +103,7 @@ function App() {
     );
   }, []);
 
+  // Actualiza el mapa de respuestas de la sección actual (estado controlado, pasado a los formularios).
   const actualizarRespuestas = useCallback((actualizar) => {
     setRespuestas((actuales) =>
       typeof actualizar === 'function'
@@ -93,6 +112,7 @@ function App() {
     );
   }, []);
 
+  // Actualiza los datos del formulario de cierre (inspector, representante, etc.).
   const actualizarDatosCierre = useCallback((actualizar) => {
     setDatosCierre((actuales) =>
       typeof actualizar === 'function'
@@ -101,6 +121,8 @@ function App() {
     );
   }, []);
 
+  // Guarda en caché la sección ya cargada (ítems, nombre, etc.) para no volver
+  // a pedirla al backend cada vez que el usuario navega entre secciones ya visitadas.
   const registrarSeccion = useCallback((codigo, seccion) => {
     setSeccionesCache((actuales) =>
       actuales[codigo] === seccion
@@ -112,6 +134,8 @@ function App() {
     );
   }, []);
 
+  // Muestra el mensaje de "Cambios guardados correctamente" y lo oculta solo
+  // después de 2.5 segundos.
   const mostrarGuardadoExitoso = useCallback(() => {
     setGuardadoExitoso(true);
 
@@ -120,6 +144,9 @@ function App() {
     }, 2500);
   }, []);
 
+  // Se ejecuta al presionar "Siguiente": si hay respuestas nuevas o
+  // modificadas, las guarda en el backend (autoguardado); si todo sale bien,
+  // avanza a la siguiente vista, o si ya era la última, abre la pantalla de cierre.
   const avanzarYGuardar = useCallback(async () => {
     setErrorGuardado(null);
     setGuardando(true);
@@ -172,10 +199,14 @@ function App() {
     mostrarGuardadoExitoso,
   ]);
 
+  // Regresa de la pantalla de cierre al formulario (sin perder los datos ya escritos).
   const volverDeCierre = useCallback(() => {
     setCierreActivo(false);
   }, []);
 
+  // Cada vez que cambia algo relevante, guarda todo el progreso en
+  // localStorage (a través de progresoInspeccionService). Si no hay una
+  // inspección en curso, borra cualquier progreso guardado previamente.
   useEffect(() => {
     if (!datos) {
       limpiarProgreso();
@@ -205,6 +236,7 @@ function App() {
     datosCierre,
   ]);
 
+  // Sube el scroll hasta arriba cada vez que se cambia de vista o se abre el cierre.
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -212,11 +244,13 @@ function App() {
     });
   }, [wizard.indice, cierreActivo]);
 
+  // Abre el modal de confirmación para volver al menú principal.
   const volverAlInicio = useCallback(() => {
     setErrorSalida(null);
     setMostrarConfirmacionSalida(true);
   }, []);
 
+  // Cierra el modal de confirmación sin hacer nada (a menos que ya se esté eliminando la inspección).
   const cancelarVolverAlInicio = useCallback(() => {
     if (eliminandoInspeccion) return;
 
@@ -224,6 +258,8 @@ function App() {
     setMostrarConfirmacionSalida(false);
   }, [eliminandoInspeccion]);
 
+  // Confirma la salida sin guardar: elimina la inspección en curso del
+  // backend (si ya se había creado) y reinicia todo el estado local.
   const salirSinGuardar = useCallback(async () => {
     setErrorSalida(null);
     setEliminandoInspeccion(true);
@@ -260,6 +296,8 @@ function App() {
     setPantallaActual('inicio');
   }, [datos?.idInspeccion, wizard]);
 
+  // Regresa a la pantalla de selección de establecimiento, eliminando primero
+  // la inspección en curso (se descarta, no se guarda a medias).
   const volverASeleccionEstablecimiento = useCallback(async () => {
     if (datos?.idInspeccion) {
       try {
@@ -290,6 +328,8 @@ function App() {
     setPantallaActual('inspeccion');
   }, [datos?.idInspeccion, wizard]);
 
+  // Se llama cuando el cierre de la inspección se completó con éxito: limpia
+  // todo el estado y vuelve a la pantalla de inicio.
   const manejarInspeccionFinalizada = useCallback(() => {
     setDatos(null);
     setRespuestas({});
@@ -307,6 +347,7 @@ function App() {
     setPantallaActual('inicio');
   }, [wizard]);
 
+  // Permite cerrar el modal de confirmación de salida presionando la tecla Escape.
   useEffect(() => {
     const manejarEscape = (event) => {
       if (
@@ -327,12 +368,17 @@ function App() {
     cancelarVolverAlInicio,
   ]);
 
+  // ---- A partir de aquí se decide qué pantalla mostrar ----
+
+  // Pantalla de inicio (menú principal).
   if (pantallaActual === 'inicio') {
     return (
       <PantallaInicio
         onNuevaInspeccion={() =>
           setPantallaActual('inspeccion')
         }
+        // NOTA: Historial, Reportes y Cerrar sesión todavía son solo
+        // marcadores (console.log); falta conectarlos a una funcionalidad real.
         onHistorial={() => {
           console.log(
             'Historial pendiente de implementar'
@@ -352,6 +398,7 @@ function App() {
     );
   }
 
+  // Todavía no se eligió un establecimiento: se muestra la pantalla de selección.
   if (!datos) {
     return (
       <SeleccionEstablecimiento
@@ -363,6 +410,9 @@ function App() {
     );
   }
 
+  // Mensajes/modales que pueden aparecer sobre cualquier pantalla de la
+  // inspección: aviso de guardado exitoso, error de guardado, y el modal de
+  // confirmación para salir sin guardar.
   const mensajesGlobales = (
     <>
       {guardadoExitoso && (
@@ -445,6 +495,7 @@ function App() {
                 Cancelar
               </button>
 
+              {/* Botón deshabilitado a propósito: la función "Guardar borrador" aún no está implementada. */}
               <button
                 type="button"
                 className="boton-modal boton-modal--secundario"
@@ -471,6 +522,7 @@ function App() {
     </>
   );
 
+  // El usuario ya completó todas las secciones y está en la pantalla de cierre.
   if (cierreActivo) {
     return (
       <>
@@ -492,16 +544,21 @@ function App() {
     );
   }
 
+  // Elige el componente de formulario según la vista actual (ver COMPONENTES_POR_CODIGO).
   const Formulario =
     COMPONENTES_POR_CODIGO[
       wizard.vistaActual?.codigo
     ] ?? FormularioSeccionAlimentos;
 
+  // En la primera vista, "Anterior" regresa a la selección de establecimiento;
+  // en las demás, simplemente retrocede una vista dentro del asistente.
   const manejarAnterior =
     wizard.indice === 0
       ? volverASeleccionEstablecimiento
       : wizard.retroceder;
 
+  // Caso del componente genérico: necesita props extra (código, título) que
+  // los componentes dedicados (B, C, H) no necesitan porque ya los conocen.
   if (
     Formulario === FormularioSeccionAlimentos
   ) {
@@ -543,6 +600,7 @@ function App() {
     );
   }
 
+  // Caso de los componentes dedicados (B, C o H): ya saben pintar su propio contenido.
   return (
     <>
       {mensajesGlobales}

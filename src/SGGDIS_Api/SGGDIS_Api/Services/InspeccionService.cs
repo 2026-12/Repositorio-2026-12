@@ -5,35 +5,49 @@ using SGGDIS_Api.Models.Dtos;
 
 namespace SGGDIS_Api.Services
 {
+    // Se lanza cuando se intenta crear una inspección con un número consecutivo (folio)
+    // que ya existe; el consecutivo debe ser único.
     public class ConsecutivoDuplicadoException : Exception
     {
         public ConsecutivoDuplicadoException() : base("El número consecutivo ya está registrado.") { }
     }
 
     // Excepciones propias del cierre de inspección.
+
+    // Se lanza al intentar cerrar una inspección que todavía tiene ítems obligatorios sin responder.
     public class SeccionesIncompletasException : Exception
     {
         public SeccionesIncompletasException()
             : base("No se puede cerrar la inspección: hay secciones obligatorias sin completar.") { }
     }
 
+    // Se lanza al intentar cerrar una inspección sin los datos mínimos requeridos
+    // (nombre/identificación del inspector e identificación del representante).
     public class CamposCierreIncompletosException : Exception
     {
         public CamposCierreIncompletosException()
             : base("Los datos del inspector y la identificación del representante son obligatorios para cerrar la inspección.") { }
     }
 
+    /// <summary>
+    /// Implementación de IInspeccionService: contiene toda la lógica real para
+    /// crear, guardar, consultar y cerrar una inspección, hablando directamente
+    /// con la base de datos a través del DbContext.
+    /// </summary>
     public class InspeccionService : IInspeccionService
     {
         private readonly SggdisDbContext _context;
         private readonly ILogger<InspeccionService> _logger;
 
+        // Recibe el DbContext y el logger (para registrar eventos importantes) por inyección de dependencias.
         public InspeccionService(SggdisDbContext context, ILogger<InspeccionService> logger)
         {
             _context = context;
             _logger = logger;
         }
 
+        // Crea una nueva inspección en estado "EN_PROCESO", validando primero que
+        // el número consecutivo no esté repetido.
         public async Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto)
         {
             var consecutivoExiste = await _context.Inspecciones
@@ -57,6 +71,8 @@ namespace SGGDIS_Api.Services
             return inspeccion;
         }
 
+        // Elimina una inspección junto con todas sus respuestas. Devuelve false si
+        // la inspección no existía (no lanza error en ese caso).
         public async Task<bool> EliminarInspeccionAsync(int idInspeccion)
         {
             var inspeccion = await _context.Inspecciones.FindAsync(idInspeccion);
@@ -74,6 +90,9 @@ namespace SGGDIS_Api.Services
             return true;
         }
 
+        // Guarda las respuestas que llegan del formulario. Si el ítem ya tenía una
+        // respuesta guardada, la actualiza; si no, crea una nueva. Esto es lo que
+        // permite el autoguardado: se puede llamar varias veces sin duplicar filas.
         public async Task GuardarRespuestasAsync(int idInspeccion, List<RespuestaDto> respuestas)
         {
             if (respuestas == null || respuestas.Count == 0) return;
@@ -106,6 +125,8 @@ namespace SGGDIS_Api.Services
             await _context.SaveChangesAsync();
         }
 
+        // Devuelve todas las respuestas ya guardadas de una inspección (para
+        // restaurar el formulario cuando el usuario vuelve a entrar).
         public async Task<List<InsRespuesta>> ObtenerRespuestasAsync(int idInspeccion)
         {
             return await _context.Respuestas
@@ -151,20 +172,26 @@ namespace SGGDIS_Api.Services
                 .Where(r => r.IdInspeccion == idInspeccion)
                 .ToListAsync();
 
+            // Si falta algún ítem obligatorio sin responder, no se puede cerrar.
             var idsRespondidos = respuestas.Select(r => r.IdItem).ToHashSet();
             if (idsItemsObligatorios.Except(idsRespondidos).Any())
             {
                 throw new SeccionesIncompletasException();
             }
 
+            // Suma solo los puntos de los ítems marcados como "Cumple".
             var puntajeObtenido = respuestas
                 .Where(r => r.Estado == "Cumple")
                 .Sum(r => r.PuntosOtorgados ?? 0);
 
+            // Suma los puntos de los ítems marcados "N/A": esos puntos se restan
+            // del máximo, porque un ítem que no aplica no debe penalizar ni exigirse.
             var puntosExcluidosPorNoAplica = respuestas
                 .Where(r => r.Estado == "N/A")
                 .Sum(r => r.Item?.Puntaje ?? 0);
 
+            // Puntaje máximo del catálogo (fijo por tipo de establecimiento) y el
+            // máximo "real" aplicado a esta inspección, ya ajustado por los N/A.
             var puntajeMaximoReferencia = inspeccion.TipoEstablecimiento?.PuntajeMaximo ?? 0;
             var puntajeMaximoAplicado = Math.Max(0, puntajeMaximoReferencia - puntosExcluidosPorNoAplica);
 

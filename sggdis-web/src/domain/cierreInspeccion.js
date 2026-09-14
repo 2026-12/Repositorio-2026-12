@@ -42,6 +42,8 @@ export function todasLasSeccionesCompletas(vistas = [], seccionesCache = {}, res
   return vistas.every((vista) => esVistaCompleta(vista, seccionesCache, respuestas));
 }
 
+// Devuelve la lista de vistas que todavía tienen ítems sin responder, para
+// poder decirle al usuario exactamente cuáles secciones le faltan por cerrar.
 export function obtenerVistasIncompletas(vistas = [], seccionesCache = {}, respuestas = {}) {
   return vistas.filter((vista) => !esVistaCompleta(vista, seccionesCache, respuestas));
 }

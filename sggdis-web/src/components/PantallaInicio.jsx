@@ -3,6 +3,10 @@ import './PantallaInicio.css';
 import logoMinisterio from '../assets/logo-ministerio-salud.png';
 import mapaCostaRica from '../assets/mapa.png';
 
+// Pantalla de menú principal: es lo primero que ve el usuario al entrar.
+// Muestra accesos directos a "Nueva inspección", "Historial" y "Reportes"
+// (estos dos últimos todavía sin implementar del lado de App.jsx), y un
+// modal de ayuda con preguntas frecuentes.
 export default function PantallaInicio({
   onNuevaInspeccion,
   onHistorial,
@@ -11,6 +15,8 @@ export default function PantallaInicio({
 }) {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
+  // Permite activar las tarjetas de "Áreas principales" con el teclado
+  // (Enter o Espacio), ya que son <article> con role="button" en vez de <button> reales.
   const manejarTecla = (event, accion) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -18,6 +24,7 @@ export default function PantallaInicio({
     }
   };
 
+  // Permite cerrar el modal de ayuda presionando Escape.
   useEffect(() => {
     const manejarEscape = (event) => {
       if (event.key === 'Escape') {

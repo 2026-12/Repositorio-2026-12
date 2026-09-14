@@ -25,6 +25,8 @@ export function useCierreInspeccion({
   const [datosCierreLocales, setDatosCierreLocales] = useState(DATOS_CIERRE_INICIALES);
   const datosCierre = datosCierreControlado ?? datosCierreLocales;
 
+  // Actualiza un solo campo del formulario de cierre (modo controlado o local,
+  // igual que en useRespuestasInspeccion).
   const actualizarCampo = (campo, valor) => {
     if (onDatosCierreChange) {
       onDatosCierreChange((actuales) => ({ ...(actuales ?? DATOS_CIERRE_INICIALES), [campo]: valor }));
@@ -70,6 +72,8 @@ export function useCierreInspeccion({
     [datosCierre],
   );
 
+  // Solo se puede enviar el cierre si todas las secciones están completas
+  // Y no falta ningún campo obligatorio del formulario de cierre.
   const puedeEnviar = seccionesCompletas && camposPendientes.length === 0;
 
   return {

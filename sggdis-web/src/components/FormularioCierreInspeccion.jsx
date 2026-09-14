@@ -49,6 +49,10 @@ export default function FormularioCierreInspeccion({
   const [errorEnvio, setErrorEnvio] = useState(null);
   const [cierreConfirmado, setCierreConfirmado] = useState(null);
 
+  // Al presionar "Finalizar inspección": si falta algo (sección incompleta o
+  // campo obligatorio), muestra la alerta correspondiente en vez de enviar.
+  // Si todo está en orden, envía el cierre al backend y, si sale bien, guarda
+  // la confirmación (lo que activa la pantalla de éxito abajo).
   const manejarFinalizar = async () => {
     if (!puedeEnviar) {
       setMostrarAlerta(true);
@@ -73,6 +77,7 @@ export default function FormularioCierreInspeccion({
     }
   };
 
+  // Pantalla de éxito: se muestra en vez del formulario una vez que el cierre ya se envió correctamente.
   if (cierreConfirmado) {
     return (
       <div className="pagina">
