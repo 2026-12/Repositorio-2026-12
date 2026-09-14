@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using SGGDIS_Api.Controllers;
 using SGGDIS_Api.Models.Dtos;
@@ -12,7 +13,7 @@ namespace SGGDIS_Api.Tests.Controllers
     public class InspeccionesControllerTests
     {
         private static InspeccionesController CrearControlador(Mock<IInspeccionService> servicioMock)
-            => new(servicioMock.Object);
+            => new(servicioMock.Object, NullLogger<InspeccionesController>.Instance);
 
         [Fact]
         public async Task CrearInspeccion_RechazaFechaAnteriorAHoy()
