@@ -279,17 +279,8 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
 
                 <span className="tipo-card__secciones">
                   Secciones:{' '}
-                  {/* La sección "H" (Servicio de Catering) se oculta de este
-                      resumen a propósito, aunque sí forme parte del tipo. */}
                   {tipo.secciones
-                    .map(
-                      (seccion) =>
-                        seccion.codigo
-                    )
-                    .filter(
-                      (codigo) =>
-                        codigo !== 'H'
-                    )
+                    .map((seccion) => seccion.codigo)
                     .join('-')}
                 </span>
               </button>

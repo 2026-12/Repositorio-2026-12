@@ -16,10 +16,6 @@ export function obtenerSeccionesRenderizables(secciones = []) {
 }
 
 // Nombres amigables que se muestran para cada paso del asistente (wizard).
-// OJO: falta la llave "H" (Servicio de Catering), aunque "H" sí está en
-// CODIGOS_RENDERIZABLES. Quien la usa (FormularioSeccionGenerico) tiene un
-// "?? vista.codigo" de respaldo, así que no rompe nada, pero la pestaña de
-// esa sección se ve como "H" en vez de un nombre legible. Conviene agregar la llave.
 export const nombresVistas = {
   A: 'Aspectos Generales',
   B: 'Cocina y Preparación',
@@ -28,6 +24,7 @@ export const nombresVistas = {
   E: 'Manejo de Desechos',
   F: 'Área de Consumo',
   G: 'Servicio a Domicilio',
+  H: 'Servicio de Catering',
 }
 
 // Rangos de clasificación según el porcentaje de cumplimiento (Art. 65 del Reglamento).
