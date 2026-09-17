@@ -54,6 +54,15 @@ describe('useRespuestasInspeccion', () => {
     expect(result.current.respuestas[1].puntos).toBe(3);
   });
 
+  it('no acepta 0 puntos para un ítem marcado como "Cumple" porque es redundante con "No cumple"', () => {
+    const { result } = renderHook(() => useRespuestasInspeccion(grupos));
+
+    act(() => result.current.alternarRespuesta(1, 'Cumple', 8));
+    act(() => result.current.actualizarPuntos(1, 0));
+
+    expect(result.current.respuestas[1].puntos).toBe(1);
+  });
+
   it('el resumen se recalcula en tiempo real conforme cambian las respuestas', () => {
     const { result } = renderHook(() => useRespuestasInspeccion(grupos));
 
