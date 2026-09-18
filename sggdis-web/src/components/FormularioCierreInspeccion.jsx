@@ -3,6 +3,8 @@ import { MARCA_ALIMENTOS } from '../config/inspeccionAlimentos';
 import { TEXTO_ORDEN_SANITARIA } from '../config/inspeccion';
 import { useCierreInspeccion } from '../hooks/useCierreInspeccion';
 import { cerrarInspeccion } from '../services/inspeccionesService';
+import mapaDorado from '../assets/mapa-dorado.png';
+import { limpiarSoloLetras, limpiarSoloNumeros } from '../domain/cierreInspeccion';
 import './formulario.css';
 
 // Último paso del wizard de inspección: observaciones finales,
@@ -119,7 +121,9 @@ export default function FormularioCierreInspeccion({
     <div className="pagina">
       <header className="cabecera">
         <div className="cabecera__marca">
-          <div className="cabecera__logo">{MARCA_ALIMENTOS.logo}</div>
+          <div className="cabecera__logo cabecera__logo--imagen">
+            <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+          </div>
           <div>
             <h1>{MARCA_ALIMENTOS.tituloGuia}</h1>
             <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
@@ -204,18 +208,19 @@ export default function FormularioCierreInspeccion({
               id="nombre-inspector"
               type="text"
               value={datosCierre.nombreInspector}
-              onChange={(e) => actualizarCampo('nombreInspector', e.target.value)}
+              onChange={(e) => actualizarCampo('nombreInspector', limpiarSoloLetras(e.target.value))}
             />
           </div>
-          <div className="campo">
-            <label htmlFor="id-inspector">Identificación del inspector *</label>
-            <input
-              id="id-inspector"
-              type="text"
-              value={datosCierre.identificacionInspector}
-              onChange={(e) => actualizarCampo('identificacionInspector', e.target.value)}
-            />
-          </div>
+        <div className="campo">
+          <label htmlFor="id-inspector">Identificación del inspector *</label>
+          <input
+            id="id-inspector"
+            type="text"
+            inputMode="numeric"
+            value={datosCierre.identificacionInspector}
+            onChange={(e) => actualizarCampo('identificacionInspector', limpiarSoloNumeros(e.target.value))}
+          />
+        </div>
         </div>
 
         <div className="campo-fila">
@@ -228,8 +233,9 @@ export default function FormularioCierreInspeccion({
             <input
               id="id-representante"
               type="text"
+              inputMode="numeric"
               value={datosCierre.identificacionRepresentante}
-              onChange={(e) => actualizarCampo('identificacionRepresentante', e.target.value)}
+              onChange={(e) => actualizarCampo('identificacionRepresentante', limpiarSoloNumeros(e.target.value))}
             />
           </div>
         </div>

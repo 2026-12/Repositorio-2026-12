@@ -16,6 +16,7 @@ registerLocale('es', es);
 // arrancar el asistente (wizard) de secciones.
 function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   const [fecha, setFecha] = useState(null);
+  const [hora, setHora] = useState('09:00');
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
 
@@ -47,7 +48,8 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     numeroConsecutivo.length === 4 &&
     anioConsecutivo.length === 4 &&
     nombre.trim().length > 0 &&
-    tipoSeleccionado;
+    tipoSeleccionado &&
+    hora.trim().length > 0;
 
   // Crea la inspección en el backend y, si todo sale bien, avisa al
   // componente padre (App.jsx) para que arranque el formulario.
@@ -58,18 +60,24 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     setErrorCreacion(null);
 
     try {
-      const { idInspeccion } = await crearInspeccion({
-        idGuia: ID_GUIA_ACTIVA,
-        idTipoEstablecimiento:
-          tipoSeleccionado.idTipoEstablecimiento,
-        nombreEstablecimiento: nombre,
-        consecutivo,
-        fecha: fecha.toLocaleDateString('en-CA'),
+      // Combina fecha y hora en un DateTime
+        const [horas, minutos] = hora.split(':');
+        const fechaCompleta = new Date(fecha);
+        fechaCompleta.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+        
+        const { idInspeccion } = await crearInspeccion({
+          idGuia: ID_GUIA_ACTIVA,
+          idTipoEstablecimiento:
+            tipoSeleccionado.idTipoEstablecimiento,
+          nombreEstablecimiento: nombre,
+          consecutivo,
+          fecha: fechaCompleta.toISOString().split('T')[0] + 'T' + hora + ':00',
       });
 
       onComenzar({
         nombre,
         fecha: fecha.toLocaleDateString('es-CR'),
+        hora,
         consecutivo,
         tipoLabel: tipoSeleccionado.nombre,
         idGuia: ID_GUIA_ACTIVA,
@@ -171,6 +179,21 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
               dropdownMode="select"
               yearDropdownItemNumber={15}
               scrollableYearDropdown
+            />
+          </div>
+
+         <div className="campo">
+            <label htmlFor="hora">
+              Hora de inspección *
+            </label>
+
+            <input
+              id="hora"
+              type="time"
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
+              className="input-hora"
+              required
             />
           </div>
 
@@ -309,7 +332,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
 
         {!puedeComenzar && (
           <p className="ayuda-obligatorio">
-            Completá la fecha, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
+            Completá la fecha, la hora, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
           </p>
         )}
       </main>

@@ -594,6 +594,7 @@ function App() {
           maxAlcanzado={wizard.maxAlcanzado}
           indiceActual={wizard.indice}
           vistas={wizard.vistas}
+          marcarVistaCompleta={wizard.marcarVistaCompleta}
           guardando={guardando}
         />
       </>

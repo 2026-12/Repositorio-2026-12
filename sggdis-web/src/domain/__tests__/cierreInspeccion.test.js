@@ -8,6 +8,8 @@ import {
   obtenerCamposCierrePendientes,
   calcularPuntosExcluidosPorNoAplica,
   calcularPuntajeMaximoAjustado,
+  limpiarSoloLetras,
+  limpiarSoloNumeros,
 } from '../cierreInspeccion';
 
 // Cubre HU I: puntaje total, porcentaje de cumplimiento, clasificación por
@@ -104,13 +106,61 @@ describe('obtenerCamposCierrePendientes', () => {
     ]);
   });
 
-  it('no reporta pendientes cuando todos los campos obligatorios están completos', () => {
+  it('no reporta pendientes cuando todos los campos obligatorios están completos y son válidos', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      nombreInspector: 'Juan Pérez Núñez',
+      identificacionInspector: '112345678',
+      identificacionRepresentante: '223456789',
+    });
+    expect(pendientes).toEqual([]);
+  });
+
+  it('rechaza el nombre del inspector si contiene números o símbolos', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      nombreInspector: '873$%__:',
+      identificacionInspector: '112345678',
+      identificacionRepresentante: '223456789',
+    });
+    expect(pendientes).toContain('Nombre del inspector (solo se permiten letras y espacios)');
+  });
+
+  it('acepta nombres con tildes, Ñ y Ü', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      nombreInspector: 'María José Piña Güell',
+      identificacionInspector: '112345678',
+      identificacionRepresentante: '223456789',
+    });
+    expect(pendientes).toEqual([]);
+  });
+
+  it('rechaza identificaciones con letras, guiones o símbolos', () => {
     const pendientes = obtenerCamposCierrePendientes({
       nombreInspector: 'Juan Pérez',
       identificacionInspector: '1-2345-6789',
-      identificacionRepresentante: '2-3456-7890',
+      identificacionRepresentante: '223456789',
     });
-    expect(pendientes).toEqual([]);
+    expect(pendientes).toContain('Identificación del inspector (solo se permiten números)');
+  });
+
+  it('rechaza cuando inspector y representante tienen la misma identificación', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      nombreInspector: 'Juan Pérez',
+      identificacionInspector: '112345678',
+      identificacionRepresentante: '112345678',
+    });
+    expect(pendientes).toContain('Identificación del inspector y del representante (no pueden ser iguales)');
+  });
+});
+
+describe('limpiarSoloLetras / limpiarSoloNumeros', () => {
+  it('limpiarSoloLetras descarta números y símbolos, conserva letras y espacios', () => {
+    expect(limpiarSoloLetras('873$%__:')).toBe('');
+    expect(limpiarSoloLetras('José Ñúñez123')).toBe('José Ñúñez');
+  });
+
+  it('limpiarSoloNumeros descarta letras, guiones y símbolos, conserva solo dígitos', () => {
+    expect(limpiarSoloNumeros('1-2345-6789')).toBe('12345789');
+    expect(limpiarSoloNumeros('abc123def456')).toBe('123456');
   });
 });
 

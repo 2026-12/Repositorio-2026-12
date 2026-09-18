@@ -59,16 +59,64 @@ export const DATOS_CIERRE_INICIALES = {
   ordenSanitaria: false,
 };
 
-// Campos obligatorios de la sección de cierre (HU-005I, criterio de aceptación).
+// Reglas de formato para los campos de identificación del cierre.
+// Nombre: solo letras y espacios, incluye acentos, Ñ/ñ y Ü/ü (nombres en español).
+// Identificación: solo dígitos (sin guiones ni otros separadores).
+export const NOMBRE_INSPECTOR_REGEX = /^[A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]+$/;
+export const IDENTIFICACION_REGEX = /^[0-9]+$/;
+
+// Filtra en tiempo real lo que el usuario escribe en el campo de nombre: deja
+// pasar solo letras (con sus variantes en español) y espacios.
+export function limpiarSoloLetras(valor = '') {
+  return valor.replace(/[^A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]/g, '');
+}
+
+// Filtra en tiempo real lo que el usuario escribe en un campo de identificación:
+// deja pasar solo dígitos.
+export function limpiarSoloNumeros(valor = '') {
+  return valor.replace(/\D/g, '');
+}
+
+// Campos obligatorios y de formato de la sección de cierre.
+// Valida: presencia, que el nombre del inspector sea solo letras, que ambas
+// identificaciones sean solo números, y que no sean iguales entre sí (no
+// tiene sentido que inspector y representante compartan identificación).
 export function obtenerCamposCierrePendientes({
   nombreInspector,
   identificacionInspector,
   identificacionRepresentante,
 }) {
   const pendientes = [];
-  if (!nombreInspector?.trim()) pendientes.push('Nombre del inspector');
-  if (!identificacionInspector?.trim()) pendientes.push('Identificación del inspector');
-  if (!identificacionRepresentante?.trim()) pendientes.push('Identificación del representante del establecimiento');
+
+  const nombre = nombreInspector?.trim() ?? '';
+  if (!nombre) {
+    pendientes.push('Nombre del inspector');
+  } else if (!NOMBRE_INSPECTOR_REGEX.test(nombre)) {
+    pendientes.push('Nombre del inspector (solo se permiten letras y espacios)');
+  }
+
+  const idInspector = identificacionInspector?.trim() ?? '';
+  if (!idInspector) {
+    pendientes.push('Identificación del inspector');
+  } else if (!IDENTIFICACION_REGEX.test(idInspector)) {
+    pendientes.push('Identificación del inspector (solo se permiten números)');
+  }
+
+  const idRepresentante = identificacionRepresentante?.trim() ?? '';
+  if (!idRepresentante) {
+    pendientes.push('Identificación del representante del establecimiento');
+  } else if (!IDENTIFICACION_REGEX.test(idRepresentante)) {
+    pendientes.push('Identificación del representante del establecimiento (solo se permiten números)');
+  }
+
+  const ambasValidasYPresentes =
+    idInspector && idRepresentante &&
+    IDENTIFICACION_REGEX.test(idInspector) && IDENTIFICACION_REGEX.test(idRepresentante);
+
+  if (ambasValidasYPresentes && idInspector === idRepresentante) {
+    pendientes.push('Identificación del inspector y del representante (no pueden ser iguales)');
+  }
+
   return pendientes;
 }
 

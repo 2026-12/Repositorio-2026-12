@@ -42,11 +42,39 @@ export default function FormularioSeccionGenerico({
   obtenerPuntosItem = (item) => Array.from({ length: item.valor }, (_, n) => n + 1),
   renderizarContenidoItem,
   guardando = false,
+  marcarVistaCompleta,
 }) {
   const [grupos, setGrupos] = useState(seccionInicial ? agruparPorArticulo(seccionInicial.items) : []);
   const [cargando, setCargando] = useState(!seccionInicial);
   const [error, setError] = useState(null);
   const [mostrarPendientes, setMostrarPendientes] = useState(false);
+  const [vistaVacia, setVistaVacia] = useState(true);
+
+  // Detecta si el formulario está completo o vacío
+  useEffect(() => {
+    if (!marcarVistaCompleta) return;
+    
+    const gruposActuales = seccionInicial ? agruparPorArticulo(seccionInicial.items) : grupos;
+    const itemsRequeridos = gruposActuales
+      .flatMap(grupo => grupo.items)
+      .filter(item => !item.opcional);
+    
+    // Verifica si hay ALGUNA respuesta en esta vista
+    const tieneRespuestas = Object.keys(respuestas).length > 0;
+    setVistaVacia(!tieneRespuestas);
+    
+    if (itemsRequeridos.length === 0) {
+      marcarVistaCompleta(true);
+      return;
+    }
+    
+    const todosRespondidos = itemsRequeridos.every(
+      item => respuestas[item.id]?.estado
+    );
+    
+    // Pasa dos cosas: si está completo y si está vacío
+    marcarVistaCompleta(todosRespondidos, !tieneRespuestas);
+  }, [respuestas, grupos, seccionInicial, marcarVistaCompleta]);
 
   // Si la sección ya estaba en caché (seccionInicial), la usa directo y no
   // vuelve a pedirla al backend. Si no, la pide y avisa al padre
@@ -180,7 +208,7 @@ export default function FormularioSeccionGenerico({
               key={vista.codigo}
               type="button"
               disabled={bloqueada}
-              onClick={() => onIrAVista?.(i)}
+              onClick={() => onIrAVista?.(i, vistaVacia)}
               className={`tabs__item ${
                 i === indiceActual ? 'tabs__item--activo' : ''
               } ${
