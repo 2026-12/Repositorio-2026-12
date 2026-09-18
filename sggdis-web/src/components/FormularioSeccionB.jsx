@@ -27,7 +27,7 @@ const SUBSECCIONES = [
 // asistente, así que no puede reutilizar directamente FormularioSeccionGenerico
 // (que asume una sola sección por paso). Repite parte de su misma lógica de
 // renderizado, pero agregando la navegación entre subsecciones.
-function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [], paso, totalPasos, guardando = false }) {
+function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, puedeRetroceder, respuestas = {}, onRespuestasChange, seccionesCache = {}, onSeccionCargada, onIrAVista, maxAlcanzado = 0, indiceActual = 0, vistas = [], paso, totalPasos, guardando = false, marcarVistaCompleta }) {
   // Solo se muestran las subsecciones (B1/B2/B3) que en verdad le aplican al
   // tipo de establecimiento seleccionado.
   const subsecciones = useMemo(
@@ -96,6 +96,26 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, pu
     });
     return completas;
   }, [gruposPorSubseccion, respuestas, subsecciones]);
+
+  // Avisa al asistente si la vista B (las tres subsecciones juntas) ya está
+  // completa: sin esto, el botón "Siguiente" de B3 nunca puede avanzar de
+  // vista de verdad (el asistente cree que B nunca se completó) y termina
+  // saltando directo a la pantalla de cierre.
+  useEffect(() => {
+    if (!marcarVistaCompleta || subsecciones.length === 0) return;
+
+    const todasCargadas = subsecciones.every((sub) => (gruposPorSubseccion[sub.codigo]?.length ?? 0) > 0);
+    if (!todasCargadas) return;
+
+    const tieneRespuestas = subsecciones.some((sub) =>
+      (gruposPorSubseccion[sub.codigo] ?? []).some((grupo) =>
+        grupo.items.some((item) => respuestas[item.id])
+      )
+    );
+    const todasCompletas = subsecciones.every((sub) => subseccionesCompletas[sub.codigo]);
+
+    marcarVistaCompleta(todasCompletas, !tieneRespuestas);
+  }, [subsecciones, gruposPorSubseccion, respuestas, subseccionesCompletas, marcarVistaCompleta]);
 
   // "Anterior" dentro de la Sección B: retrocede a la subsección previa
   // (B2 → B1), no a la vista anterior del asistente (eso lo maneja el botón de abajo).
