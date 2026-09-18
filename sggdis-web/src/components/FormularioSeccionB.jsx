@@ -275,7 +275,7 @@ function FormularioSeccionB({ datos, onAnterior, onSiguiente, onVolverInicio, pu
                     <div className="item__puntos">
                       <span className="item__puntos-label">Puntos otorgados:</span>
                       <div className="item__puntos-opciones">
-                        {Array.from({ length: item.valor + 1 }, (_, n) => n).map((n) => (
+                        {Array.from({ length: item.valor }, (_, n) => n + 1).map((n) => (
                           <button
                             key={n}
                             type="button"

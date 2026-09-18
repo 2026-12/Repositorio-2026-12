@@ -39,7 +39,7 @@ export default function FormularioSeccionGenerico({
   textoAdvertenciaCritico,
   opciones = OPCIONES_ESTANDAR,
   obtenerOpcionesItem = (item, opcionesBase) => opcionesBase,
-  obtenerPuntosItem = (item) => Array.from({ length: item.valor + 1 }, (_, n) => n),
+  obtenerPuntosItem = (item) => Array.from({ length: item.valor }, (_, n) => n + 1),
   renderizarContenidoItem,
   guardando = false,
 }) {

@@ -244,9 +244,15 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
         </p>
 
         {cargando && (
-          <p className="ayuda-obligatorio">
-            Cargando tipos de establecimiento...
-          </p>
+          <div className="tipos-grid tipos-grid--skeleton" aria-live="polite" aria-busy="true">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="tipo-card tipo-card--skeleton">
+                <div className="skeleton skeleton--tipoNombre"></div>
+                <div className="skeleton skeleton--tipoLinea"></div>
+                <div className="skeleton skeleton--tipoPuntos"></div>
+              </div>
+            ))}
+          </div>
         )}
 
         {!cargando && !error && (
