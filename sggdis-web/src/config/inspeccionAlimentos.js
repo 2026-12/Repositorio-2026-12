@@ -18,4 +18,4 @@ export const TOTAL_PASOS_ALIMENTOS = 9;
 
 // Mensaje de advertencia que se muestra cuando se marca un ítem crítico como "No cumple".
 export const TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS =
-  '🛡 Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.';
+  'Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.';

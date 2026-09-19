@@ -34,28 +34,39 @@ export function useRespuestasInspeccion(grupos, respuestasControladas, onRespues
         delete siguientes[itemId];
         return siguientes;
       }
+
       return {
         ...actuales,
-        [itemId]: { estado, puntos: estado === 'Cumple' ? puntosMaximos : 0 },
+        [itemId]: {
+          estado,
+          puntos: estado === 'Cumple' ? puntosMaximos : 0,
+        },
       };
     });
   }
 
   // Cambia solo el puntaje otorgado a un ítem ya marcado (para puntaje parcial).
   function actualizarPuntos(itemId, puntos) {
-    actualizarRespuestas((actuales) => {
-      const valorActual = Number.isFinite(puntos) ? puntos : 0;
-      const puntosNormales = Math.max(1, Math.min(valorActual, Number(actuales[itemId]?.puntos ?? 0) || 0));
-      const maximo = Number(actuales[itemId]?.maximo ?? 0) || 1;
-      const valorMinimo = 1;
-      const valorMaximo = Math.max(1, maximo);
-      const puntosAjustados = Math.min(Math.max(valorMinimo, puntosNormales), valorMaximo);
+    const item = grupos
+      .flatMap((grupo) => grupo.items)
+      .find((itemActual) => itemActual.id === itemId);
 
-      return {
-        ...actuales,
-        [itemId]: { ...actuales[itemId], puntos: puntosAjustados },
-      };
-    });
+    if (!item) return;
+
+    const valorMaximo = Number(item.valor) || 1;
+    const valorSeleccionado = Number(puntos) || 1;
+    const puntosAjustados = Math.min(
+      Math.max(1, valorSeleccionado),
+      valorMaximo
+    );
+
+    actualizarRespuestas((actuales) => ({
+      ...actuales,
+      [itemId]: {
+        ...actuales[itemId],
+        puntos: puntosAjustados,
+      },
+    }));
   }
 
   // Recalcula el resumen solo cuando cambian los ítems o las respuestas (evita recálculos innecesarios).

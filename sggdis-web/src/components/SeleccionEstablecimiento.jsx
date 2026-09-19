@@ -4,27 +4,46 @@ import { es } from 'date-fns/locale';
 import { useTiposEstablecimiento } from '../hooks/useTiposEstablecimiento';
 import { crearInspeccion } from '../services/inspeccionesService';
 import { ID_GUIA_ACTIVA } from '../config/inspeccion';
+import { REGIONES_SALUD } from '../config/regionesSalud';
 import 'react-datepicker/dist/react-datepicker.css';
 import './SeleccionEstablecimiento.css';
 import mapaDorado from '../assets/mapa-dorado.png';
 
 registerLocale('es', es);
 
-// Primera pantalla de una inspección nueva: pide fecha, número consecutivo
-// (folio), nombre del establecimiento y tipo de establecimiento. Al confirmar,
-// crea la inspección real en el backend y le pasa los datos a App.jsx para
-// arrancar el asistente (wizard) de secciones.
+// Obtiene la fecha y hora actual del dispositivo.
+function obtenerFechaHoraActual() {
+  const ahora = new Date();
+
+  return {
+    fecha: ahora,
+    hora: `${String(ahora.getHours()).padStart(2, '0')}:${String(
+      ahora.getMinutes()
+    ).padStart(2, '0')}`,
+  };
+}
+
+// Primera pantalla de una inspección nueva: muestra fecha y hora automáticas,
+// número consecutivo (folio), nombre del establecimiento y tipo de establecimiento.
+// Al confirmar, crea la inspección real en el backend y le pasa los datos a
+// App.jsx para arrancar el asistente (wizard) de secciones.
 function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
-  const [fecha, setFecha] = useState(null);
-  const [hora, setHora] = useState('09:00');
+  const [fechaHoraInicial] = useState(() => obtenerFechaHoraActual());
+
+  const fecha = fechaHoraInicial.fecha;
+  const hora = fechaHoraInicial.hora;
+
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
 
-  // El consecutivo se compone de un número de 4 dígitos y un año de 4 dígitos.
+  const [regionCodigo, setRegionCodigo] = useState('');
+  const [areaCodigo, setAreaCodigo] = useState('');
+
+  // El consecutivo se compone de la región, el área rectora,
+  // un número de 4 dígitos y el año actual.
   const [numeroConsecutivo, setNumeroConsecutivo] = useState('');
-  const [anioConsecutivo, setAnioConsecutivo] = useState(
-    String(new Date().getFullYear())
-  );
+
+  const anioConsecutivo = String(new Date().getFullYear());
 
   const [creando, setCreando] = useState(false);
   const [errorCreacion, setErrorCreacion] = useState(null);
@@ -37,16 +56,29 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     (tipo) => tipo.idTipoEstablecimiento === tipoId
   );
 
-  // Folio completo con el prefijo institucional fijo.
+  const regionSeleccionada = REGIONES_SALUD.find(
+    (region) => region.codigo === regionCodigo
+  );
+
+  const areaSeleccionada = regionSeleccionada?.areas.find(
+    (area) => area.codigo === areaCodigo
+  );
+
+  // Folio completo con los prefijos institucionales fijos.
   const consecutivo =
-    `MS-DRRSCS-ARS-T-AI-${numeroConsecutivo}-${anioConsecutivo}`;
+    regionSeleccionada &&
+    areaSeleccionada &&
+    numeroConsecutivo.length === 4
+      ? `MS-DRRS${regionSeleccionada.codigo}-ARS-${areaSeleccionada.codigo}-AI-${numeroConsecutivo}-${anioConsecutivo}`
+      : '';
 
   // El botón "Comenzar inspección" solo se habilita si todos los campos
   // obligatorios están completos.
   const puedeComenzar =
     fecha !== null &&
+    regionSeleccionada &&
+    areaSeleccionada &&
     numeroConsecutivo.length === 4 &&
-    anioConsecutivo.length === 4 &&
     nombre.trim().length > 0 &&
     tipoSeleccionado &&
     hora.trim().length > 0;
@@ -60,18 +92,21 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     setErrorCreacion(null);
 
     try {
-      // Combina fecha y hora en un DateTime
-        const [horas, minutos] = hora.split(':');
-        const fechaCompleta = new Date(fecha);
-        fechaCompleta.setHours(parseInt(horas), parseInt(minutos), 0, 0);
-        
-        const { idInspeccion } = await crearInspeccion({
-          idGuia: ID_GUIA_ACTIVA,
-          idTipoEstablecimiento:
-            tipoSeleccionado.idTipoEstablecimiento,
-          nombreEstablecimiento: nombre,
-          consecutivo,
-          fecha: fechaCompleta.toISOString().split('T')[0] + 'T' + hora + ':00',
+      // Combina fecha y hora local del dispositivo en un DateTime.
+      const anio = fecha.getFullYear();
+      const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+      const dia = String(fecha.getDate()).padStart(2, '0');
+
+      const fechaHoraInspeccion =
+        `${anio}-${mes}-${dia}T${hora}:00`;
+
+      const { idInspeccion } = await crearInspeccion({
+        idGuia: ID_GUIA_ACTIVA,
+        idTipoEstablecimiento:
+          tipoSeleccionado.idTipoEstablecimiento,
+        nombreEstablecimiento: nombre,
+        consecutivo,
+        fecha: fechaHoraInspeccion,
       });
 
       onComenzar({
@@ -167,22 +202,15 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
             <DatePicker
               id="fecha"
               selected={fecha}
-              onChange={(date) => setFecha(date)}
-              minDate={new Date()}
               dateFormat="dd/MM/yyyy"
               locale="es"
-              placeholderText="Seleccioná una fecha"
               className="input-fecha"
               wrapperClassName="input-fecha-wrapper"
-              showMonthDropdown
-              showYearDropdown
-              dropdownMode="select"
-              yearDropdownItemNumber={15}
-              scrollableYearDropdown
+              readOnly
             />
           </div>
 
-         <div className="campo">
+          <div className="campo">
             <label htmlFor="hora">
               Hora de inspección *
             </label>
@@ -191,58 +219,106 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
               id="hora"
               type="time"
               value={hora}
-              onChange={(e) => setHora(e.target.value)}
               className="input-hora"
-              required
+              readOnly
             />
+          </div>
+        </div>
+
+        <div className="campo-fila">
+          <div className="campo">
+            <label htmlFor="region">
+              Dirección Regional *
+            </label>
+
+            <select
+              id="region"
+              value={regionCodigo}
+              onChange={(e) => {
+                setRegionCodigo(e.target.value);
+                setAreaCodigo('');
+              }}
+            >
+              <option value="">
+                Seleccione una región
+              </option>
+
+              {REGIONES_SALUD.map((region) => (
+                <option
+                  key={region.codigo}
+                  value={region.codigo}
+                >
+                  {region.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="campo">
-            <label htmlFor="numero-consecutivo">
-              N° consecutivo *
+            <label htmlFor="area">
+              Área Rectora de Salud *
             </label>
 
-            <div className="consecutivo-campo">
-              <span className="consecutivo-campo__prefijo">
-                MS-DRRSCS-ARS-T-AI-
-              </span>
+            <select
+              id="area"
+              value={areaCodigo}
+              onChange={(e) =>
+                setAreaCodigo(e.target.value)
+              }
+              disabled={!regionSeleccionada}
+            >
+              <option value="">
+                Seleccione un área rectora
+              </option>
 
-              <input
-                id="numero-consecutivo"
-                type="text"
-                inputMode="numeric"
-                maxLength={4}
-                value={numeroConsecutivo}
-                onChange={(e) => {
-                  const valor =
-                    e.target.value.replace(/\D/g, '');
+              {regionSeleccionada?.areas.map((area) => (
+                <option
+                  key={area.codigo}
+                  value={area.codigo}
+                >
+                  {area.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-                  setNumeroConsecutivo(valor);
-                }}
-                placeholder="0000"
-                className="consecutivo-campo__numero"
-                aria-label="Número consecutivo"
-              />
+        <div className="campo">
+          <label htmlFor="numero-consecutivo">
+            N° consecutivo *
+          </label>
 
-              <span className="consecutivo-campo__separador">
-                -
-              </span>
+          <div className="consecutivo-campo">
+            <span className="consecutivo-campo__prefijo">
+              {regionSeleccionada && areaSeleccionada
+                ? `MS-DRRS${regionSeleccionada.codigo}-ARS-${areaSeleccionada.codigo}-AI-`
+                : 'MS-DRRS—-ARS-—-AI-'}
+            </span>
 
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={4}
-                value={anioConsecutivo}
-                onChange={(e) => {
-                  const valor =
-                    e.target.value.replace(/\D/g, '');
+            <input
+              id="numero-consecutivo"
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={numeroConsecutivo}
+              onChange={(e) => {
+                const valor =
+                  e.target.value.replace(/\D/g, '');
 
-                  setAnioConsecutivo(valor);
-                }}
-                className="consecutivo-campo__anio"
-                aria-label="Año del consecutivo"
-              />
-            </div>
+                setNumeroConsecutivo(valor);
+              }}
+              placeholder="0000"
+              className="consecutivo-campo__numero"
+              aria-label="Número consecutivo"
+            />
+
+            <span className="consecutivo-campo__separador">
+              -
+            </span>
+
+            <span className="consecutivo-campo__anio">
+              {anioConsecutivo}
+            </span>
           </div>
         </div>
 
@@ -267,9 +343,16 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
         </p>
 
         {cargando && (
-          <div className="tipos-grid tipos-grid--skeleton" aria-live="polite" aria-busy="true">
+          <div
+            className="tipos-grid tipos-grid--skeleton"
+            aria-live="polite"
+            aria-busy="true"
+          >
             {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="tipo-card tipo-card--skeleton">
+              <div
+                key={index}
+                className="tipo-card tipo-card--skeleton"
+              >
                 <div className="skeleton skeleton--tipoNombre"></div>
                 <div className="skeleton skeleton--tipoLinea"></div>
                 <div className="skeleton skeleton--tipoPuntos"></div>
@@ -332,7 +415,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
 
         {!puedeComenzar && (
           <p className="ayuda-obligatorio">
-            Completá la fecha, la hora, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
+            Completá la región, el área rectora, el consecutivo, el nombre del establecimiento y el tipo para poder comenzar.
           </p>
         )}
       </main>
