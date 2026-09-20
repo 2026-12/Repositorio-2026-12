@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
-import FormularioSeccionB from './alimentos/components/FormularioSeccionB';
-import FormularioSeccionC from './alimentos/components/FormularioSeccionC';
-import FormularioSeccionAlimentos from './alimentos/components/FormularioSeccionAlimentos';
-import FormularioSeccionH from './alimentos/components/FormularioSeccionH';
-import FormularioCierreInspeccion from './alimentos/components/FormularioCierreInspeccion';
+import FormularioSeccionB from './inspeccionAlimentos/components/FormularioSeccionB';
+import FormularioSeccionC from './inspeccionAlimentos/components/FormularioSeccionC';
+import FormularioSeccionAlimentos from './inspeccionAlimentos/components/FormularioSeccionAlimentos';
+import FormularioSeccionH from './inspeccionAlimentos/components/FormularioSeccionH';
+import FormularioCierreInspeccion from './inspeccionAlimentos/components/FormularioCierreInspeccion';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
 import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesService';
-import { TOTAL_PASOS_ALIMENTOS } from './alimentos/config/inspeccionAlimentos';
+import { TOTAL_PASOS_ALIMENTOS } from './inspeccionAlimentos/config/inspeccionAlimentos';
 import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
 import { esVistaCompleta } from './domain/progresoVistas';
 

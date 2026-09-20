@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { obtenerSeccionesRenderizables } from '../alimentos/config/inspeccionAlimentos';
+import { obtenerSeccionesRenderizables } from '../inspeccionAlimentos/config/inspeccionAlimentos';
 
 const VISTAS_COMPUESTAS = new Map([
   ['B1', 'B'],
