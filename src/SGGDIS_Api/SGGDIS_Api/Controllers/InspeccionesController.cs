@@ -5,9 +5,8 @@ using SGGDIS_Api.Services;
 namespace SGGDIS_Api.Controllers
 {
     /// <summary>
-    /// Expone los endpoints para crear, actualizar, consultar, cerrar y eliminar
-    /// inspecciones reales. Cada acción delega la lógica al IInspeccionService y
-    /// solo se encarga de traducir el resultado (o el error) a una respuesta HTTP.
+    /// Endpoints de inspecciones (crear, actualizar, consultar, cerrar, eliminar).
+    /// La lógica vive en IInspeccionService, acá solo se traduce a HTTP.
     /// </summary>
     [ApiController]
     [Route("api/inspecciones")]
@@ -43,8 +42,8 @@ namespace SGGDIS_Api.Controllers
             }
             catch (Exception ex)
             {
-                // Cualquier otro error (ej. de base de datos) se oculta y se muestra un mensaje genérico,
-                // pero se registra el detalle real en el log para poder diagnosticarlo.
+                // Error inesperado: se oculta el detalle y se muestra un mensaje genérico,
+                // pero queda registrado en el log para diagnosticarlo.
                 _logger.LogError(ex, "Error al crear la inspeccion.");
                 return StatusCode(500, "Ocurrio un error al crear la inspeccion.");
             }

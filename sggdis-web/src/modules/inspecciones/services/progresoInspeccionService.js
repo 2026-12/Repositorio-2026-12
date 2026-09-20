@@ -1,17 +1,15 @@
-// Persiste el progreso de la inspección en curso para que no se pierda si se
-// recarga la página o se pierde la conexión (requisito de uso sin conexión).
+// Guarda el progreso en localStorage para que no se pierda si se recarga
+// la página o se va el internet.
 //
-// HU-005I / hallazgo H4: antes se usaba una única clave fija para TODAS las
-// inspecciones, así que si el inspector tenía dos inspecciones abiertas al
-// mismo tiempo (dos pestañas, o iniciaba una nueva sin terminar la anterior),
-// la segunda sobrescribía el progreso guardado de la primera. Ahora cada
-// inspección guarda su progreso bajo una clave propia, formada con su
-// idInspeccion, para que no se pisen entre sí.
+// Antes (hallazgo H4) usábamos una sola clave para guardar todo, entonces
+// si tenías dos inspecciones abiertas (dos pestañas, o empezabas una nueva
+// sin terminar la otra) una se comía el progreso de la otra. Ahora cada
+// inspección guarda su progreso en su propia clave usando el idInspeccion,
+// así no se pisan entre ellas.
 const PREFIJO_CLAVE_PROGRESO = 'sggdis:inspeccion-en-curso';
 
-// Clave aparte que recuerda cuál fue la última inspección activa en este
-// navegador, para poder recuperarla automáticamente al volver a abrir la
-// app sin necesidad de conocer de antemano su idInspeccion.
+// Clave aparte que guarda cuál fue la última inspección activa, para
+// recuperarla sola al volver a abrir la app.
 const CLAVE_INSPECCION_ACTIVA = 'sggdis:inspeccion-activa-id';
 
 // Construye la clave específica de una inspección a partir de su idInspeccion.
@@ -19,8 +17,8 @@ function claveProgreso(idInspeccion) {
   return `${PREFIJO_CLAVE_PROGRESO}:${idInspeccion}`;
 }
 
-// Chequeo liviano para que el shell de la app decida la pantalla inicial
-// sin tener que cargar (ni conocer la forma de) el progreso completo.
+// Chequeo liviano para que el shell decida la pantalla inicial sin tener
+// que cargar todo el progreso.
 export function existeProgresoGuardado() {
   try {
     return Boolean(localStorage.getItem(CLAVE_INSPECCION_ACTIVA));
@@ -29,9 +27,8 @@ export function existeProgresoGuardado() {
   }
 }
 
-// Recupera el progreso guardado (si existe) al volver a abrir la app.
-// Busca primero cuál fue la última inspección activa y luego carga su
-// progreso específico (ya no hay una única clave compartida por todas).
+// Recupera el progreso guardado al volver a abrir la app: busca la última
+// inspección activa y carga su progreso específico.
 export function cargarProgreso() {
   try {
     const idActivo = localStorage.getItem(CLAVE_INSPECCION_ACTIVA);
@@ -59,8 +56,8 @@ export function guardarProgreso(progreso) {
   }
 }
 
-// Borra el progreso guardado de una inspección (ej. cuando ya se cerró o se
-// canceló). Si no se indica idInspeccion, borra la que estaba activa.
+// Borra el progreso guardado de una inspección (ya cerrada o cancelada).
+// Si no se indica idInspeccion, borra la que estaba activa.
 export function limpiarProgreso(idInspeccion) {
   try {
     const id = idInspeccion ?? localStorage.getItem(CLAVE_INSPECCION_ACTIVA);

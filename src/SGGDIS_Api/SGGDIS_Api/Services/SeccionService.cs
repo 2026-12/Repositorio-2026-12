@@ -5,21 +5,19 @@ using SGGDIS_Api.Models;
 namespace SGGDIS_Api.Services
 {
     /// <summary>
-    /// Implementación de ISeccionService: aquí se consulta directamente la base de
-    /// datos (a través del DbContext) para armar la información del catálogo.
+    /// Implementación de ISeccionService. Consulta la base de datos directamente
+    /// a través del DbContext para armar el catálogo.
     /// </summary>
     public class SeccionService : ISeccionService
     {
         private readonly SggdisDbContext _context;
 
-        // Recibe el DbContext ya configurado (inyección de dependencias).
         public SeccionService(SggdisDbContext context)
         {
             _context = context;
         }
 
-        // Trae todos los tipos de establecimiento de una guía, con sus secciones incluidas,
-        // ordenados según el campo "Orden".
+        // Trae los tipos de establecimiento de una guía con sus secciones, ordenados por "Orden".
         public async Task<List<InsTipoEstablecimiento>> ObtenerTiposPorGuiaAsync(int idGuia)
         {
             return await _context.TiposEstablecimiento
@@ -29,9 +27,8 @@ namespace SGGDIS_Api.Services
                 .ToListAsync();
         }
 
-        // Busca una sección (por guía y código) junto con todos sus ítems ya ordenados.
-        // Si se indica un tipo de establecimiento, solo devuelve la sección si en verdad
-        // le aplica a ese tipo (evita mostrar secciones que no correspondan).
+        // Busca una sección por guía y código, con sus ítems ordenados. Si se pasa
+        // un tipo de establecimiento, solo devuelve la sección si en verdad le aplica.
         public async Task<InsSeccion?> ObtenerSeccionConItemsAsync(
             int idGuia,
             string codigo,

@@ -1,7 +1,5 @@
-// Identidad visual y textos legales propios de la guía de inspección de
-// Servicios de Alimentación al Público. El núcleo genérico de formularios
-// (FormularioSeccionGenerico) no conoce estos valores: los recibe como props.
-// Logo y título que se muestran en el encabezado del formulario.
+// Identidad visual y textos legales de la guía de Alimentación. El núcleo
+// genérico (FormularioSeccionGenerico) no conoce estos valores, los recibe como props.
 export const MARCA_ALIMENTOS = {
   logo: 'MS',
   tituloGuia: 'Guía de Inspección — Servicios de Alimentación al Público',
@@ -20,9 +18,8 @@ export const TOTAL_PASOS_ALIMENTOS = 9;
 export const TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS =
   'Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.';
 
-// Códigos de sección que el frontend sabe cómo mostrar (deben existir componentes
-// FormularioSeccionX para cada uno). Si el backend agrega una sección nueva que no
-// esté aquí, simplemente no se va a mostrar en el formulario.
+// Códigos de sección que el frontend sabe mostrar (necesitan su FormularioSeccionX).
+// Si el backend agrega una sección nueva que no está acá, no se muestra.
 export const CODIGOS_RENDERIZABLES = new Set(['A', 'B1', 'B2', 'B3', 'C1', 'C2', 'D', 'E', 'F', 'G', 'H']);
 
 // De la lista completa de secciones que manda el backend, deja solo las que se

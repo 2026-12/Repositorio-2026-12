@@ -1,8 +1,7 @@
 import { API_BASE_URL } from '../config/inspeccion';
 
-// Helper interno: hace un GET y devuelve el JSON de la respuesta. Si el
-// servidor responde con error o si no hay conexión, lanza un mensaje claro
-// en vez de dejar que el error técnico llegue tal cual hasta la pantalla.
+// GET interno que devuelve el JSON. Si falla, lanza un mensaje claro en vez
+// del error técnico crudo.
 async function solicitarJson(url) {
   try {
     const respuesta = await fetch(url);
@@ -12,7 +11,7 @@ async function solicitarJson(url) {
     return await respuesta.json();
   } catch (error) {
     if (error instanceof TypeError) {
-      // fetch lanza TypeError cuando ni siquiera pudo conectarse (ej. backend apagado).
+      // fetch tira TypeError cuando ni siquiera logró conectarse (backend apagado, sin red, etc.).
       throw new Error('No se pudo conectar con el servicio de inspecciones.', { cause: error });
     }
     throw error;

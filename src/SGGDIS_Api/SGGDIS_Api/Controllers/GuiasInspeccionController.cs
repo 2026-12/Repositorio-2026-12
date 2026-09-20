@@ -4,10 +4,9 @@ using SGGDIS_Api.Services;
 namespace SGGDIS_Api.Controllers
 {
     /// <summary>
-    /// Expone los endpoints de solo lectura para consultar el catálogo de una guía
-    /// de inspección: qué tipos de establecimiento existen y qué secciones/ítems
-    /// le corresponden a cada uno. Esta información no cambia con cada inspección,
-    /// se usa para armar el formulario en el frontend.
+    /// Endpoints de solo lectura del catálogo de una guía: qué tipos de
+    /// establecimiento existen y qué secciones/ítems le corresponden a cada uno.
+    /// No cambia con cada inspección, se usa para armar el formulario del frontend.
     /// </summary>
     [ApiController]
     [Route("api/guias-inspeccion")]
@@ -54,8 +53,8 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
-        /// Devuelve una sección de la guía (con sus ítems) según su código, ej. GET /api/guias-inspeccion/1/secciones/A
-
+        // GET /api/guias-inspeccion/1/secciones/A
+        // Devuelve una sección de la guía (con sus ítems) según su código.
         [HttpGet("{idGuia}/secciones/{codigo}")]
         public async Task<IActionResult> ObtenerSeccion(
             int idGuia,

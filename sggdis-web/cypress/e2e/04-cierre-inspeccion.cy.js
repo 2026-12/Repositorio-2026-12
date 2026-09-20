@@ -1,41 +1,32 @@
 // Sprint 1 — Flujo 4: Cierre de inspección (HU-005I).
-// NOTA: este flujo requiere completar TODAS las secciones (y subsecciones,
-// como B1/B2/B3 y C1/C2) del tipo de establecimiento elegido antes de
-// llegar a la pantalla de cierre. Es el test más frágil de los 4: si falla,
-// revisar manualmente el flujo paso a paso antes de asumir que es un bug.
+// Ojo: hay que completar TODAS las secciones (incluye B1/B2/B3, C1/C2)
+// para llegar al cierre. Es el test más frágil de los 4 — si falla, probar
+// el flujo a mano antes de asumir que es un bug real.
 
-// Hace clic en el primer botón "Cumple" que todavía no esté marcado, y se
-// repite hasta que no quede ninguno. A propósito NO usa cy.get(...).each()
-// sobre una lista ya capturada: cada clic dispara un re-render de React
-// (aparece el bloque "Puntos otorgados"), lo que puede dejar desconectadas
-// ("detached") las referencias de los ítems capturados antes de empezar.
-// Volviendo a consultar el DOM en cada paso se evita ese problema.
+// Click al primer "Cumple" sin marcar, y se repite hasta que no quede
+// ninguno. No uso .each() sobre una lista ya capturada porque cada click
+// re-renderiza (aparece "Puntos otorgados") y las referencias quedan
+// "detached". Por eso vuelvo a consultar el DOM en cada vuelta.
 function responderTodosCumple() {
   cy.get('body').then(($body) => {
     if ($body.find('.item .opcion--cumple').not('.opcion--activa').length === 0) return
 
-    // A diferencia de cy.wrap($elementoYaCapturado), esta cadena es una
-    // consulta de Cypress de punta a punta: si React vuelve a renderizar
-    // justo antes del clic (ej. al aparecer "Puntos otorgados"), Cypress
-    // vuelve a buscar el elemento en vivo en cada reintento, en vez de
-    // aferrarse a una referencia que ya puede haber quedado obsoleta.
+    // Esta cadena es una consulta completa de Cypress, no cy.wrap() sobre
+    // algo ya capturado: si React re-renderiza justo antes del click,
+    // Cypress vuelve a buscar el elemento en vivo en el reintento.
     cy.get('.item .opcion--cumple').not('.opcion--activa').first().click()
     responderTodosCumple()
   })
 }
 
-// Responde todos los ítems visibles y avanza, repitiendo hasta llegar a la
-// pantalla de cierre (o hasta agotar los intentos, como tope de seguridad
-// para no quedar en un bucle infinito si algo no avanza como se espera).
+// Responde todo y avanza, repitiendo hasta llegar al cierre (o hasta agotar
+// los intentos, como tope para no quedar en loop infinito).
 function avanzarHastaCierre(intentosRestantes) {
   if (intentosRestantes <= 0) return
 
-  // Espera (con reintento automático) a que aparezca algo realmente nuevo
-  // para hacer: un botón "Cumple" TODAVÍA sin marcar, o ya el resumen de
-  // cierre. No basta con esperar ".item" a secas: al cambiar de sección,
-  // por un instante pueden seguir en el DOM ítems "viejos" de la sección
-  // anterior (ya todos marcados) mientras carga la nueva, y ese chequeo
-  // más flojo se confundía pensando que ya no quedaba nada pendiente.
+  // Espera a que aparezca algo nuevo: un "Cumple" sin marcar, o el resumen
+  // de cierre. No alcanza con esperar ".item" solo — al cambiar de sección
+  // quedan un instante ítems viejos ya marcados y ese chequeo se confunde.
   cy.get('.opcion--cumple:not(.opcion--activa), .cierre__resumen', { timeout: 10000 }).should('exist')
 
   cy.get('body').then(($body) => {
@@ -54,9 +45,10 @@ describe('Cierre de inspección', () => {
 
     cy.visit('/')
     cy.get('.inicio__navLink').contains('Nueva inspección').click()
-    cy.get('#fecha').click().type('22/09/2026{enter}')
+    // Fecha y hora se auto-completan solas (campo de solo lectura).
+    cy.get('#region').select('HN')
+    cy.get('#area').select('F')
     cy.get('#numero-consecutivo').type(numeroConsecutivo)
-    cy.get('[aria-label="Año del consecutivo"]').clear().type('2026')
     cy.get('#nombre').type('Soda Cypress Cierre')
     cy.get('.tipo-card').first().click()
     cy.contains('button', 'Comenzar inspección').click()

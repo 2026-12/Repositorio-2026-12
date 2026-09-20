@@ -3,10 +3,8 @@ import './PantallaInicio.css';
 import logoMinisterio from '../assets/logo-ministerio-salud.png';
 import mapaCostaRica from '../assets/mapa.png';
 
-// Pantalla de menú principal: es lo primero que ve el usuario al entrar.
-// Muestra accesos directos a "Nueva inspección", "Historial" y "Reportes"
-// (estos dos últimos todavía sin implementar del lado de App.jsx), y un
-// modal de ayuda con preguntas frecuentes.
+// Menú principal: accesos a Nueva inspección, Historial y Reportes (estos
+// dos últimos todavía sin implementar) y un modal de ayuda con FAQ.
 export default function PantallaInicio({
   onNuevaInspeccion,
   onHistorial,

@@ -26,9 +26,7 @@ function App() {
     return (
       <PantallaInicio
         onNuevaInspeccion={() => setPantallaActual('inspeccion')}
-        // NOTA: Historial, Reportes y Cerrar sesión todavía son solo
-        // marcadores; falta conectarlos a una funcionalidad real (o a sus
-        // propios módulos, cuando existan).
+        // Historial, Reportes y Cerrar sesión: pendiente conectarlos a algo real.
         onHistorial={() => {
           console.log('Historial pendiente de implementar');
         }}

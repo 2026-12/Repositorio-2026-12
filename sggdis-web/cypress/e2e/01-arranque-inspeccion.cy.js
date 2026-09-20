@@ -1,7 +1,6 @@
 // Sprint 1 — Flujo 1: Arranque de inspección (HU-005A).
-// Verifica que el botón "Comenzar inspección" permanezca deshabilitado
-// mientras falten datos obligatorios, y que se pueda crear una inspección
-// completando fecha, consecutivo, nombre del establecimiento y tipo.
+// Chequea que "Comenzar inspección" quede deshabilitado sin datos, y que se
+// pueda crear una inspección llenando fecha, consecutivo, nombre y tipo.
 describe('Arranque de inspección', () => {
   beforeEach(() => {
     cy.visit('/')
@@ -18,12 +17,15 @@ describe('Arranque de inspección', () => {
     // a correr la prueba.
     const numeroConsecutivo = String(Math.floor(1000 + Math.random() * 9000))
 
-    // Fecha (react-datepicker: se escribe directo en el input y se confirma con Enter)
-    cy.get('#fecha').click().type('20/09/2026{enter}')
+    // Fecha y hora se auto-completan solas (el campo quedó de solo lectura),
+    // no hace falta interactuar con #fecha ni con #hora.
 
-    // N° consecutivo
+    // Dirección Regional y Área Rectora de Salud (selects obligatorios)
+    cy.get('#region').select('HN')
+    cy.get('#area').select('F')
+
+    // N° consecutivo (el año ya no es editable, queda fijo)
     cy.get('#numero-consecutivo').type(numeroConsecutivo)
-    cy.get('[aria-label="Año del consecutivo"]').clear().type('2026')
 
     // Nombre del establecimiento
     cy.get('#nombre').type('Soda Cypress Test')

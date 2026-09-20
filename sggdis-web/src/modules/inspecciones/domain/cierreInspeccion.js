@@ -3,8 +3,8 @@ import { calcularResumen } from './calculoPuntaje';
 import { esVistaCompleta } from './progresoVistas';
 import { RANGOS_CLASIFICACION } from '../config/inspeccion';
 
-// Suma los puntajes de TODAS las secciones ya visitadas (cacheadas) para obtener
-// el resumen total de la inspección, no solo el de la sección actual.
+// Suma los puntajes de todas las secciones ya visitadas para el resumen
+// total de la inspección (no solo la sección actual).
 export function calcularResumenTotal(vistas = [], seccionesCache = {}, respuestas = {}) {
   return vistas.reduce((total, vista) => {
     vista.secciones.forEach((seccionRaw) => {
@@ -48,9 +48,8 @@ export function obtenerVistasIncompletas(vistas = [], seccionesCache = {}, respu
   return vistas.filter((vista) => !esVistaCompleta(vista, seccionesCache, respuestas));
 }
 
-// Valor inicial del formulario de cierre. No incluye "nombreRepresentante":
-// ese dato ya no se le pide al usuario, se usa datos.nombre (el nombre del
-// establecimiento, capturado al iniciar la inspección en SeleccionEstablecimiento).
+// Valor inicial del formulario de cierre. Sin "nombreRepresentante": ya no
+// se le pide al usuario, se usa datos.nombre (capturado en SeleccionEstablecimiento).
 export const DATOS_CIERRE_INICIALES = {
   nombreInspector: '',
   identificacionInspector: '',
@@ -65,22 +64,19 @@ export const DATOS_CIERRE_INICIALES = {
 export const NOMBRE_INSPECTOR_REGEX = /^[A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]+$/;
 export const IDENTIFICACION_REGEX = /^[0-9]+$/;
 
-// Filtra en tiempo real lo que el usuario escribe en el campo de nombre: deja
-// pasar solo letras (con sus variantes en español) y espacios.
+// Filtra el campo de nombre mientras se escribe: solo letras (con acentos) y espacios.
 export function limpiarSoloLetras(valor = '') {
   return valor.replace(/[^A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]/g, '');
 }
 
-// Filtra en tiempo real lo que el usuario escribe en un campo de identificación:
-// deja pasar solo dígitos.
+// Filtra un campo de identificación mientras se escribe: solo dígitos.
 export function limpiarSoloNumeros(valor = '') {
   return valor.replace(/\D/g, '');
 }
 
-// Campos obligatorios y de formato de la sección de cierre.
-// Valida: presencia, que el nombre del inspector sea solo letras, que ambas
-// identificaciones sean solo números, y que no sean iguales entre sí (no
-// tiene sentido que inspector y representante compartan identificación).
+// Valida los campos obligatorios del cierre: presencia, formato (nombre
+// solo letras, identificaciones solo números) y que inspector y
+// representante no compartan la misma identificación.
 export function obtenerCamposCierrePendientes({
   nombreInspector,
   identificacionInspector,
@@ -120,9 +116,8 @@ export function obtenerCamposCierrePendientes({
   return pendientes;
 }
 
-// Suma los puntos de los ítems marcados "N/A" en toda la inspección. Un ítem
-// que no aplica no debe contar como falta ni exigirse para llegar al 100%,
-// así que sus puntos deben restarse del máximo, no quedarse fijos.
+// Suma los puntos de los ítems en "N/A" para restarlos del máximo
+// (si no aplica, no debería contar como falta).
 export function calcularPuntosExcluidosPorNoAplica(vistas = [], seccionesCache = {}, respuestas = {}) {
   return vistas.reduce((totalExcluido, vista) => {
     vista.secciones.forEach((seccionRaw) => {
@@ -138,8 +133,8 @@ export function calcularPuntosExcluidosPorNoAplica(vistas = [], seccionesCache =
   }, 0);
 }
 
-// Puntaje máximo REALMENTE aplicable de la inspección: el fijo del tipo de
-// establecimiento, menos los puntos de los ítems marcados "N/A".
+// Puntaje máximo real de la inspección: el del tipo de establecimiento,
+// menos los puntos de los ítems en "N/A".
 export function calcularPuntajeMaximoAjustado(puntajeMaximoTipo, puntosExcluidosPorNoAplica) {
   return Math.max(0, (puntajeMaximoTipo ?? 0) - (puntosExcluidosPorNoAplica ?? 0));
 }
