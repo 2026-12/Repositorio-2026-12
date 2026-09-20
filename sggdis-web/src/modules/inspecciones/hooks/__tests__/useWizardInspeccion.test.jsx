@@ -25,24 +25,25 @@ describe('useWizardInspeccion', () => {
     expect(result.current.puedeRetroceder).toBe(false);
   });
 
-  it('avanzar mueve a la siguiente vista y habilita el progreso alcanzado', () => {
+  it('avanzar mueve a la siguiente vista', () => {
     const { result } = renderHook(() => useWizardInspeccion(secciones));
 
     act(() => result.current.avanzar());
 
     expect(result.current.indice).toBe(1);
-    expect(result.current.maxAlcanzado).toBe(1);
+    // Todas las pestañas están habilitadas desde el inicio (diseño actual).
+    expect(result.current.maxAlcanzado).toBe(2);
   });
 
-  it('irAVista bloquea el salto a una vista que todavía no se ha alcanzado', () => {
+  it('irAVista permite saltar directamente a cualquier vista', () => {
     const { result } = renderHook(() => useWizardInspeccion(secciones));
 
-    act(() => result.current.irAVista(2)); // aún no se ha llegado a la vista 2
+    act(() => result.current.irAVista(2));
 
-    expect(result.current.indice).toBe(0);
+    expect(result.current.indice).toBe(2);
   });
 
-  it('irAVista permite regresar a una vista ya alcanzada', () => {
+  it('irAVista permite regresar a una vista anterior', () => {
     const { result } = renderHook(() => useWizardInspeccion(secciones));
 
     act(() => result.current.avanzar());
@@ -50,7 +51,7 @@ describe('useWizardInspeccion', () => {
     act(() => result.current.irAVista(0));
 
     expect(result.current.indice).toBe(0);
-    expect(result.current.maxAlcanzado).toBe(2); // no se pierde el progreso ya alcanzado
+    expect(result.current.maxAlcanzado).toBe(2);
   });
 
   it('no avanza más allá de la última vista', () => {

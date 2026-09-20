@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { MARCA_ALIMENTOS } from '../config/inspeccionAlimentos';
-import { TEXTO_ORDEN_SANITARIA } from '../config/inspeccion';
-import { useCierreInspeccion } from '../hooks/useCierreInspeccion';
-import { cerrarInspeccion } from '../services/inspeccionesService';
-import mapaDorado from '../assets/mapa-dorado.png';
-import { limpiarSoloLetras, limpiarSoloNumeros } from '../domain/cierreInspeccion';
+import { TEXTO_ORDEN_SANITARIA } from '../../config/inspeccion';
+import { useCierreInspeccion } from '../../hooks/useCierreInspeccion';
+import { cerrarInspeccion } from '../../services/inspeccionesService';
+import mapaDorado from '../../../../assets/mapa-dorado.png';
+import { limpiarSoloLetras, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
 import './formulario.css';
 
 // Último paso del wizard de inspección: observaciones finales,

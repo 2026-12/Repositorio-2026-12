@@ -19,6 +19,16 @@ function claveProgreso(idInspeccion) {
   return `${PREFIJO_CLAVE_PROGRESO}:${idInspeccion}`;
 }
 
+// Chequeo liviano para que el shell de la app decida la pantalla inicial
+// sin tener que cargar (ni conocer la forma de) el progreso completo.
+export function existeProgresoGuardado() {
+  try {
+    return Boolean(localStorage.getItem(CLAVE_INSPECCION_ACTIVA));
+  } catch {
+    return false;
+  }
+}
+
 // Recupera el progreso guardado (si existe) al volver a abrir la app.
 // Busca primero cuál fue la última inspección activa y luego carga su
 // progreso específico (ya no hay una única clave compartida por todas).

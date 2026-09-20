@@ -159,7 +159,7 @@ describe('limpiarSoloLetras / limpiarSoloNumeros', () => {
   });
 
   it('limpiarSoloNumeros descarta letras, guiones y símbolos, conserva solo dígitos', () => {
-    expect(limpiarSoloNumeros('1-2345-6789')).toBe('12345789');
+    expect(limpiarSoloNumeros('1-2345-6789')).toBe('123456789');
     expect(limpiarSoloNumeros('abc123def456')).toBe('123456');
   });
 });

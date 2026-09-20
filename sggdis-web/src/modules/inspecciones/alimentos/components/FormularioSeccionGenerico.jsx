@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { agruparPorArticulo } from '../domain/agrupacionItems';
-import { obtenerSeccion } from '../services/guiasInspeccionService';
-import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
-import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
+import { agruparPorArticulo } from '../../domain/agrupacionItems';
+import { obtenerSeccion } from '../../services/guiasInspeccionService';
+import { useRespuestasInspeccion } from '../../hooks/useRespuestasInspeccion';
+import { OPCIONES_ESTANDAR } from '../../domain/opcionesRespuesta';
 import './formulario.css';
-import { obtenerPendientes } from '../domain/validacionSeccion';
-import { esVistaCompleta } from '../domain/progresoVistas';
-import { nombresVistas } from '../config/inspeccion';
-import mapaDorado from '../assets/mapa-dorado.png';
+import { obtenerPendientes } from '../../domain/validacionSeccion';
+import { esVistaCompleta } from '../../domain/progresoVistas';
+import { nombresVistas } from '../config/inspeccionAlimentos';
+import mapaDorado from '../../../../assets/mapa-dorado.png';
 
 const MARCA_POR_DEFECTO = {
   logo: 'IN',

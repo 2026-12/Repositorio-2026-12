@@ -30,9 +30,11 @@ describe('useCierreInspeccion', () => {
   it('permite enviar cuando las secciones y los campos obligatorios están completos', () => {
     const { result } = setup({ 1: { estado: 'Cumple', puntos: 100 } });
 
+    // Sin guiones: la identificación validada solo acepta dígitos (ver
+    // 'rechaza identificaciones con letras, guiones o símbolos' más abajo).
     act(() => result.current.actualizarCampo('nombreInspector', 'Ana'));
-    act(() => result.current.actualizarCampo('identificacionInspector', '1-1111-1111'));
-    act(() => result.current.actualizarCampo('identificacionRepresentante', '2-2222-2222'));
+    act(() => result.current.actualizarCampo('identificacionInspector', '111111111'));
+    act(() => result.current.actualizarCampo('identificacionRepresentante', '222222222'));
 
     expect(result.current.camposPendientes).toEqual([]);
     expect(result.current.puedeEnviar).toBe(true);

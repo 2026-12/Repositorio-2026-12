@@ -1,41 +1,32 @@
 import { useState, useEffect, useMemo } from 'react';
-import { obtenerSeccion } from '../services/guiasInspeccionService';
-import { agruparPorArticulo } from '../domain/agrupacionItems';
-import { obtenerPendientes } from '../domain/validacionSeccion';
-import { OPCIONES_ESTANDAR } from '../domain/opcionesRespuesta';
-import { useRespuestasInspeccion } from '../hooks/useRespuestasInspeccion';
-import { esVistaCompleta } from '../domain/progresoVistas';
-import mapaDorado from '../assets/mapa-dorado.png';
+import { obtenerSeccion } from '../../services/guiasInspeccionService';
+import { agruparPorArticulo } from '../../domain/agrupacionItems';
+import { obtenerPendientes } from '../../domain/validacionSeccion';
+import { OPCIONES_ESTANDAR } from '../../domain/opcionesRespuesta';
+import { esVistaCompleta } from '../../domain/progresoVistas';
+import mapaDorado from '../../../../assets/mapa-dorado.png';
 import {
-  MARCA_ALIMENTOS,
   TOTAL_PASOS_ALIMENTOS,
-  TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
+  nombresVistas,
 } from '../config/inspeccionAlimentos';
 import './formulario.css';
-import { nombresVistas } from '../config/inspeccion';
 
-// En el backend la Sección B viene dividida en tres subsecciones con código propio.
+// En el backend la Sección C viene dividida en dos subsecciones con código propio.
 const SUBSECCIONES = [
   {
-    codigo: 'B1',
-    titulo: 'Área de Preparación de Alimentos (Cocina) — Condiciones Físicas y Sanitarias',
+    codigo: 'C1',
+    titulo: 'Bodega de Insumos — Condiciones Físicas y Sanitarias',
   },
   {
-    codigo: 'B2',
-    titulo: 'Área de Preparación de Alimentos (Cocina) — Equipo y Utensilios',
-  },
-  {
-    codigo: 'B3',
-    titulo: 'Área de Preparación de Alimentos (Cocina) — Operaciones de Preparación de los Alimentos',
+    codigo: 'C2',
+    titulo: 'Bodega de Insumos — Condiciones de Almacenamiento',
   },
 ];
 
-// Componente dedicado para la Sección B: a diferencia de las demás secciones,
-// esta necesita mostrar sub-pestañas (B1, B2, B3) dentro del mismo paso del
-// asistente, así que no puede reutilizar directamente FormularioSeccionGenerico
-// (que asume una sola sección por paso). Repite parte de su misma lógica de
-// renderizado, pero agregando la navegación entre subsecciones.
-function FormularioSeccionB({
+// Componente dedicado para la Sección C: igual que FormularioSeccionB, pero
+// para las subsecciones C1 y C2 (en vez de B1/B2/B3). Repite la misma
+// estructura de sub-pestañas y renderizado por las mismas razones.
+function FormularioSeccionC({
   datos,
   onAnterior,
   onSiguiente,
@@ -54,8 +45,7 @@ function FormularioSeccionB({
   guardando = false,
   marcarVistaCompleta,
 }) {
-  // Solo se muestran las subsecciones (B1/B2/B3) que en verdad le aplican al
-  // tipo de establecimiento seleccionado.
+  // Solo se muestran las subsecciones (C1/C2) que en verdad le aplican al tipo de establecimiento.
   const subsecciones = useMemo(
     () =>
       SUBSECCIONES.filter(
@@ -110,11 +100,9 @@ function FormularioSeccionB({
     });
   }, [subSeccionActiva]);
 
-  // Carga las tres subsecciones en paralelo (Promise.all), reusando la caché
-  // si ya se habían cargado antes, y avisa al padre de cada una para que
-  // quede guardada en la caché general de la app.
+  // Carga las subsecciones C1 y C2 en paralelo, reusando la caché si ya existía.
   useEffect(() => {
-    async function cargarSeccionB() {
+    async function cargarSeccionC() {
       try {
         setCargando(true);
         setError(null);
@@ -162,19 +150,19 @@ function FormularioSeccionB({
         );
       } catch (err) {
         console.error(
-          'Error al cargar la Sección B:',
+          'Error al cargar la Sección C:',
           err
         );
 
         setError(
-          'No se pudo cargar la Sección B. Verifique que el backend esté disponible.'
+          'No se pudo cargar la Sección C. Verifique que el backend esté disponible.'
         );
       } finally {
         setCargando(false);
       }
     }
 
-    cargarSeccionB();
+    cargarSeccionC();
   }, [
     datos.idGuia,
     datos.idTipoEstablecimiento,
@@ -183,8 +171,6 @@ function FormularioSeccionB({
     subsecciones,
   ]);
 
-  // Los grupos de la subsección activa se usan para renderizar y validar;
-  // el puntaje y la validación reutilizan el mismo dominio que las demás secciones.
   const grupos = useMemo(
     () =>
       gruposPorSubseccion[
@@ -196,21 +182,167 @@ function FormularioSeccionB({
     ],
   );
 
-  const {
-    alternarRespuesta,
-    actualizarPuntos,
-    resumen,
-  } = useRespuestasInspeccion(
-    grupos,
-    respuestas,
-    onRespuestasChange
-  );
+  // NOTA: a diferencia de FormularioSeccionGenerico y FormularioSeccionB,
+  // aquí NO se usa el hook useRespuestasInspeccion ni calcularResumen de
+  // domain/calculoPuntaje: se reescribió la misma lógica de marcar/desmarcar
+  // un ítem y de sumar el puntaje directamente en este archivo. Funciona
+  // igual, pero si el comportamiento se corrige en un solo lugar (el hook o
+  // el dominio), esta copia no se actualiza automáticamente y puede
+  // desalinearse. Convendría migrar esta sección para reusar el hook, igual
+  // que hacen las demás.
+  const manejarSeleccion = (
+    itemId,
+    opcion,
+    valorMaximo
+  ) => {
+    onRespuestasChange?.(
+      (prev) => {
+        const actual =
+          prev[itemId];
 
+        if (
+          actual &&
+          actual.estado === opcion
+        ) {
+          const copia = {
+            ...prev,
+          };
+
+          delete copia[
+            itemId
+          ];
+
+          return copia;
+        }
+
+        return {
+          ...prev,
+          [itemId]: {
+            estado:
+              opcion,
+            puntos:
+              opcion ===
+              'Cumple'
+                ? valorMaximo
+                : 0,
+          },
+        };
+      }
+    );
+  };
+
+  const manejarPuntos = (
+    itemId,
+    puntos
+  ) => {
+    const item =
+      grupos
+        .flatMap(
+          (grupo) =>
+            grupo.items
+        )
+        .find(
+          (itemActual) =>
+            itemActual.id ===
+            itemId
+        );
+
+    if (!item) {
+      return;
+    }
+
+    const valorMaximo =
+      Number(
+        item.valor
+      ) || 1;
+
+    const valorSeleccionado =
+      Number(
+        puntos
+      ) || 1;
+
+    const puntosAjustados =
+      Math.min(
+        Math.max(
+          1,
+          valorSeleccionado
+        ),
+        valorMaximo
+      );
+
+    onRespuestasChange?.(
+      (prev) => ({
+        ...prev,
+        [itemId]: {
+          ...prev[
+            itemId
+          ],
+          puntos:
+            puntosAjustados,
+        },
+      })
+    );
+  };
+
+  // Mismo cálculo que calcularResumen (domain/calculoPuntaje.js), pero copiado a mano.
   const {
     obtenidos,
     maximo,
     criticosIncumplidos,
-  } = resumen;
+  } = useMemo(() => {
+    let obtenidos = 0;
+    let maximo = 0;
+    let criticosIncumplidos = 0;
+
+    grupos.forEach(
+      (grupo) => {
+        grupo.items.forEach(
+          (item) => {
+            const respuesta =
+              respuestas[
+                item.id
+              ];
+
+            if (
+              respuesta?.estado ===
+              'N/A'
+            ) {
+              return;
+            }
+
+            maximo +=
+              item.valor;
+
+            if (
+              respuesta?.estado ===
+              'Cumple'
+            ) {
+              obtenidos +=
+                respuesta.puntos ??
+                0;
+            }
+
+            if (
+              item.critico &&
+              respuesta?.estado ===
+                'No cumple'
+            ) {
+              criticosIncumplidos += 1;
+            }
+          }
+        );
+      }
+    );
+
+    return {
+      obtenidos,
+      maximo,
+      criticosIncumplidos,
+    };
+  }, [
+    respuestas,
+    grupos,
+  ]);
 
   const itemsPendientesDetalle =
     useMemo(
@@ -285,10 +417,9 @@ function FormularioSeccionB({
       subsecciones,
     ]);
 
-  // Avisa al asistente si la vista B (las tres subsecciones juntas) ya está
-  // completa: sin esto, el botón "Siguiente" de B3 nunca puede avanzar de
-  // vista de verdad (el asistente cree que B nunca se completó) y termina
-  // saltando directo a la pantalla de cierre.
+  // Avisa al asistente si la vista C (ambas subsecciones juntas) ya está
+  // completa: sin esto, el botón "Siguiente" de C2 nunca puede avanzar de
+  // vista de verdad y termina saltando directo a la pantalla de cierre.
   useEffect(() => {
     if (
       !marcarVistaCompleta ||
@@ -429,8 +560,7 @@ function FormularioSeccionB({
     );
   };
 
-  // "Anterior" dentro de la Sección B: retrocede a la subsección previa
-  // (B2 → B1), no a la vista anterior del asistente (eso lo maneja el botón de abajo).
+  // "Anterior" dentro de la Sección C: retrocede a la subsección previa (C2 → C1).
   const manejarAnterior = () => {
     if (
       subseccionIncompletaIniciada
@@ -460,10 +590,8 @@ function FormularioSeccionB({
     }
   };
 
-  // "Siguiente": si faltan ítems de la subsección actual, los resalta igual
-  // que en el formulario genérico. Si ya están completos, avanza a la
-  // siguiente subsección (B1 → B2 → B3) y solo llama a onSiguiente (avanzar
-  // de vista de verdad) cuando ya se completó la última subsección.
+  // "Siguiente": avanza entre subsecciones (C1 → C2) y solo llama a
+  // onSiguiente cuando ya se completó la última.
   const manejarSiguiente = () => {
     if (
       itemsSinResponder > 0
@@ -549,7 +677,7 @@ function FormularioSeccionB({
 
           <div>
             <h1>
-              {MARCA_ALIMENTOS.tituloGuia}
+              Guía de Inspección — Servicios de Alimentación al Público
             </h1>
 
             <p>
@@ -782,7 +910,7 @@ function FormularioSeccionB({
                                     : ''
                                 }`}
                                 onClick={() =>
-                                  alternarRespuesta(
+                                  manejarSeleccion(
                                     item.id,
                                     op.valor,
                                     item.valor
@@ -824,7 +952,7 @@ function FormularioSeccionB({
                                       : ''
                                   }`}
                                   onClick={() =>
-                                    actualizarPuntos(
+                                    manejarPuntos(
                                       item.id,
                                       n
                                     )
@@ -843,7 +971,7 @@ function FormularioSeccionB({
 
                       {incumplido && (
                         <p className="item__advertencia">
-                          {TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS}
+                          🛡 Al incumplir un punto crítico, se procederá inmediatamente a notificar mediante Orden Sanitaria según Art. 142 del Reglamento General de Alimentos.
                         </p>
                       )}
                     </div>
@@ -888,4 +1016,4 @@ function FormularioSeccionB({
   );
 }
 
-export default FormularioSeccionB;
+export default FormularioSeccionC;

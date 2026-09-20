@@ -7,7 +7,7 @@ import { ID_GUIA_ACTIVA } from '../config/inspeccion';
 import { REGIONES_SALUD } from '../config/regionesSalud';
 import 'react-datepicker/dist/react-datepicker.css';
 import './SeleccionEstablecimiento.css';
-import mapaDorado from '../assets/mapa-dorado.png';
+import mapaDorado from '../../../assets/mapa-dorado.png';
 
 registerLocale('es', es);
 
