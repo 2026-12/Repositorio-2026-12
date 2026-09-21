@@ -5,12 +5,6 @@ export const MARCA_ALIMENTOS = {
   tituloGuia: 'Guía de Inspección — Servicios de Alimentación al Público',
 };
 
-// Nombres de las pestañas/pasos que ve el usuario mientras avanza por el formulario.
-export const TABS_ALIMENTOS = [
-  'Aspectos Generales', 'Cocina y Preparación', 'Bodega de Insumos', 'Servicios Sanitarios',
-  'Manejo de Desechos', 'Control de Plagas', 'Salud del Personal', 'Cierre y Dictamen',
-];
-
 // Cantidad total de pasos del asistente (wizard), usado para la barra de progreso.
 export const TOTAL_PASOS_ALIMENTOS = 9;
 

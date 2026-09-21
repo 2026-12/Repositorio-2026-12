@@ -1,22 +1,5 @@
 import { API_BASE_URL } from '../config/inspeccion';
-
-// GET interno que devuelve el JSON. Si falla, lanza un mensaje claro en vez
-// del error técnico crudo.
-async function solicitarJson(url) {
-  try {
-    const respuesta = await fetch(url);
-    if (!respuesta.ok) {
-      throw new Error('La API respondió con un error.');
-    }
-    return await respuesta.json();
-  } catch (error) {
-    if (error instanceof TypeError) {
-      // fetch tira TypeError cuando ni siquiera logró conectarse (backend apagado, sin red, etc.).
-      throw new Error('No se pudo conectar con el servicio de inspecciones.', { cause: error });
-    }
-    throw error;
-  }
-}
+import { solicitarJson } from './httpClient';
 
 // Trae los tipos de establecimiento disponibles para una guía.
 export function obtenerTiposEstablecimiento(idGuia) {

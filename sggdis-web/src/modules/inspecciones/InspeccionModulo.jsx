@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
+import ModalConfirmacionSalida from './components/ModalConfirmacionSalida';
 import FormularioSeccionB from './inspeccionAlimentos/components/FormularioSeccionB';
 import FormularioSeccionC from './inspeccionAlimentos/components/FormularioSeccionC';
 import FormularioSeccionAlimentos from './inspeccionAlimentos/components/FormularioSeccionAlimentos';
 import FormularioCierreInspeccion from './inspeccionAlimentos/components/FormularioCierreInspeccion';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
-import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
-import { eliminarInspeccion, guardarRespuestas } from './services/inspeccionesService';
+import { usePersistenciaProgreso } from './hooks/usePersistenciaProgreso';
+import { useSincronizacionRespuestas } from './hooks/useSincronizacionRespuestas';
+import { useConfirmacionSalida } from './hooks/useConfirmacionSalida';
+import { cargarProgreso } from './services/progresoInspeccionService';
+import { eliminarInspeccion } from './services/inspeccionesService';
 import { TOTAL_PASOS_ALIMENTOS } from './inspeccionAlimentos/config/inspeccionAlimentos';
 import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
 import { esVistaCompleta } from './domain/progresoVistas';
@@ -25,24 +29,6 @@ const COMPONENTES_POR_CODIGO = {
   G: FormularioSeccionAlimentos,
   H: FormularioSeccionAlimentos,
 };
-
-// Compara respuestas actuales contra las guardadas y devuelve solo las que
-// cambiaron. Así el autoguardado manda solo el delta, no todo cada vez.
-function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
-  const modificadas = {};
-
-  for (const [idItem, respuesta] of Object.entries(respuestasActuales)) {
-    const guardada = respuestasGuardadas[idItem];
-    const cambioEstado = !guardada || guardada.estado !== respuesta.estado;
-    const cambioPuntos = !guardada || guardada.puntos !== respuesta.puntos;
-
-    if (cambioEstado || cambioPuntos) {
-      modificadas[idItem] = respuesta;
-    }
-  }
-
-  return modificadas;
-}
 
 // Acá vive toda la lógica del módulo: decide qué paso mostrar (selección,
 // formulario, o cierre) y guarda el estado de la inspección en curso.
@@ -67,13 +53,15 @@ function InspeccionModulo({ onVolverInicio }) {
   const [datosCierre, setDatosCierre] = useState(progresoGuardado?.datosCierre ?? DATOS_CIERRE_INICIALES);
 
   const [errorGuardado, setErrorGuardado] = useState(null);
-  const [guardando, setGuardando] = useState(false);
-  const [guardadoExitoso, setGuardadoExitoso] = useState(false);
-  const [guardadoSinSincronizar, setGuardadoSinSincronizar] = useState(false);
 
-  const [mostrarConfirmacionSalida, setMostrarConfirmacionSalida] = useState(false);
-  const [eliminandoInspeccion, setEliminandoInspeccion] = useState(false);
-  const [errorSalida, setErrorSalida] = useState(null);
+  const sincronizacion = useSincronizacionRespuestas({
+    idInspeccion: datos?.idInspeccion,
+    respuestas,
+    respuestasGuardadas,
+    setRespuestasGuardadas,
+  });
+
+  const salida = useConfirmacionSalida();
 
   // Chequea si TODAS las vistas están completas, incluyendo las compuestas
   // B (B1/B2/B3) y C (C1/C2).
@@ -117,54 +105,12 @@ function InspeccionModulo({ onVolverInicio }) {
     );
   }, []);
 
-  // Muestra el mensaje de guardado exitoso durante unos segundos.
-  const mostrarGuardadoExitoso = useCallback(() => {
-    setGuardadoSinSincronizar(false);
-    setGuardadoExitoso(true);
-
-    setTimeout(() => {
-      setGuardadoExitoso(false);
-    }, 2500);
-  }, []);
-
   // Guarda las respuestas modificadas y después decide si continúa a otra
   // sección o si puede entrar a la pantalla de cierre.
   const avanzarYGuardar = useCallback(async () => {
     setErrorGuardado(null);
-    setGuardando(true);
 
-    if (datos?.idInspeccion) {
-      const delta = obtenerRespuestasModificadas(
-        respuestas,
-        respuestasGuardadas
-      );
-
-      if (Object.keys(delta).length > 0) {
-        try {
-          await guardarRespuestas(
-            datos.idInspeccion,
-            delta
-          );
-
-          setRespuestasGuardadas((actuales) => ({
-            ...actuales,
-            ...delta,
-          }));
-
-          mostrarGuardadoExitoso();
-        } catch (error) {
-          console.error(
-            'No se pudieron guardar las respuestas en el servidor:',
-            error
-          );
-
-          setGuardadoExitoso(false);
-          setGuardadoSinSincronizar(true);
-        }
-      }
-    }
-
-    setGuardando(false);
+    await sincronizacion.guardarDelta();
 
     // Si todavía existe una vista siguiente, continúa normalmente.
     if (wizard.puedeAvanzar) {
@@ -185,11 +131,8 @@ function InspeccionModulo({ onVolverInicio }) {
     // El cierre solo se habilita cuando todas las secciones están completas.
     setCierreActivo(true);
   }, [
-    datos?.idInspeccion,
-    respuestas,
-    respuestasGuardadas,
+    sincronizacion,
     wizard,
-    mostrarGuardadoExitoso,
     todasLasSeccionesCompletas,
   ]);
 
@@ -198,97 +141,15 @@ function InspeccionModulo({ onVolverInicio }) {
     setCierreActivo(false);
   }, []);
 
-  // Guarda el progreso completo en localStorage.
-  useEffect(() => {
-    if (!datos) {
-      limpiarProgreso();
-      return;
-    }
-
-    guardarProgreso({
-      datos,
-      respuestas,
-      respuestasGuardadas,
-      seccionesCache,
-      indiceWizard: wizard.indice,
-      maxAlcanzado: wizard.maxAlcanzado,
-      cierreActivo,
-      datosCierre,
-    });
-  }, [
+  usePersistenciaProgreso({
     datos,
     respuestas,
     respuestasGuardadas,
     seccionesCache,
-    wizard.indice,
-    wizard.maxAlcanzado,
+    wizard,
     cierreActivo,
     datosCierre,
-  ]);
-
-  // Cuando vuelve la conexión, intenta sincronizar las respuestas que
-  // quedaron guardadas únicamente de forma local.
-  useEffect(() => {
-    const sincronizarPendientes = async () => {
-      if (!datos?.idInspeccion) {
-        return;
-      }
-
-      const delta = obtenerRespuestasModificadas(
-        respuestas,
-        respuestasGuardadas
-      );
-
-      if (Object.keys(delta).length === 0) {
-        setGuardadoSinSincronizar(false);
-        return;
-      }
-
-      setGuardando(true);
-
-      try {
-        await guardarRespuestas(
-          datos.idInspeccion,
-          delta
-        );
-
-        setRespuestasGuardadas((actuales) => ({
-          ...actuales,
-          ...delta,
-        }));
-
-        setErrorGuardado(null);
-        mostrarGuardadoExitoso();
-      } catch (error) {
-        console.error(
-          'No se pudieron sincronizar las respuestas pendientes:',
-          error
-        );
-
-        setGuardadoExitoso(false);
-        setGuardadoSinSincronizar(true);
-      } finally {
-        setGuardando(false);
-      }
-    };
-
-    window.addEventListener(
-      'online',
-      sincronizarPendientes
-    );
-
-    return () => {
-      window.removeEventListener(
-        'online',
-        sincronizarPendientes
-      );
-    };
-  }, [
-    datos?.idInspeccion,
-    respuestas,
-    respuestasGuardadas,
-    mostrarGuardadoExitoso,
-  ]);
+  });
 
   // Sube el scroll hasta arriba cada vez que cambia la vista o se abre el cierre.
   useEffect(() => {
@@ -301,24 +162,10 @@ function InspeccionModulo({ onVolverInicio }) {
     cierreActivo,
   ]);
 
-  // Abre el modal para volver al menú principal.
-  const volverAlInicio = useCallback(() => {
-    setErrorSalida(null);
-    setMostrarConfirmacionSalida(true);
-  }, []);
-
-  // Cierra el modal de confirmación.
-  const cancelarVolverAlInicio = useCallback(() => {
-    if (eliminandoInspeccion) return;
-
-    setErrorSalida(null);
-    setMostrarConfirmacionSalida(false);
-  }, [eliminandoInspeccion]);
-
   // Sale de la inspección sin conservarla.
   const salirSinGuardar = useCallback(async () => {
-    setErrorSalida(null);
-    setEliminandoInspeccion(true);
+    salida.setError(null);
+    salida.setEliminando(true);
 
     if (datos?.idInspeccion) {
       try {
@@ -326,11 +173,11 @@ function InspeccionModulo({ onVolverInicio }) {
           datos.idInspeccion
         );
       } catch (error) {
-        setErrorSalida(
+        salida.setError(
           `No se pudo salir de la inspección: ${error.message}`
         );
 
-        setEliminandoInspeccion(false);
+        salida.setEliminando(false);
         return;
       }
     }
@@ -342,21 +189,20 @@ function InspeccionModulo({ onVolverInicio }) {
     setCierreActivo(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     setErrorGuardado(null);
-    setGuardadoExitoso(false);
-    setGuardadoSinSincronizar(false);
+    sincronizacion.reiniciarEstado();
 
-    setMostrarConfirmacionSalida(false);
-    setEliminandoInspeccion(false);
+    salida.cerrar();
+    salida.setEliminando(false);
 
     wizard.reiniciar();
-
-    limpiarProgreso();
 
     onVolverInicio();
   }, [
     datos?.idInspeccion,
     wizard,
     onVolverInicio,
+    salida,
+    sincronizacion,
   ]);
 
   // Regresa a la selección de establecimiento y descarta la inspección actual.
@@ -383,15 +229,13 @@ function InspeccionModulo({ onVolverInicio }) {
     setCierreActivo(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     setErrorGuardado(null);
-    setGuardadoExitoso(false);
-    setGuardadoSinSincronizar(false);
+    sincronizacion.reiniciarEstado();
 
     wizard.reiniciar();
-
-    limpiarProgreso();
   }, [
     datos?.idInspeccion,
     wizard,
+    sincronizacion,
   ]);
 
   // Limpia el estado cuando una inspección fue finalizada correctamente.
@@ -403,42 +247,12 @@ function InspeccionModulo({ onVolverInicio }) {
     setCierreActivo(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     setErrorGuardado(null);
-    setGuardadoExitoso(false);
-    setGuardadoSinSincronizar(false);
+    sincronizacion.reiniciarEstado();
 
     wizard.reiniciar();
 
-    limpiarProgreso();
-
     onVolverInicio();
-  }, [wizard, onVolverInicio]);
-
-  // Permite cerrar el modal de salida con Escape.
-  useEffect(() => {
-    const manejarEscape = (event) => {
-      if (
-        event.key === 'Escape' &&
-        mostrarConfirmacionSalida
-      ) {
-        cancelarVolverAlInicio();
-      }
-    };
-
-    document.addEventListener(
-      'keydown',
-      manejarEscape
-    );
-
-    return () => {
-      document.removeEventListener(
-        'keydown',
-        manejarEscape
-      );
-    };
-  }, [
-    mostrarConfirmacionSalida,
-    cancelarVolverAlInicio,
-  ]);
+  }, [wizard, onVolverInicio, sincronizacion]);
 
   // ---- A partir de aquí se decide qué paso del módulo mostrar ----
 
@@ -455,7 +269,7 @@ function InspeccionModulo({ onVolverInicio }) {
   // Mensajes y modales globales.
   const mensajesGlobales = (
     <>
-      {guardando && (
+      {sincronizacion.guardando && (
         <div
           className="estado-guardado estado-guardado--guardando"
           role="status"
@@ -469,7 +283,7 @@ function InspeccionModulo({ onVolverInicio }) {
         </div>
       )}
 
-      {!guardando && guardadoExitoso && (
+      {!sincronizacion.guardando && sincronizacion.guardadoExitoso && (
         <div
           className="estado-guardado estado-guardado--sincronizado"
           role="status"
@@ -485,7 +299,7 @@ function InspeccionModulo({ onVolverInicio }) {
         </div>
       )}
 
-      {!guardando && guardadoSinSincronizar && (
+      {!sincronizacion.guardando && sincronizacion.guardadoSinSincronizar && (
         <div
           className="estado-guardado estado-guardado--local"
           role="status"
@@ -528,74 +342,17 @@ function InspeccionModulo({ onVolverInicio }) {
         </div>
       )}
 
-      {mostrarConfirmacionSalida && (
-        <div className="modal-overlay">
-          <div
-            className="modal-confirmacion"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="titulo-confirmacion-salida"
-          >
-            <h2 id="titulo-confirmacion-salida">
-              ¿Volver al menú principal?
-            </h2>
-
-            <p>
-              Si sale de la inspección sin guardar,
-              se perderá el progreso registrado.
-            </p>
-
-            {errorSalida && (
-              <div
-                className="modal-error"
-                role="alert"
-              >
-                <strong>
-                  No se pudo completar la acción
-                </strong>
-
-                <span>
-                  {errorSalida}
-                </span>
-              </div>
-            )}
-
-            <div className="modal-confirmacion__acciones">
-              <button
-                type="button"
-                className="boton-modal boton-modal--secundario"
-                onClick={cancelarVolverAlInicio}
-                disabled={eliminandoInspeccion}
-              >
-                Cancelar
-              </button>
-
-              {/* Botón deshabilitado a propósito: la función "Guardar borrador" aún no está implementada. */}
-              <button
-                type="button"
-                className="boton-modal boton-modal--secundario"
-                disabled
-                title="Esta funcionalidad estará disponible próximamente"
-              >
-                Guardar borrador
-              </button>
-
-              <button
-                type="button"
-                className="boton-modal boton-modal--primario"
-                onClick={salirSinGuardar}
-                disabled={eliminandoInspeccion}
-              >
-                {eliminandoInspeccion
-                  ? 'Saliendo…'
-                  : 'Salir'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {salida.mostrar && (
+        <ModalConfirmacionSalida
+          error={salida.error}
+          eliminando={salida.eliminando}
+          onCancelar={salida.cancelar}
+          onConfirmar={salirSinGuardar}
+        />
       )}
     </>
   );
+
 
   // El cierre solo se puede mostrar cuando ya se completaron todas las secciones.
   if (cierreActivo) {
@@ -653,7 +410,7 @@ function InspeccionModulo({ onVolverInicio }) {
           tabActivo={wizard.indice}
           onAnterior={manejarAnterior}
           onSiguiente={avanzarYGuardar}
-          onVolverInicio={volverAlInicio}
+          onVolverInicio={salida.abrir}
           puedeRetroceder
           respuestas={respuestas}
           onRespuestasChange={actualizarRespuestas}
@@ -669,7 +426,7 @@ function InspeccionModulo({ onVolverInicio }) {
           indiceActual={wizard.indice}
           vistas={wizard.vistas}
           marcarVistaCompleta={wizard.marcarVistaCompleta}
-          guardando={guardando}
+          guardando={sincronizacion.guardando}
         />
       </>
     );
@@ -684,7 +441,7 @@ function InspeccionModulo({ onVolverInicio }) {
         datos={datos}
         onAnterior={manejarAnterior}
         onSiguiente={avanzarYGuardar}
-        onVolverInicio={volverAlInicio}
+        onVolverInicio={salida.abrir}
         puedeRetroceder
         puedeAvanzar={wizard.puedeAvanzar}
         respuestas={respuestas}
@@ -698,7 +455,7 @@ function InspeccionModulo({ onVolverInicio }) {
         indiceActual={wizard.indice}
         vistas={wizard.vistas}
         marcarVistaCompleta={wizard.marcarVistaCompleta}
-        guardando={guardando}
+        guardando={sincronizacion.guardando}
       />
     </>
   );

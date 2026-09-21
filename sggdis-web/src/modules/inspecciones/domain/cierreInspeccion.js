@@ -1,6 +1,7 @@
 import { agruparPorArticulo } from './agrupacionItems';
 import { calcularResumen } from './calculoPuntaje';
 import { esVistaCompleta } from './progresoVistas';
+import { ESTADO_NO_APLICA } from './opcionesRespuesta';
 import { RANGOS_CLASIFICACION } from '../config/inspeccion';
 
 // Suma los puntajes de todas las secciones ya visitadas para el resumen
@@ -124,7 +125,7 @@ export function calcularPuntosExcluidosPorNoAplica(vistas = [], seccionesCache =
       const seccion = seccionesCache[seccionRaw.codigo];
       if (!seccion) return;
       seccion.items.forEach((item) => {
-        if (respuestas[item.idItem]?.estado === 'N/A') {
+        if (respuestas[item.idItem]?.estado === ESTADO_NO_APLICA) {
           totalExcluido += item.puntaje;
         }
       });

@@ -21,3 +21,18 @@ export function esVistaCompleta(vista, seccionesCache = {}, respuestas = {}) {
   const { total, contestados } = contarProgresoVista(vista, seccionesCache, respuestas);
   return total > 0 && contestados === total;
 }
+
+// Evalúa si una sección (grupos de ítems ya cargados) está completa: solo cuentan
+// los ítems no opcionales. Si no hay ninguno requerido, se considera completa.
+export function evaluarCompletitudSeccion(grupos, respuestas = {}) {
+  const itemsRequeridos = grupos.flatMap((grupo) => grupo.items).filter((item) => !item.opcional);
+
+  if (itemsRequeridos.length === 0) {
+    return { completa: true, vacia: true };
+  }
+
+  const tieneRespuestas = itemsRequeridos.some((item) => Boolean(respuestas[item.id]?.estado));
+  const todosRespondidos = itemsRequeridos.every((item) => Boolean(respuestas[item.id]?.estado));
+
+  return { completa: todosRespondidos, vacia: !tieneRespuestas };
+}

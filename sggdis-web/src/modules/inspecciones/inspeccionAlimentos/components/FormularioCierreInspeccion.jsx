@@ -3,6 +3,7 @@ import { MARCA_ALIMENTOS } from '../config/inspeccionAlimentos';
 import { TEXTO_ORDEN_SANITARIA } from '../../config/inspeccion';
 import { useCierreInspeccion } from '../../hooks/useCierreInspeccion';
 import { cerrarInspeccion } from '../../services/inspeccionesService';
+import AlertaError from '../../components/AlertaError';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
 import { limpiarSoloLetras, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
 import './formulario.css';
@@ -191,12 +192,7 @@ export default function FormularioCierreInspeccion({
           </div>
         )}
 
-        {errorEnvio && (
-          <div className="alerta-validacion-error">
-            <span className="alerta-validacion-error__titulo">No se pudo registrar el cierre</span>
-            <span>{errorEnvio}</span>
-          </div>
-        )}
+        {errorEnvio && <AlertaError titulo="No se pudo registrar el cierre" mensaje={errorEnvio} />}
 
         <div className="campo-fila">
           <div className="campo">

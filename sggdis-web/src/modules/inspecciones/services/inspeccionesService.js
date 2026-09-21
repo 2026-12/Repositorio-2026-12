@@ -1,24 +1,5 @@
 import { API_BASE_URL } from '../config/inspeccion';
-
-// Como el de guiasInspeccionService.js, pero lee el mensaje de error del
-// backend y maneja respuestas 204 sin contenido.
-// Pendiente: está duplicado entre los dos archivos, se podría mover a un
-// httpClient.js compartido.
-async function solicitarJson(url, opciones) {
-  try {
-    const respuesta = await fetch(url, opciones);
-    if (!respuesta.ok) {
-      const mensaje = await respuesta.text();
-      throw new Error(mensaje || 'La API respondió con un error.');
-    }
-    return respuesta.status === 204 ? null : await respuesta.json();
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error('No se pudo conectar con el servicio de inspecciones.', { cause: error });
-    }
-    throw error;
-  }
-}
+import { solicitarJson } from './httpClient';
 
 // Crea una nueva inspección en el backend y devuelve su id.
 export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha }) {

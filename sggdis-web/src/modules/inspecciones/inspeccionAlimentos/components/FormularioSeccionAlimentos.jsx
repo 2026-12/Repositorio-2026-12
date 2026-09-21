@@ -1,7 +1,6 @@
 import FormularioSeccionGenerico from './FormularioSeccionGenerico';
 import {
   MARCA_ALIMENTOS,
-  TABS_ALIMENTOS,
   TOTAL_PASOS_ALIMENTOS,
   TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS,
 } from '../config/inspeccionAlimentos';
@@ -13,7 +12,6 @@ export default function FormularioSeccionAlimentos(props) {
     <FormularioSeccionGenerico
       {...props}
       marca={MARCA_ALIMENTOS}
-      tabs={TABS_ALIMENTOS}
       totalPasos={TOTAL_PASOS_ALIMENTOS}
       textoAdvertenciaCritico={TEXTO_ADVERTENCIA_CRITICO_ALIMENTOS}
     />

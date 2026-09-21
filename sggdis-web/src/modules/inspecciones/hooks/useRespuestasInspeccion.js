@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { calcularResumen } from '../domain/calculoPuntaje';
+import { ESTADO_CUMPLE } from '../domain/opcionesRespuesta';
 
 // Maneja las respuestas del checklist de una sección: marcar/desmarcar un
 // ítem, ajustar puntos, y recalcular el resumen cada vez que cambian.
@@ -33,7 +34,7 @@ export function useRespuestasInspeccion(grupos, respuestasControladas, onRespues
         ...actuales,
         [itemId]: {
           estado,
-          puntos: estado === 'Cumple' ? puntosMaximos : 0,
+          puntos: estado === ESTADO_CUMPLE ? puntosMaximos : 0,
         },
       };
     });

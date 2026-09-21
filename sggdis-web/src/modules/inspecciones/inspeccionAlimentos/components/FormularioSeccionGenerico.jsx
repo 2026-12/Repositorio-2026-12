@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { agruparPorArticulo } from '../../domain/agrupacionItems';
 import { obtenerSeccion } from '../../services/guiasInspeccionService';
 import { useRespuestasInspeccion } from '../../hooks/useRespuestasInspeccion';
-import { OPCIONES_ESTANDAR } from '../../domain/opcionesRespuesta';
+import { OPCIONES_ESTANDAR, ESTADO_CUMPLE, ESTADO_NO_CUMPLE, obtenerClaseOpcion } from '../../domain/opcionesRespuesta';
+import EsqueletoCarga from './EsqueletoCarga';
 import './formulario.css';
 import { obtenerPendientes } from '../../domain/validacionSeccion';
-import { esVistaCompleta } from '../../domain/progresoVistas';
+import { esVistaCompleta, evaluarCompletitudSeccion } from '../../domain/progresoVistas';
 import { nombresVistas } from '../config/inspeccionAlimentos';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
 
@@ -82,11 +83,6 @@ export default function FormularioSeccionGenerico({
   ] = useState(false);
 
   const [
-    vistaVacia,
-    setVistaVacia,
-  ] = useState(true);
-
-  const [
     mensajeNavegacion,
     setMensajeNavegacion,
   ] = useState('');
@@ -106,57 +102,8 @@ export default function FormularioSeccionGenerico({
           )
         : grupos;
 
-    const itemsRequeridos =
-      gruposActuales
-        .flatMap(
-          (grupo) =>
-            grupo.items
-        )
-        .filter(
-          (item) =>
-            !item.opcional
-        );
-
-    // Verifica si hay ALGUNA respuesta únicamente
-    // dentro de la vista actual.
-    const tieneRespuestas =
-      itemsRequeridos.some(
-        (item) =>
-          Boolean(
-            respuestas[
-              item.id
-            ]?.estado
-          )
-      );
-
-    setVistaVacia(
-      !tieneRespuestas
-    );
-
-    if (
-      itemsRequeridos.length === 0
-    ) {
-      marcarVistaCompleta(
-        true,
-        true
-      );
-
-      return;
-    }
-
-    const todosRespondidos =
-      itemsRequeridos.every(
-        (item) =>
-          respuestas[
-            item.id
-          ]?.estado
-      );
-
-    // Pasa dos cosas: si está completo y si está vacío
-    marcarVistaCompleta(
-      todosRespondidos,
-      !tieneRespuestas
-    );
+    const { completa, vacia } = evaluarCompletitudSeccion(gruposActuales, respuestas);
+    marcarVistaCompleta(completa, vacia);
   }, [
     respuestas,
     grupos,
@@ -368,17 +315,7 @@ export default function FormularioSeccionGenerico({
   };
 
   if (cargando) {
-    return (
-      <div className="pagina">
-        <div className="skeleton-contenedor">
-          <div className="skeleton skeleton--titulo"></div>
-          <div className="skeleton skeleton--linea"></div>
-          <div className="skeleton skeleton--linea"></div>
-          <div className="skeleton skeleton--linea"></div>
-          <div className="skeleton skeleton--linea"></div>
-        </div>
-      </div>
-    );
+    return <EsqueletoCarga />;
   }
 
   if (error) {
@@ -534,7 +471,7 @@ export default function FormularioSeccionGenerico({
                   const incumplido =
                     item.critico &&
                     respuesta?.estado ===
-                      'No cumple';
+                      ESTADO_NO_CUMPLE;
 
                   const esPendiente =
                     mostrarPendientes &&
@@ -598,15 +535,7 @@ export default function FormularioSeccionGenerico({
                               <button
                                 key={opcion.valor}
                                 type="button"
-                                className={`opcion opcion--${
-                                  opcion.valor ===
-                                  'Cumple'
-                                    ? 'cumple'
-                                    : opcion.valor ===
-                                      'No cumple'
-                                      ? 'no-cumple'
-                                      : 'na'
-                                } ${
+                                className={`opcion opcion--${obtenerClaseOpcion(opcion.valor)} ${
                                   respuesta?.estado ===
                                   opcion.valor
                                     ? 'opcion--activa'
@@ -629,7 +558,7 @@ export default function FormularioSeccionGenerico({
                       </div>
 
                       {respuesta?.estado ===
-                        'Cumple' && (
+                        ESTADO_CUMPLE && (
                         <div className="item__puntos">
                           <span className="item__puntos-label">
                             Puntos otorgados:
