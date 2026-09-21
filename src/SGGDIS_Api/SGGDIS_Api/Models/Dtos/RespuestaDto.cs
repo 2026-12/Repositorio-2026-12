@@ -1,8 +1,8 @@
-﻿namespace SGGDIS_Api.Models.Dtos
+namespace SGGDIS_Api.Models.Dtos
 {
     /// <summary>
-    /// Datos que llegan desde el frontend para guardar la respuesta de un solo ítem
-    /// del checklist (no es una tabla, solo viaja entre el frontend y el backend).
+    /// Datos que llegan del frontend para guardar la respuesta de un ítem del
+    /// checklist. No es tabla, solo viaja entre frontend y backend.
     /// </summary>
     public class RespuestaDto
     {
@@ -17,8 +17,8 @@
     }
 
     /// <summary>
-    /// Datos necesarios para crear una nueva inspección cuando el inspector
-    /// selecciona un establecimiento y empieza a llenar el formulario.
+    /// Datos para crear una inspección: se usan cuando el inspector elige un
+    /// establecimiento y arranca el formulario.
     /// </summary>
     public class CrearInspeccionDto
     {
@@ -28,20 +28,20 @@
         // Tipo de establecimiento seleccionado.
         public int IdTipoEstablecimiento { get; set; }
 
-        // Nombre del establecimiento que se va a inspeccionar.
+        // Nombre del establecimiento a inspeccionar.
         public string NombreEstablecimiento { get; set; } = string.Empty;
 
-        // Número consecutivo (folio) de la inspección.
+        // Folio de la inspección.
         public string Consecutivo { get; set; } = string.Empty;
 
-        // Fecha en la que se realiza la inspección.
+        // Fecha de la inspección.
         public DateTime Fecha { get; set; }
     }
 
     /// <summary>
-    /// Datos capturados en la pantalla de cierre de la inspección.
-    /// No incluye "nombre del representante": se usa NOMBRE_ESTABLECIMIENTO,
-    /// ya registrado al crear la inspección, para no duplicar el dato (estándar B10).
+    /// Datos que se capturan al cerrar la inspección. No pide "nombre del
+    /// representante": ya se guardó como NOMBRE_ESTABLECIMIENTO al crear la
+    /// inspección, no hace falta duplicarlo (estándar B10).
     /// </summary>
     public class CerrarInspeccionDto
     {
@@ -62,10 +62,9 @@
     }
 
     /// <summary>
-    /// Resultado que se devuelve al cerrar una inspección: puntaje, porcentaje
-    /// de cumplimiento y la clasificación final del establecimiento.
-    /// PuntajeMaximoReferencia es el valor fijo del catálogo, solo para mostrar
-    /// de dónde partió el cálculo (no cambia entre inspecciones del mismo tipo).
+    /// Resultado de cerrar una inspección: puntaje, porcentaje de cumplimiento
+    /// y clasificación final. PuntajeMaximoReferencia es el valor fijo del
+    /// catálogo, solo para referencia (no cambia entre inspecciones del mismo tipo).
     /// </summary>
     public class ResumenCierreDto
     {

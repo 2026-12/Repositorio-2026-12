@@ -5,8 +5,7 @@ using SGGDIS_Api.Models.Dtos;
 
 namespace SGGDIS_Api.Services
 {
-    // Se lanza cuando se intenta crear una inspección con un número consecutivo (folio)
-    // que ya existe; el consecutivo debe ser único.
+    // Se lanza si el consecutivo (folio) ya existe. Debe ser único.
     public class ConsecutivoDuplicadoException : Exception
     {
         public ConsecutivoDuplicadoException() : base("El número consecutivo ya está registrado.") { }
@@ -14,15 +13,14 @@ namespace SGGDIS_Api.Services
 
     // Excepciones propias del cierre de inspección.
 
-    // Se lanza al intentar cerrar una inspección que todavía tiene ítems obligatorios sin responder.
+    // Se lanza si quedan ítems obligatorios sin responder al cerrar.
     public class SeccionesIncompletasException : Exception
     {
         public SeccionesIncompletasException()
             : base("No se puede cerrar la inspección: hay secciones obligatorias sin completar.") { }
     }
 
-    // Se lanza al intentar cerrar una inspección sin los datos mínimos requeridos
-    // (nombre/identificación del inspector e identificación del representante).
+    // Se lanza si faltan datos mínimos de cierre (inspector o representante).
     public class CamposCierreIncompletosException : Exception
     {
         public CamposCierreIncompletosException()
@@ -30,24 +28,22 @@ namespace SGGDIS_Api.Services
     }
 
     /// <summary>
-    /// Implementación de IInspeccionService: contiene toda la lógica real para
-    /// crear, guardar, consultar y cerrar una inspección, hablando directamente
-    /// con la base de datos a través del DbContext.
+    /// Implementación de IInspeccionService. Habla directamente con la base de
+    /// datos a través del DbContext.
     /// </summary>
     public class InspeccionService : IInspeccionService
     {
         private readonly SggdisDbContext _context;
         private readonly ILogger<InspeccionService> _logger;
 
-        // Recibe el DbContext y el logger (para registrar eventos importantes) por inyección de dependencias.
+        // Inyección de dependencias: DbContext y logger.
         public InspeccionService(SggdisDbContext context, ILogger<InspeccionService> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        // Crea una nueva inspección en estado "EN_PROCESO", validando primero que
-        // el número consecutivo no esté repetido.
+        // Crea la inspección en "EN_PROCESO". Antes valida que el consecutivo no esté repetido.
         public async Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto)
         {
             var consecutivoExiste = await _context.Inspecciones
@@ -71,8 +67,7 @@ namespace SGGDIS_Api.Services
             return inspeccion;
         }
 
-        // Elimina una inspección junto con todas sus respuestas. Devuelve false si
-        // la inspección no existía (no lanza error en ese caso).
+        // Elimina la inspección y sus respuestas. Devuelve false si no existía (no lanza error).
         public async Task<bool> EliminarInspeccionAsync(int idInspeccion)
         {
             var inspeccion = await _context.Inspecciones.FindAsync(idInspeccion);
@@ -90,9 +85,9 @@ namespace SGGDIS_Api.Services
             return true;
         }
 
-        // Guarda las respuestas que llegan del formulario. Si el ítem ya tenía una
-        // respuesta guardada, la actualiza; si no, crea una nueva. Esto es lo que
-        // permite el autoguardado: se puede llamar varias veces sin duplicar filas.
+        // Guarda las respuestas del formulario: actualiza si el ítem ya tenía
+        // respuesta, si no crea una nueva. Así funciona el autoguardado, se puede
+        // llamar varias veces sin duplicar filas.
         public async Task GuardarRespuestasAsync(int idInspeccion, List<RespuestaDto> respuestas)
         {
             if (respuestas == null || respuestas.Count == 0) return;
@@ -125,8 +120,7 @@ namespace SGGDIS_Api.Services
             await _context.SaveChangesAsync();
         }
 
-        // Devuelve todas las respuestas ya guardadas de una inspección (para
-        // restaurar el formulario cuando el usuario vuelve a entrar).
+        // Devuelve las respuestas guardadas, para restaurar el formulario si el usuario vuelve a entrar.
         public async Task<List<InsRespuesta>> ObtenerRespuestasAsync(int idInspeccion)
         {
             return await _context.Respuestas
@@ -134,13 +128,10 @@ namespace SGGDIS_Api.Services
                 .ToListAsync();
         }
 
-
-                /// HU-005I (corrige H1 y H5): valida los campos obligatorios de cierre y que
-        /// todos los ítems estén respondidos; calcula el puntaje obtenido y el
-        /// máximo REALMENTE aplicable (el fijo del tipo de establecimiento, menos
-        /// los puntos de los ítems marcados "N/A", ya que un ítem que no aplica no
-        /// debe contar como falta ni exigirse para el 100%); clasifica y persiste
-        /// todo en INS_INSPECCION junto con el cambio de estado a FINALIZADA.
+        /// HU-005I (corrige H1 y H5). Hace el cierre completo:
+        /// - valida campos obligatorios y que no queden ítems sin responder
+        /// - calcula puntaje y máximo real (resta los N/A, no deberían contar)
+        /// - clasifica y guarda todo, pasa la inspección a FINALIZADA
         public async Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion, CerrarInspeccionDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.NombreInspector) ||
@@ -165,8 +156,8 @@ namespace SGGDIS_Api.Services
                 .Select(item => item.IdItem)
                 .ToListAsync();
 
-            // Se incluye el Item de cada respuesta para poder sumar los puntos de
-            // los ítems marcados "N/A" y así ajustar el máximo (corrige H5).
+            // Se incluye el Item de cada respuesta para sumar los puntos de los
+            // "N/A" y ajustar el máximo (corrige H5).
             var respuestas = await _context.Respuestas
                 .Include(r => r.Item)
                 .Where(r => r.IdInspeccion == idInspeccion)
@@ -184,14 +175,12 @@ namespace SGGDIS_Api.Services
                 .Where(r => r.Estado == "Cumple")
                 .Sum(r => r.PuntosOtorgados ?? 0);
 
-            // Suma los puntos de los ítems marcados "N/A": esos puntos se restan
-            // del máximo, porque un ítem que no aplica no debe penalizar ni exigirse.
+            // Puntos de los ítems "N/A": se restan del máximo, no deben penalizar ni exigirse.
             var puntosExcluidosPorNoAplica = respuestas
                 .Where(r => r.Estado == "N/A")
                 .Sum(r => r.Item?.Puntaje ?? 0);
 
-            // Puntaje máximo del catálogo (fijo por tipo de establecimiento) y el
-            // máximo "real" aplicado a esta inspección, ya ajustado por los N/A.
+            // Máximo del catálogo (fijo por tipo) y el máximo real ya ajustado por los N/A.
             var puntajeMaximoReferencia = inspeccion.TipoEstablecimiento?.PuntajeMaximo ?? 0;
             var puntajeMaximoAplicado = Math.Max(0, puntajeMaximoReferencia - puntosExcluidosPorNoAplica);
 

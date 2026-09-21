@@ -15,10 +15,9 @@ const MARCA_POR_DEFECTO = {
 };
 
 
-// Núcleo visual reutilizable para cualquier guía de inspección por
-// secciones. No conoce textos ni reglas de una guía en particular: cada
-// guía (p. ej. alimentos) los provee vía props o mediante un componente
-// adaptador que envuelva a este.
+// Componente genérico para renderizar cualquier sección de guía. No sabe
+// nada de una guía en particular — recibe todo por props (o por un
+// adaptador que lo envuelva).
 export default function FormularioSeccionGenerico({
   datos,
   codigo,
@@ -165,10 +164,8 @@ export default function FormularioSeccionGenerico({
     marcarVistaCompleta,
   ]);
 
-  // Si la sección ya estaba en caché (seccionInicial), la usa directo y no
-  // vuelve a pedirla al backend. Si no, la pide y avisa al padre
-  // (onSeccionCargada) para que la guarde en caché y no tener que repetir la
-  // petición la próxima vez que el usuario visite esta misma sección.
+  // Si ya está en caché (seccionInicial) la usa directo. Si no, la pide al
+  // backend y avisa al padre (onSeccionCargada) para que quede cacheada.
   useEffect(() => {
     let activo = true;
 
@@ -353,11 +350,9 @@ export default function FormularioSeccionGenerico({
     onAnterior?.();
   };
 
-  // Al presionar "Siguiente": si quedan ítems sin responder, no avanza —
-  // en vez de eso resalta visualmente el primer ítem pendiente y hace scroll
-  // hasta él para que el usuario sepa exactamente qué le falta.
-  // Si ya no hay pendientes, avanza normalmente (llama a onSiguiente,
-  // que en App.jsx dispara el guardado y el paso a la siguiente vista).
+  // Si quedan ítems sin responder, no avanza: resalta el primer pendiente y
+  // hace scroll hasta ahí. Si ya está todo respondido, llama a onSiguiente
+  // (guarda y pasa a la siguiente vista).
   const manejarSiguiente = () => {
     if (
       pendientes > 0
@@ -518,9 +513,7 @@ export default function FormularioSeccionGenerico({
           </div>
         </div>
 
-        {/* Cada grupo es un artículo del reglamento; dentro se listan sus
-            ítems con sus opciones de respuesta (Cumple/No cumple/N/A),
-            el selector de puntos parciales y la advertencia si es crítico. */}
+        {/* Cada grupo es un artículo del reglamento, con sus ítems debajo. */}
         {gruposActuales.map(
           (grupo) => (
             <div

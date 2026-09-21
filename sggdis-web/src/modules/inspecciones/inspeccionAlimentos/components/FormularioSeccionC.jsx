@@ -23,9 +23,8 @@ const SUBSECCIONES = [
   },
 ];
 
-// Componente dedicado para la Sección C: igual que FormularioSeccionB, pero
-// para las subsecciones C1 y C2 (en vez de B1/B2/B3). Repite la misma
-// estructura de sub-pestañas y renderizado por las mismas razones.
+// Igual que FormularioSeccionB pero para C1/C2. Repite la misma estructura
+// de sub-pestañas y renderizado por las mismas razones.
 function FormularioSeccionC({
   datos,
   onAnterior,
@@ -182,14 +181,9 @@ function FormularioSeccionC({
     ],
   );
 
-  // NOTA: a diferencia de FormularioSeccionGenerico y FormularioSeccionB,
-  // aquí NO se usa el hook useRespuestasInspeccion ni calcularResumen de
-  // domain/calculoPuntaje: se reescribió la misma lógica de marcar/desmarcar
-  // un ítem y de sumar el puntaje directamente en este archivo. Funciona
-  // igual, pero si el comportamiento se corrige en un solo lugar (el hook o
-  // el dominio), esta copia no se actualiza automáticamente y puede
-  // desalinearse. Convendría migrar esta sección para reusar el hook, igual
-  // que hacen las demás.
+  // OJO: esta sección tiene su propia copia de la lógica de useRespuestasInspeccion
+  // y calculoPuntaje. Si se corrige algo en el hook, acá no se actualiza solo.
+  // Pendiente: migrar para reusar el hook como las demás secciones.
   const manejarSeleccion = (
     itemId,
     opcion,
@@ -417,9 +411,8 @@ function FormularioSeccionC({
       subsecciones,
     ]);
 
-  // Avisa al asistente si la vista C (ambas subsecciones juntas) ya está
-  // completa: sin esto, el botón "Siguiente" de C2 nunca puede avanzar de
-  // vista de verdad y termina saltando directo a la pantalla de cierre.
+  // Avisa al asistente si la vista C (C1+C2) ya está completa. Sin esto,
+  // "Siguiente" en C2 nunca avanza de verdad y salta directo al cierre.
   useEffect(() => {
     if (
       !marcarVistaCompleta ||

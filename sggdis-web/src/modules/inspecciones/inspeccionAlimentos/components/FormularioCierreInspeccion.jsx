@@ -7,12 +7,10 @@ import mapaDorado from '../../../../assets/mapa-dorado.png';
 import { limpiarSoloLetras, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
 import './formulario.css';
 
-// Último paso del wizard de inspección: observaciones finales,
-// identificación de las partes, puntaje total con clasificación automática
-// y la opción de registrar una orden sanitaria, independiente del puntaje.
-// El porcentaje de cumplimiento se calcula sobre el máximo REALMENTE
-// aplicable (excluye los puntos de ítems marcados N/A, corrige H5), no
-// sobre el máximo fijo de catálogo.
+// Último paso del wizard: observaciones, identificación de las partes,
+// puntaje con clasificación automática y la opción de orden sanitaria.
+// El porcentaje se calcula sobre el máximo real (sin los ítems en N/A,
+// corrige H5), no sobre el máximo fijo del catálogo.
 export default function FormularioCierreInspeccion({
   datos,
   vistas = [],
@@ -51,10 +49,9 @@ export default function FormularioCierreInspeccion({
   const [errorEnvio, setErrorEnvio] = useState(null);
   const [cierreConfirmado, setCierreConfirmado] = useState(null);
 
-  // Al presionar "Finalizar inspección": si falta algo (sección incompleta o
-  // campo obligatorio), muestra la alerta correspondiente en vez de enviar.
-  // Si todo está en orden, envía el cierre al backend y, si sale bien, guarda
-  // la confirmación (lo que activa la pantalla de éxito abajo).
+  // Si falta algo (sección incompleta o campo obligatorio), muestra la
+  // alerta en vez de enviar. Si todo está bien, envía el cierre y guarda
+  // la confirmación (activa la pantalla de éxito de abajo).
   const manejarFinalizar = async () => {
     if (!puedeEnviar) {
       setMostrarAlerta(true);
@@ -79,7 +76,7 @@ export default function FormularioCierreInspeccion({
     }
   };
 
-  // Pantalla de éxito: se muestra en vez del formulario una vez que el cierre ya se envió correctamente.
+  // Pantalla de éxito, se muestra en vez del formulario una vez que el cierre se envió bien.
   if (cierreConfirmado) {
     return (
       <div className="pagina">

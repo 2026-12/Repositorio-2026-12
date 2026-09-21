@@ -26,9 +26,8 @@ const COMPONENTES_POR_CODIGO = {
   H: FormularioSeccionAlimentos,
 };
 
-// Compara las respuestas actuales contra las que ya se guardaron en el
-// backend y devuelve solo las que cambiaron. Así el autoguardado solo manda
-// al servidor lo que realmente cambió, no todas las respuestas cada vez.
+// Compara respuestas actuales contra las guardadas y devuelve solo las que
+// cambiaron. Así el autoguardado manda solo el delta, no todo cada vez.
 function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
   const modificadas = {};
 
@@ -45,14 +44,12 @@ function obtenerRespuestasModificadas(respuestasActuales, respuestasGuardadas) {
   return modificadas;
 }
 
-// Punto de entrada del módulo de inspecciones: decide qué paso mostrar
-// (selección de establecimiento, formulario de una sección, o cierre) y
-// mantiene todo el estado de la inspección en curso. El shell de la app
-// (App.jsx) solo decide CUÁNDO mostrar este módulo; a partir de ahí, el
-// módulo es autónomo.
+// Acá vive toda la lógica del módulo: decide qué paso mostrar (selección,
+// formulario, o cierre) y guarda el estado de la inspección en curso.
+// App.jsx solo decide cuándo montar este módulo.
 function InspeccionModulo({ onVolverInicio }) {
-  // Al montar el módulo, intenta recuperar una inspección que haya quedado
-  // a medias (guardada en localStorage). Se lee una sola vez.
+  // Al montar, intenta recuperar una inspección a medias desde localStorage.
+  // Se lee una sola vez.
   const [progresoGuardado] = useState(cargarProgreso);
 
   const [datos, setDatos] = useState(progresoGuardado?.datos ?? null);
@@ -78,8 +75,8 @@ function InspeccionModulo({ onVolverInicio }) {
   const [eliminandoInspeccion, setEliminandoInspeccion] = useState(false);
   const [errorSalida, setErrorSalida] = useState(null);
 
-  // Comprueba si TODAS las vistas de la inspección están completas.
-  // Esto incluye las vistas compuestas B (B1/B2/B3) y C (C1/C2).
+  // Chequea si TODAS las vistas están completas, incluyendo las compuestas
+  // B (B1/B2/B3) y C (C1/C2).
   const todasLasSeccionesCompletas =
     wizard.vistas.length > 0 &&
     wizard.vistas.every((vista) =>
@@ -108,8 +105,7 @@ function InspeccionModulo({ onVolverInicio }) {
     );
   }, []);
 
-  // Guarda en caché las secciones ya cargadas para no volver a pedirlas
-  // al backend cada vez que el usuario regresa a ellas.
+  // Guarda en caché las secciones ya cargadas para no volver a pedirlas al backend.
   const registrarSeccion = useCallback((codigo, seccion) => {
     setSeccionesCache((actuales) =>
       actuales[codigo] === seccion
@@ -176,8 +172,8 @@ function InspeccionModulo({ onVolverInicio }) {
       return;
     }
 
-    // Llegar al final de las pestañas NO significa que la inspección esté
-    // completa. Antes de abrir el cierre se validan todas las secciones.
+    // Llegar al final de las pestañas no significa que esté completa: antes
+    // de abrir el cierre se valida todo.
     if (!todasLasSeccionesCompletas) {
       setErrorGuardado(
         'Debe completar todas las secciones de la inspección antes de continuar al cierre.'
@@ -601,8 +597,7 @@ function InspeccionModulo({ onVolverInicio }) {
     </>
   );
 
-  // La pantalla de cierre únicamente puede mostrarse después de que
-  // todas las secciones hayan sido completadas.
+  // El cierre solo se puede mostrar cuando ya se completaron todas las secciones.
   if (cierreActivo) {
     return (
       <>

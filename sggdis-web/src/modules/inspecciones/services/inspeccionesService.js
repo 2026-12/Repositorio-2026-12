@@ -1,12 +1,9 @@
 import { API_BASE_URL } from '../config/inspeccion';
 
-// Helper interno igual en espíritu al de guiasInspeccionService.js, pero además
-// lee el texto del error que manda el backend (para mostrar mensajes como
-// "El número consecutivo ya está registrado") y sabe manejar respuestas 204
-// (sin contenido), que es lo que devuelven varios de estos endpoints.
-// NOTA: esta función está duplicada entre los dos archivos de services/.
-// Se podría mover a un solo archivo compartido (ej. services/httpClient.js)
-// para no mantener la misma lógica en dos lugares.
+// Como el de guiasInspeccionService.js, pero lee el mensaje de error del
+// backend y maneja respuestas 204 sin contenido.
+// Pendiente: está duplicado entre los dos archivos, se podría mover a un
+// httpClient.js compartido.
 async function solicitarJson(url, opciones) {
   try {
     const respuesta = await fetch(url, opciones);
@@ -54,10 +51,8 @@ export function guardarRespuestas(idInspeccion, respuestas) {
   });
 }
 
-// Envía los datos de cierre (inspector, identificación del representante,
-// observaciones y orden sanitaria) y marca la inspección como FINALIZADA en
-// el backend. El nombre del representante no se envía: el backend
-// usa el nombre del establecimiento ya registrado.
+// Envía los datos de cierre y marca la inspección como FINALIZADA. No manda
+// el nombre del representante: el backend usa el nombre del establecimiento ya registrado.
 export function cerrarInspeccion(idInspeccion, datosCierre) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones/${idInspeccion}/cierre`, {
     method: 'PUT',

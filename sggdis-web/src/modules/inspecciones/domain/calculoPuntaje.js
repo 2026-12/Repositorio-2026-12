@@ -1,7 +1,6 @@
-// Calcula, en tiempo real (mientras el usuario va marcando el formulario), el
-// resumen de una sección: cuántos puntos lleva, cuál es el máximo posible
-// (ignorando los ítems marcados "N/A") y cuántos ítems críticos están incumplidos.
-// Esto es lo que alimenta el indicador visual de progreso y la alerta de crítico.
+// Resumen en vivo de una sección: puntos obtenidos, máximo (sin contar los
+// ítems en N/A) y cuántos críticos están incumplidos. Alimenta el indicador
+// de progreso y la alerta de crítico.
 export function calcularResumen(grupos, respuestas) {
   return grupos.flatMap((grupo) => grupo.items).reduce((resumen, item) => {
     const respuesta = respuestas[item.id];

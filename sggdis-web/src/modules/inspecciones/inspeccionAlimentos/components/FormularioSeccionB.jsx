@@ -30,11 +30,10 @@ const SUBSECCIONES = [
   },
 ];
 
-// Componente dedicado para la Sección B: a diferencia de las demás secciones,
-// esta necesita mostrar sub-pestañas (B1, B2, B3) dentro del mismo paso del
-// asistente, así que no puede reutilizar directamente FormularioSeccionGenerico
-// (que asume una sola sección por paso). Repite parte de su misma lógica de
-// renderizado, pero agregando la navegación entre subsecciones.
+// Sección B necesita sub-pestañas (B1, B2, B3) dentro del mismo paso, así
+// que no puede reusar FormularioSeccionGenerico directo (asume una sola
+// sección por paso). Repite parte de su lógica de render y le agrega la
+// navegación entre subsecciones.
 function FormularioSeccionB({
   datos,
   onAnterior,
@@ -110,9 +109,9 @@ function FormularioSeccionB({
     });
   }, [subSeccionActiva]);
 
-  // Carga las tres subsecciones en paralelo (Promise.all), reusando la caché
-  // si ya se habían cargado antes, y avisa al padre de cada una para que
-  // quede guardada en la caché general de la app.
+  // Carga las tres subsecciones en paralelo (Promise.all), reusa la caché
+  // si ya estaban cargadas, y avisa al padre para que las guarde en la
+  // caché general.
   useEffect(() => {
     async function cargarSeccionB() {
       try {
@@ -183,8 +182,8 @@ function FormularioSeccionB({
     subsecciones,
   ]);
 
-  // Los grupos de la subsección activa se usan para renderizar y validar;
-  // el puntaje y la validación reutilizan el mismo dominio que las demás secciones.
+  // Grupos de la subsección activa: se usan para renderizar y validar, con
+  // el mismo dominio de puntaje que las demás secciones.
   const grupos = useMemo(
     () =>
       gruposPorSubseccion[
@@ -285,10 +284,8 @@ function FormularioSeccionB({
       subsecciones,
     ]);
 
-  // Avisa al asistente si la vista B (las tres subsecciones juntas) ya está
-  // completa: sin esto, el botón "Siguiente" de B3 nunca puede avanzar de
-  // vista de verdad (el asistente cree que B nunca se completó) y termina
-  // saltando directo a la pantalla de cierre.
+  // Avisa al asistente si la vista B (B1+B2+B3) ya está completa. Sin esto,
+  // "Siguiente" en B3 nunca avanza de verdad y salta directo al cierre.
   useEffect(() => {
     if (
       !marcarVistaCompleta ||
@@ -460,10 +457,8 @@ function FormularioSeccionB({
     }
   };
 
-  // "Siguiente": si faltan ítems de la subsección actual, los resalta igual
-  // que en el formulario genérico. Si ya están completos, avanza a la
-  // siguiente subsección (B1 → B2 → B3) y solo llama a onSiguiente (avanzar
-  // de vista de verdad) cuando ya se completó la última subsección.
+  // "Siguiente": si faltan ítems los resalta, igual que el genérico. Si no,
+  // avanza de subsección (B1 → B2 → B3) y llama a onSiguiente solo en la última.
   const manejarSiguiente = () => {
     if (
       itemsSinResponder > 0

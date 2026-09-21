@@ -23,10 +23,9 @@ function obtenerFechaHoraActual() {
   };
 }
 
-// Primera pantalla de una inspección nueva: muestra fecha y hora automáticas,
-// número consecutivo (folio), nombre del establecimiento y tipo de establecimiento.
-// Al confirmar, crea la inspección real en el backend y le pasa los datos a
-// App.jsx para arrancar el asistente (wizard) de secciones.
+// Primera pantalla de una inspección nueva: fecha/hora, consecutivo, nombre
+// y tipo de establecimiento. Al confirmar crea la inspección en el backend
+// y arranca el wizard de secciones.
 function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   const [fechaHoraInicial] = useState(() => obtenerFechaHoraActual());
 
@@ -83,8 +82,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
     tipoSeleccionado &&
     hora.trim().length > 0;
 
-  // Crea la inspección en el backend y, si todo sale bien, avisa al
-  // componente padre (App.jsx) para que arranque el formulario.
+  // Crea la inspección en el backend y avisa al padre para que arranque el formulario.
   const manejarComenzar = async () => {
     if (!puedeComenzar) return;
 

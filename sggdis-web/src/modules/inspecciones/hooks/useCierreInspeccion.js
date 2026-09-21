@@ -11,9 +11,8 @@ import {
   DATOS_CIERRE_INICIALES,
 } from '../domain/cierreInspeccion';
 
-// Encapsula el estado propio del formulario de cierre y los cálculos
-// derivados: puntaje obtenido, máximo REALMENTE aplicable (excluyendo ítems
-// N/A, corrige H5), porcentaje y clasificación.
+// Estado del formulario de cierre más los cálculos derivados: puntaje,
+// máximo real (sin los ítems en N/A, corrige H5), porcentaje y clasificación.
 export function useCierreInspeccion({
   vistas,
   seccionesCache,
@@ -25,8 +24,7 @@ export function useCierreInspeccion({
   const [datosCierreLocales, setDatosCierreLocales] = useState(DATOS_CIERRE_INICIALES);
   const datosCierre = datosCierreControlado ?? datosCierreLocales;
 
-  // Actualiza un solo campo del formulario de cierre (modo controlado o local,
-  // igual que en useRespuestasInspeccion).
+  // Actualiza un campo del formulario (controlado o local, igual que en useRespuestasInspeccion).
   const actualizarCampo = (campo, valor) => {
     if (onDatosCierreChange) {
       onDatosCierreChange((actuales) => ({ ...(actuales ?? DATOS_CIERRE_INICIALES), [campo]: valor }));
@@ -72,8 +70,7 @@ export function useCierreInspeccion({
     [datosCierre],
   );
 
-  // Solo se puede enviar el cierre si todas las secciones están completas
-  // Y no falta ningún campo obligatorio del formulario de cierre.
+  // Solo se puede enviar si las secciones están completas y no falta ningún campo.
   const puedeEnviar = seccionesCompletas && camposPendientes.length === 0;
 
   return {
