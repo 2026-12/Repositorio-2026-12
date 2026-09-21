@@ -3,7 +3,6 @@ import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
 import FormularioSeccionB from './inspeccionAlimentos/components/FormularioSeccionB';
 import FormularioSeccionC from './inspeccionAlimentos/components/FormularioSeccionC';
 import FormularioSeccionAlimentos from './inspeccionAlimentos/components/FormularioSeccionAlimentos';
-import FormularioSeccionH from './inspeccionAlimentos/components/FormularioSeccionH';
 import FormularioCierreInspeccion from './inspeccionAlimentos/components/FormularioCierreInspeccion';
 import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { cargarProgreso, guardarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
@@ -13,8 +12,9 @@ import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
 import { esVistaCompleta } from './domain/progresoVistas';
 
 // Qué componente de formulario usar para cada vista (paso del asistente).
-// La mayoría de las secciones (A, D, E, F, G) se pintan con el componente
-// genérico FormularioSeccionAlimentos; B, C y H tienen su propio componente.
+// La mayoría de las secciones (A, D, E, F, G, H) se pintan con el componente
+// genérico FormularioSeccionAlimentos; solo B y C (que tienen subsecciones)
+// tienen su propio componente.
 const COMPONENTES_POR_CODIGO = {
   A: FormularioSeccionAlimentos,
   B: FormularioSeccionB,
@@ -23,7 +23,7 @@ const COMPONENTES_POR_CODIGO = {
   E: FormularioSeccionAlimentos,
   F: FormularioSeccionAlimentos,
   G: FormularioSeccionAlimentos,
-  H: FormularioSeccionH,
+  H: FormularioSeccionAlimentos,
 };
 
 // Compara las respuestas actuales contra las que ya se guardaron en el
@@ -680,7 +680,7 @@ function InspeccionModulo({ onVolverInicio }) {
     );
   }
 
-  // Componentes dedicados B, C y H.
+  // Componentes dedicados B y C.
   return (
     <>
       {mensajesGlobales}
