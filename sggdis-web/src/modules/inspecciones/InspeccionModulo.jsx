@@ -9,7 +9,7 @@ import { useWizardInspeccion } from './hooks/useWizardInspeccion';
 import { usePersistenciaProgreso } from './hooks/usePersistenciaProgreso';
 import { useSincronizacionRespuestas } from './hooks/useSincronizacionRespuestas';
 import { useConfirmacionSalida } from './hooks/useConfirmacionSalida';
-import { cargarProgreso } from './services/progresoInspeccionService';
+import { cargarProgreso, limpiarProgreso } from './services/progresoInspeccionService';
 import { eliminarInspeccion } from './services/inspeccionesService';
 import { TOTAL_PASOS_ALIMENTOS } from './inspeccionAlimentos/config/inspeccionAlimentos';
 import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
@@ -182,6 +182,10 @@ function InspeccionModulo({ onVolverInicio }) {
       }
     }
 
+    // Se limpia antes de desmontar: el efecto de usePersistenciaProgreso no
+    // alcanza a correr si el componente se desmonta en el mismo render.
+    limpiarProgreso(datos?.idInspeccion);
+
     setDatos(null);
     setRespuestas({});
     setRespuestasGuardadas({});
@@ -240,6 +244,10 @@ function InspeccionModulo({ onVolverInicio }) {
 
   // Limpia el estado cuando una inspección fue finalizada correctamente.
   const manejarInspeccionFinalizada = useCallback(() => {
+    // Se limpia antes de desmontar: el efecto de usePersistenciaProgreso no
+    // alcanza a correr si el componente se desmonta en el mismo render.
+    limpiarProgreso(datos?.idInspeccion);
+
     setDatos(null);
     setRespuestas({});
     setRespuestasGuardadas({});
@@ -252,7 +260,7 @@ function InspeccionModulo({ onVolverInicio }) {
     wizard.reiniciar();
 
     onVolverInicio();
-  }, [wizard, onVolverInicio, sincronizacion]);
+  }, [datos?.idInspeccion, wizard, onVolverInicio, sincronizacion]);
 
   // ---- A partir de aquí se decide qué paso del módulo mostrar ----
 
