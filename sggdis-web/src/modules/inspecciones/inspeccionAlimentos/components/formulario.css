@@ -1417,6 +1417,49 @@ body {
 }
 
 /* ============================================================================
+   ALERTA DE VALIDACIÓN
+   ============================================================================ */
+
+.alerta-validacion-error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--rojo);
+  border-radius: 8px;
+  background: #FBEAE9;
+  color: var(--rojo);
+  font-size: 0.8rem;
+}
+
+.alerta-validacion-error__titulo {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.alerta-validacion-error__lista {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.alerta-validacion-error__lista li {
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.alerta-validacion-error--advertencia {
+  border: 2px dashed var(--rojo);
+  background: #FFF7F6;
+  color: #5B6470;
+}
+
+.alerta-validacion-error--advertencia .alerta-validacion-error__titulo {
+  color: var(--rojo);
+}
+
+/* ============================================================================
    RESPONSIVE
    ============================================================================ */
 
@@ -1576,5 +1619,268 @@ body {
 
   .cierre__confirmacion {
     padding: 24px 18px;
+  }
+}
+
+/* ============================================================================
+   CIERRE CON GRID 2 COLUMNAS
+   ============================================================================ */
+
+.cierre__contenedor-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.5fr;
+  gap: 0;
+  margin: 24px -30px -24px -30px;
+  background: var(--blanco);
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.cierre__panel-izquierdo {
+  background: linear-gradient(160deg, var(--azul-oscuro), var(--azul-acero));
+  color: var(--blanco);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 500px;
+}
+
+.cierre__panel-etiqueta {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--dorado);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.cierre__panel-titulo {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--blanco);
+}
+
+.cierre__panel-descripcion {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 24px;
+}
+
+.cierre__puntaje-box {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.cierre__puntaje-label {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 8px;
+}
+
+.cierre__puntaje-valor {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--dorado);
+  margin-bottom: 6px;
+}
+
+.cierre__puntaje-clasificacion {
+  display: block;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cierre__info-establecimiento {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 16px;
+  gap: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cierre__info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cierre__info-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cierre__info-valor {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--blanco);
+}
+
+.cierre__pie-panel {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 16px;
+}
+
+.cierre__pie-texto {
+  margin: 0 0 6px 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cierre__pie-nota {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+/* Panel Derecho */
+.cierre__panel-derecho {
+  padding: 32px;
+  background: var(--blanco);
+  display: flex;
+  flex-direction: column;
+}
+
+.cierre__campos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+/* ============================================================================
+   ALERTA DE CAMPOS INCOMPLETOS - FORMLARIO DE CIERRE
+   ============================================================================ */
+
+.alerta-campos-incompletos {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 2px dashed var(--rojo);
+  border-radius: 10px;
+  background: #FFF7F6;
+  color: #5B6470;
+  margin-bottom: 24px;
+}
+
+.alerta-campos-icono {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 24px;
+  text-align: center;
+}
+
+.alerta-campos-contenido {
+  flex: 1;
+}
+
+.alerta-campos-titulo {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--rojo);
+}
+
+.alerta-campos-texto {
+  margin: 0 0 10px 0;
+  font-size: 0.85rem;
+  color: #5B6470;
+  line-height: 1.4;
+}
+
+.alerta-campos-lista {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.alerta-campos-lista li {
+  margin: 6px 0;
+  padding-left: 20px;
+  position: relative;
+  font-size: 0.85rem;
+  color: #5B6470;
+}
+
+.alerta-campos-lista li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--rojo);
+  font-weight: 700;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* ============================================================================
+   RESPONSIVE: GRID A 1 COLUMNA EN TABLETS Y MÓVILES
+   ============================================================================ */
+
+@media (max-width: 1000px) {
+  .cierre__contenedor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cierre__panel-izquierdo {
+    min-height: auto;
+    border-bottom: 1px solid var(--gris);
+    margin-bottom: 0;
+  }
+
+  .cierre__campos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .cierre__panel-izquierdo,
+  .cierre__panel-derecho {
+    padding: 20px;
+  }
+
+  .cierre__panel-titulo {
+    font-size: 1.2rem;
+  }
+
+  .cierre__puntaje-valor {
+    font-size: 2rem;
+  }
+
+  .alerta-campos-incompletos {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .alerta-campos-icono {
+    font-size: 1.3rem;
+  }
+
+  .alerta-campos-titulo {
+    font-size: 0.9rem;
+  }
+
+  .alerta-campos-texto {
+    font-size: 0.8rem;
+  }
+
+  .cierre__contenedor-grid {
+    margin: 20px -16px -16px -16px;
   }
 }
