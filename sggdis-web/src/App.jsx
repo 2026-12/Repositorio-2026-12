@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import PantallaInicio from './components/PantallaInicio';
 import { InspeccionModulo, existeProgresoGuardado } from './modules/inspecciones';
+import { ActaGeneralModulo } from './modules/actaGeneral';
 
 // Componente raíz de la aplicación: solo decide qué pantalla mostrar (menú
 // de inicio o el módulo de inspecciones). Todo el estado y flujo interno de
@@ -26,6 +27,7 @@ function App() {
     return (
       <PantallaInicio
         onNuevaInspeccion={() => setPantallaActual('inspeccion')}
+        onActaGeneral={() => setPantallaActual('actaGeneral')}
         // Historial, Reportes y Cerrar sesión: pendiente conectarlos a algo real.
         onHistorial={() => {
           console.log('Historial pendiente de implementar');
@@ -37,6 +39,12 @@ function App() {
           console.log('Cerrar sesión pendiente de conectar');
         }}
       />
+    );
+  }
+
+  if (pantallaActual === 'actaGeneral') {
+    return (
+      <ActaGeneralModulo onVolverInicio={() => setPantallaActual('inicio')} />
     );
   }
 

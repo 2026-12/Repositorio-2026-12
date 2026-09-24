@@ -1,0 +1,328 @@
+/* Reutiliza la misma paleta institucional del resto del sistema. */
+.acta-modulo {
+  --acta-azul-oscuro: #021a53;
+  --acta-azul-medio: #002e7a;
+  --acta-azul-acero: #164687;
+  --acta-dorado: #cfac65;
+  --acta-gris: #c1c5c8;
+  --acta-verde: #1c8a4a;
+
+  font-family: 'Segoe UI', Inter, Helvetica, sans-serif;
+  min-height: 100vh;
+  background: #f3f5f8;
+}
+
+.acta-modulo--cargando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px;
+  text-align: center;
+}
+
+/* ========== CABECERA ========== */
+
+.acta-cabecera {
+  background: #ffffff;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 20, 60, 0.08);
+}
+
+.acta-cabecera__marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.acta-cabecera__logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--acta-azul-medio);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.acta-cabecera__marca h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--acta-azul-oscuro);
+}
+
+.acta-cabecera__marca p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #667085;
+}
+
+.acta-cabecera__derecha {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.acta-folio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef4ff;
+  color: var(--acta-azul-medio);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.acta-folio__punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--acta-verde);
+}
+
+.acta-boton-volver {
+  border: 1px solid rgba(2, 26, 83, 0.18);
+  background: #ffffff;
+  color: var(--acta-azul-oscuro);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acta-boton-volver:hover {
+  background: #f3f6fb;
+}
+
+/* ========== TABS (indicador de progreso) ========== */
+
+.acta-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e6e8ec;
+  overflow-x: auto;
+}
+
+.acta-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #8a94a6;
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.acta-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.acta-tab__numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #eef0f3;
+  color: #8a94a6;
+  font-size: 0.72rem;
+}
+
+.acta-tab--activa {
+  color: var(--acta-azul-medio);
+  border-bottom: 3px solid var(--acta-azul-medio);
+}
+
+.acta-tab--activa .acta-tab__numero {
+  background: var(--acta-azul-medio);
+  color: #ffffff;
+}
+
+/* ========== CONTENIDO ========== */
+
+.acta-contenido {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+.acta-tarjeta {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 32px 36px;
+  box-shadow: 0 4px 18px rgba(0, 20, 60, 0.06);
+}
+
+.acta-apartado__etiqueta {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acta-dorado);
+}
+
+.acta-apartado__titulo {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+  color: var(--acta-azul-oscuro);
+}
+
+.acta-apartado__descripcion {
+  margin: 0 0 24px;
+  font-size: 0.88rem;
+  color: #667085;
+  border-bottom: 1px solid #eef0f3;
+  padding-bottom: 20px;
+}
+
+/* ========== CAMPOS ========== */
+
+.acta-campo-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.acta-campo-fila--tres {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.acta-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.acta-campo-fila .acta-campo {
+  margin-bottom: 0;
+}
+
+.acta-campo label,
+.acta-campo__etiquetaGrupo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--acta-azul-oscuro);
+}
+
+.acta-campo input,
+.acta-campo textarea {
+  border: 1px solid #d8dce3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  color: #1f2937;
+}
+
+.acta-campo input:focus,
+.acta-campo textarea:focus {
+  outline: none;
+  border-color: var(--acta-azul-acero);
+  box-shadow: 0 0 0 3px rgba(22, 70, 135, 0.12);
+}
+
+.acta-campo textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.acta-campo__error {
+  font-size: 0.76rem;
+  color: #c0392b;
+}
+
+.acta-opciones {
+  display: flex;
+  gap: 10px;
+}
+
+.acta-opcion {
+  flex: 1;
+  border: 1px solid #d8dce3;
+  background: #ffffff;
+  color: #667085;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acta-opcion--activa {
+  border-color: var(--acta-azul-medio);
+  background: #eef4ff;
+  color: var(--acta-azul-medio);
+}
+
+/* ========== PIE / ACCIONES ========== */
+
+.acta-pie {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.acta-boton {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acta-boton--primario {
+  background: var(--acta-azul-medio);
+  color: #ffffff;
+}
+
+.acta-boton--primario:hover {
+  background: var(--acta-azul-oscuro);
+}
+
+.acta-boton--primario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.acta-boton--secundario {
+  background: #ffffff;
+  color: var(--acta-azul-oscuro);
+  border: 1px solid rgba(2, 26, 83, 0.18);
+}
+
+.acta-alerta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #fdecea;
+  border: 1px solid #f5c2bd;
+  color: #7a2b23;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  font-size: 0.85rem;
+}

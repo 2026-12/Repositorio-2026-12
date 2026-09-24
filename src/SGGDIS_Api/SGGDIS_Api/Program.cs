@@ -23,6 +23,8 @@ builder.Services.AddScoped<ISeccionService, SeccionService>();
 
 builder.Services.AddScoped<IInspeccionService, InspeccionService>();
 
+builder.Services.AddScoped<IActaGeneralService, ActaGeneralService>();
+
 // Permite que el frontend (que corre en localhost:5173 durante desarrollo)
 // pueda hacer peticiones a esta API sin ser bloqueado por el navegador.
 builder.Services.AddCors(options =>
