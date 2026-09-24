@@ -1,4 +1,4 @@
-import { PROVINCIAS_COSTA_RICA } from '../config/actaGeneral';
+import { PROVINCIAS_CATALOGO } from '../config/divisionTerritorial';
 
 // Apartado I del wizard del Acta General (HU-006): datos de ubicación, fecha/
 // hora y permisos de acceso para la inspección. Es un componente "tonto": todo
@@ -6,6 +6,24 @@ import { PROVINCIAS_COSTA_RICA } from '../config/actaGeneral';
 function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
   const manejarCambio = (campo) => (evento) => {
     onCambiarCampo(campo, evento.target.value);
+  };
+
+  // Provincia → cantón → distrito en cascada, igual que Dirección Regional →
+  // Área Rectora en Guía de Inspección: cada nivel solo muestra las opciones
+  // que cuelgan del nivel anterior, y se deshabilita hasta que ese anterior
+  // esté elegido.
+  const provinciaSeleccionada = PROVINCIAS_CATALOGO.find(
+    (provincia) => provincia.nombre === datos.provincia
+  );
+
+  const cantonSeleccionado = provinciaSeleccionada?.cantones.find(
+    (canton) => canton.nombre === datos.canton
+  );
+
+  // Botones Sí/No de tipo "elegí uno de dos, pero puedo deshacerlo": si ya
+  // estaba en ese valor, volver a darle clic lo deja sin marcar (null).
+  const alternarBooleano = (campo, valor) => {
+    onCambiarCampo(campo, datos[campo] === valor ? null : valor);
   };
 
   return (
@@ -25,7 +43,8 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
             id="fechaInspeccion"
             type="date"
             value={datos.fechaInspeccion}
-            onChange={manejarCambio('fechaInspeccion')}
+            readOnly
+            className="acta-campo--soloLectura"
           />
           {errores.fechaInspeccion && (
             <span className="acta-campo__error">{errores.fechaInspeccion}</span>
@@ -38,7 +57,8 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
             id="horaInicio"
             type="time"
             value={datos.horaInicio}
-            onChange={manejarCambio('horaInicio')}
+            readOnly
+            className="acta-campo--soloLectura"
           />
           {errores.horaInicio && (
             <span className="acta-campo__error">{errores.horaInicio}</span>
@@ -87,35 +107,50 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
       <div className="acta-campo-fila acta-campo-fila--tres">
         <div className="acta-campo">
           <label htmlFor="provincia">Provincia *</label>
-          <input
-            id="provincia"
-            list="acta-provincias"
-            type="text"
-            value={datos.provincia}
-            onChange={manejarCambio('provincia')}
-          />
-          <datalist id="acta-provincias">
-            {PROVINCIAS_COSTA_RICA.map((provincia) => (
-              <option key={provincia} value={provincia} />
+          <select id="provincia" value={datos.provincia} onChange={manejarCambio('provincia')}>
+            <option value="">Seleccione una provincia</option>
+            {PROVINCIAS_CATALOGO.map((provincia) => (
+              <option key={provincia.nombre} value={provincia.nombre}>
+                {provincia.nombre}
+              </option>
             ))}
-          </datalist>
+          </select>
           {errores.provincia && <span className="acta-campo__error">{errores.provincia}</span>}
         </div>
 
         <div className="acta-campo">
           <label htmlFor="canton">Cantón *</label>
-          <input id="canton" type="text" value={datos.canton} onChange={manejarCambio('canton')} />
+          <select
+            id="canton"
+            value={datos.canton}
+            onChange={manejarCambio('canton')}
+            disabled={!provinciaSeleccionada}
+          >
+            <option value="">Seleccione un cantón</option>
+            {provinciaSeleccionada?.cantones.map((canton) => (
+              <option key={canton.nombre} value={canton.nombre}>
+                {canton.nombre}
+              </option>
+            ))}
+          </select>
           {errores.canton && <span className="acta-campo__error">{errores.canton}</span>}
         </div>
 
         <div className="acta-campo">
           <label htmlFor="distrito">Distrito *</label>
-          <input
+          <select
             id="distrito"
-            type="text"
             value={datos.distrito}
             onChange={manejarCambio('distrito')}
-          />
+            disabled={!cantonSeleccionado}
+          >
+            <option value="">Seleccione un distrito</option>
+            {cantonSeleccionado?.distritos.map((distrito) => (
+              <option key={distrito} value={distrito}>
+                {distrito}
+              </option>
+            ))}
+          </select>
           {errores.distrito && <span className="acta-campo__error">{errores.distrito}</span>}
         </div>
       </div>
@@ -168,15 +203,15 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
           <div className="acta-opciones">
             <button
               type="button"
-              className={`acta-opcion ${datos.autorizaIngreso ? 'acta-opcion--activa' : ''}`}
-              onClick={() => onCambiarCampo('autorizaIngreso', true)}
+              className={`acta-opcion ${datos.autorizaIngreso === true ? 'acta-opcion--activa' : ''}`}
+              onClick={() => alternarBooleano('autorizaIngreso', true)}
             >
               Sí
             </button>
             <button
               type="button"
-              className={`acta-opcion ${!datos.autorizaIngreso ? 'acta-opcion--activa' : ''}`}
-              onClick={() => onCambiarCampo('autorizaIngreso', false)}
+              className={`acta-opcion ${datos.autorizaIngreso === false ? 'acta-opcion--activa' : ''}`}
+              onClick={() => alternarBooleano('autorizaIngreso', false)}
             >
               No
             </button>
@@ -190,15 +225,15 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
           <div className="acta-opciones">
             <button
               type="button"
-              className={`acta-opcion ${datos.autorizaFotos ? 'acta-opcion--activa' : ''}`}
-              onClick={() => onCambiarCampo('autorizaFotos', true)}
+              className={`acta-opcion ${datos.autorizaFotos === true ? 'acta-opcion--activa' : ''}`}
+              onClick={() => alternarBooleano('autorizaFotos', true)}
             >
               Sí
             </button>
             <button
               type="button"
-              className={`acta-opcion ${!datos.autorizaFotos ? 'acta-opcion--activa' : ''}`}
-              onClick={() => onCambiarCampo('autorizaFotos', false)}
+              className={`acta-opcion ${datos.autorizaFotos === false ? 'acta-opcion--activa' : ''}`}
+              onClick={() => alternarBooleano('autorizaFotos', false)}
             >
               No
             </button>

@@ -1,6 +1,7 @@
 import { useActaGeneral } from '../hooks/useActaGeneral';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 import ApartadoInfoGeneral from './ApartadoInfoGeneral';
+import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
 
 // Índice del apartado activo dentro de APARTADOS_ACTA (para pintar el
@@ -15,17 +16,17 @@ function indiceApartado(id) {
 // demás son las próximas HU (HU-007 a HU-011) y se muestran "en construcción".
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
-    numeroActa,
     creando,
     errorCreacion,
     apartadoActivo,
-    setApartadoActivo,
+    irAApartado,
     infoGeneral,
     erroresInfoGeneral,
     actualizarCampoInfoGeneral,
     guardando,
     errorGuardado,
-    guardarYAvanzar,
+    avanzarAlSiguienteApartado,
+    retrocederAlApartadoAnterior,
   } = useActaGeneral();
 
   const indiceActivo = indiceApartado(apartadoActivo);
@@ -56,7 +57,9 @@ function ActaGeneralModulo({ onVolverInicio }) {
     <div className="acta-modulo">
       <header className="acta-cabecera">
         <div className="acta-cabecera__marca">
-          <div className="acta-cabecera__logo">MS</div>
+          <div className="acta-cabecera__logo">
+            <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+          </div>
           <div>
             <h1>Acta de Inspección General</h1>
             <p>Ministerio de Salud de Costa Rica — SGGDIS</p>
@@ -64,10 +67,6 @@ function ActaGeneralModulo({ onVolverInicio }) {
         </div>
 
         <div className="acta-cabecera__derecha">
-          <span className="acta-folio">
-            <span className="acta-folio__punto" />
-            N° {numeroActa}
-          </span>
           <button type="button" className="acta-boton-volver" onClick={onVolverInicio}>
             ← Volver al menú
           </button>
@@ -80,8 +79,8 @@ function ActaGeneralModulo({ onVolverInicio }) {
             key={apartado.id}
             type="button"
             className={`acta-tab ${indice === indiceActivo ? 'acta-tab--activa' : ''}`}
-            disabled={apartado.id !== 'info-general'}
-            onClick={() => setApartadoActivo(apartado.id)}
+            disabled={guardando}
+            onClick={() => irAApartado(apartado.id)}
           >
             <span className="acta-tab__numero">{apartado.numero}</span>
             {apartado.etiqueta}
@@ -115,19 +114,42 @@ function ActaGeneralModulo({ onVolverInicio }) {
           </div>
         )}
 
-        {apartadoActivo === 'info-general' && (
-          <div className="acta-pie">
-            <button
-              type="button"
-              className="acta-boton acta-boton--primario"
-              disabled={guardando}
-              onClick={guardarYAvanzar}
-            >
-              {guardando ? 'Guardando…' : 'Siguiente Apartado →'}
-            </button>
-          </div>
-        )}
       </main>
+
+      {/* Barra de navegación inferior fija: mismo estándar de colores que el
+          footer del módulo de Guía de Inspección (fondo degradado azul,
+          ambos botones en contorno blanco sobre el mismo fondo del footer). */}
+      <footer className="acta-pie acta-pie--fija">
+        {indiceActivo > 0 ? (
+          <button
+            type="button"
+            className="acta-boton acta-boton--secundario"
+            disabled={guardando}
+            onClick={retrocederAlApartadoAnterior}
+          >
+            ← Anterior
+          </button>
+        ) : (
+          <span className="acta-pie__espaciador" aria-hidden="true" />
+        )}
+
+        <span className="acta-pie__paso">
+          Paso {indiceActivo + 1} de {APARTADOS_ACTA.length}
+        </span>
+
+        {indiceActivo < APARTADOS_ACTA.length - 1 ? (
+          <button
+            type="button"
+            className="acta-boton acta-boton--secundario"
+            disabled={guardando}
+            onClick={avanzarAlSiguienteApartado}
+          >
+            {guardando ? 'Guardando…' : 'Siguiente →'}
+          </button>
+        ) : (
+          <span className="acta-pie__espaciador" aria-hidden="true" />
+        )}
+      </footer>
     </div>
   );
 }

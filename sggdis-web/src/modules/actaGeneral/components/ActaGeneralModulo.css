@@ -1,4 +1,6 @@
-/* Reutiliza la misma paleta institucional del resto del sistema. */
+/* Reutiliza la misma paleta y el mismo fondo degradado que el resto del
+   sistema (ver SeleccionEstablecimiento.css), para que el Acta General se
+   vea como una pantalla más de la misma aplicación y no como un módulo aparte. */
 .acta-modulo {
   --acta-azul-oscuro: #021a53;
   --acta-azul-medio: #002e7a;
@@ -9,7 +11,10 @@
 
   font-family: 'Segoe UI', Inter, Helvetica, sans-serif;
   min-height: 100vh;
-  background: #f3f5f8;
+  background:
+    radial-gradient(circle at 80% 15%, rgba(63, 137, 201, 0.45), transparent 38%),
+    linear-gradient(145deg, #021a53 0%, #073873 55%, #0c4f8a 100%);
+  padding-bottom: 40px;
 }
 
 .acta-modulo--cargando {
@@ -20,18 +25,23 @@
   gap: 16px;
   padding: 40px;
   text-align: center;
+  color: #ffffff;
 }
 
 /* ========== CABECERA ========== */
 
 .acta-cabecera {
   background: #ffffff;
-  padding: 14px 28px;
+  padding: 12px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  box-shadow: 0 2px 8px rgba(0, 20, 60, 0.08);
+  border-bottom: 3px solid var(--acta-azul-medio);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 3px 12px rgba(0, 20, 60, 0.08);
 }
 
 .acta-cabecera__marca {
@@ -41,16 +51,18 @@
 }
 
 .acta-cabecera__logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--acta-azul-medio);
-  color: #ffffff;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.acta-cabecera__logo img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .acta-cabecera__marca h1 {
@@ -69,25 +81,6 @@
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.acta-folio {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #eef4ff;
-  color: var(--acta-azul-medio);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.acta-folio__punto {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--acta-verde);
 }
 
 .acta-boton-volver {
@@ -114,6 +107,10 @@
   background: #ffffff;
   border-bottom: 1px solid #e6e8ec;
   overflow-x: auto;
+  position: sticky;
+  top: 65px;
+  z-index: 999;
+  box-shadow: 0 2px 6px rgba(0, 20, 60, 0.05);
 }
 
 .acta-tab {
@@ -161,16 +158,20 @@
 /* ========== CONTENIDO ========== */
 
 .acta-contenido {
-  max-width: 880px;
+  /* mismo ancho que .tarjeta del módulo de Guía de Inspección, para que la
+     card se vea igual de alargada en vez de quedar angosta y centrada. */
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  /* padding inferior extra: deja espacio para que la barra de navegación
+     fija (.acta-pie--fija) no tape el final del formulario. */
+  padding: 28px 24px 110px;
 }
 
 .acta-tarjeta {
   background: #ffffff;
   border-radius: 12px;
-  padding: 32px 36px;
-  box-shadow: 0 4px 18px rgba(0, 20, 60, 0.06);
+  padding: 24px 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .acta-apartado__etiqueta {
@@ -249,6 +250,67 @@
   resize: vertical;
 }
 
+/* Provincia / Cantón / Distrito: mismo select en cascada, con la misma
+   flecha dibujada a mano y el mismo separador vertical que Dirección
+   Regional / Área Rectora en el módulo de Guía de Inspección. */
+.acta-campo select {
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #d8dce3;
+  border-radius: 8px;
+  padding: 0 40px 0 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #1f2937;
+  background-color: #ffffff;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--acta-azul-acero) 50%),
+    linear-gradient(135deg, var(--acta-azul-acero) 50%, transparent 50%),
+    linear-gradient(to right, #e4ebf3, #e4ebf3);
+  background-position:
+    calc(100% - 18px) 18px,
+    calc(100% - 12px) 18px,
+    calc(100% - 36px) 50%;
+  background-size: 6px 6px, 6px 6px, 1px 24px;
+  background-repeat: no-repeat;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.acta-campo select:hover:not(:disabled) {
+  border-color: #93a6bb;
+  background-color: #fcfdff;
+}
+
+.acta-campo select:focus {
+  outline: none;
+  border-color: var(--acta-azul-acero);
+  box-shadow: 0 0 0 3px rgba(22, 70, 135, 0.12);
+}
+
+.acta-campo select:disabled {
+  background-color: #f3f5f8;
+  color: #8a949f;
+  cursor: not-allowed;
+  border-color: #d5dde7;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9aa8b7 50%),
+    linear-gradient(135deg, #9aa8b7 50%, transparent 50%),
+    linear-gradient(to right, #dde5ee, #dde5ee);
+}
+
+/* Fecha/hora de inicio: se toman del reloj del dispositivo, no son editables. */
+.acta-campo--soloLectura {
+  background: #f3f5f8;
+  color: #667085;
+  cursor: not-allowed;
+}
+
 .acta-campo__error {
   font-size: 0.76rem;
   color: #c0392b;
@@ -277,30 +339,60 @@
   color: var(--acta-azul-medio);
 }
 
-/* ========== PIE / ACCIONES ========== */
+/* ========== PIE / ACCIONES ==========
+   Mismo estándar de colores que la barra inferior del módulo de Guía de
+   Inspección (formulario.css: .pie--fijo / .boton--secundario): barra fija
+   de ancho completo con el mismo degradado azul que el fondo, y ambos
+   botones ("Anterior" y "Siguiente") en contorno blanco transparente. */
 
-.acta-pie {
+.acta-pie--fija {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  min-height: 74px;
+  z-index: 2000;
   display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px max(7%, 30px);
+  background:
+    radial-gradient(circle at 80% 15%, rgba(63, 137, 201, 0.45), transparent 38%),
+    linear-gradient(145deg, #021a53 0%, #073873 55%, #0c4f8a 100%);
+}
+
+.acta-pie__paso {
+  flex: 1;
+  text-align: center;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.acta-pie__espaciador {
+  min-width: 118px;
 }
 
 .acta-boton {
   border: none;
   border-radius: 8px;
-  padding: 12px 22px;
-  font-size: 0.88rem;
+  padding: 10px 20px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .acta-boton--primario {
-  background: var(--acta-azul-medio);
+  background: var(--acta-azul-acero);
   color: #ffffff;
 }
 
-.acta-boton--primario:hover {
-  background: var(--acta-azul-oscuro);
+.acta-boton--primario:hover:not(:disabled) {
+  background: var(--acta-azul-medio);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2, 26, 83, 0.2);
 }
 
 .acta-boton--primario:disabled {
@@ -308,10 +400,47 @@
   cursor: not-allowed;
 }
 
+/* Dentro de la barra fija, "Anterior" y "Siguiente" usan el mismo estilo
+   contorno (borde y letra blanca, fondo transparente para que se vea el
+   degradado del footer), igual que en el módulo de Guía de Inspección. */
+.acta-pie--fija .acta-boton {
+  min-width: 118px;
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.acta-pie--fija .acta-boton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+.acta-pie--fija .acta-boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Botón secundario fuera de la barra fija (p. ej. pantalla de error al crear
+   el acta): mismo look que .acta-boton-volver, sobre fondo blanco. */
 .acta-boton--secundario {
   background: #ffffff;
   color: var(--acta-azul-oscuro);
   border: 1px solid rgba(2, 26, 83, 0.18);
+}
+
+@media (max-width: 640px) {
+  .acta-pie--fija {
+    min-height: 70px;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .acta-pie--fija .acta-boton--secundario,
+  .acta-pie__espaciador {
+    min-width: auto;
+  }
 }
 
 .acta-alerta {

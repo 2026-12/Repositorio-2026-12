@@ -14,14 +14,3 @@ export const APARTADOS_ACTA = [
   { id: 'acciones', numero: 'V', etiqueta: 'Acciones' },
   { id: 'cierre', numero: 'VI', etiqueta: 'Cierre y Firmas' },
 ];
-
-// Provincias de Costa Rica, para el selector de ubicación del Apartado I.
-export const PROVINCIAS_COSTA_RICA = [
-  'San José',
-  'Alajuela',
-  'Cartago',
-  'Heredia',
-  'Guanacaste',
-  'Puntarenas',
-  'Limón',
-];
