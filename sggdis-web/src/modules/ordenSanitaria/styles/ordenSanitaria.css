@@ -1,0 +1,961 @@
+/* ============================================================
+   ORDEN SANITARIA
+   ============================================================ */
+
+.orden-sanitaria {
+  --os-azul-oscuro: #021a53;
+  --os-azul: #002e7a;
+  --os-azul-medio: #164687;
+  --os-dorado: #cfac65;
+  --os-gris: #c1c5c8;
+  --os-gris-claro: #f4f6f8;
+  --os-borde: #d8dde5;
+  --os-texto: #202632;
+  --os-texto-secundario: #5d6675;
+  --os-blanco: #ffffff;
+  --os-error: #b42318;
+
+  min-height: 100vh;
+  background: #f5f6f8;
+  color: var(--os-texto);
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+
+/* ============================================================
+   ZONA SUPERIOR FIJA
+   ============================================================ */
+
+.orden-sanitaria__superior {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  background: var(--os-blanco);
+
+  box-shadow:
+    0 2px 8px rgba(2, 26, 83, 0.08);
+}
+
+
+/* ============================================================
+   ENCABEZADO
+   ============================================================ */
+
+.orden-sanitaria__encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  min-height: 68px;
+  padding: 10px 32px;
+
+  background: var(--os-blanco);
+}
+
+
+/*
+ * El encabezado se mantiene limpio.
+ * No utilizamos líneas divisorias verticales.
+ */
+
+.orden-sanitaria__encabezado-identidad {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+
+.orden-sanitaria__logo {
+  width: auto;
+  max-width: 120px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+
+.orden-sanitaria__encabezado-textos {
+  min-width: 0;
+}
+
+
+.orden-sanitaria__encabezado h1 {
+  margin: 0;
+
+  color: var(--os-azul-oscuro);
+
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+
+.orden-sanitaria__encabezado-subtitulo {
+  margin: 4px 0 0;
+
+  color: var(--os-texto-secundario);
+
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+
+.orden-sanitaria__volver {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 38px;
+  padding: 8px 14px;
+
+  border: 1px solid var(--os-azul);
+  border-radius: 6px;
+
+  background: var(--os-blanco);
+  color: var(--os-azul);
+
+  font-size: 0.86rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+
+.orden-sanitaria__volver:hover {
+  background: var(--os-azul);
+  color: var(--os-blanco);
+}
+
+
+/* ============================================================
+   NAVEGACIÓN DE PASOS
+   ============================================================ */
+
+.orden-sanitaria__navegacion {
+  width: 100%;
+  padding: 0 32px 12px;
+
+  background: var(--os-blanco);
+}
+
+
+.orden-sanitaria__pasos {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+
+.orden-sanitaria__paso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 42px;
+  padding: 8px 10px;
+
+  border: 1px solid var(--os-borde);
+  border-radius: 6px;
+
+  background: var(--os-blanco);
+  color: var(--os-texto-secundario);
+
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+
+.orden-sanitaria__paso:hover {
+  border-color: var(--os-azul-medio);
+  color: var(--os-azul);
+}
+
+
+.orden-sanitaria__paso-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 25px;
+  height: 25px;
+
+  border-radius: 50%;
+
+  background: var(--os-gris-claro);
+  color: var(--os-azul-oscuro);
+
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+
+.orden-sanitaria__paso--activo {
+  border-color: var(--os-azul);
+  background: var(--os-azul);
+  color: var(--os-blanco);
+}
+
+
+.orden-sanitaria__paso--activo:hover {
+  background: var(--os-azul-oscuro);
+  color: var(--os-blanco);
+}
+
+
+.orden-sanitaria__paso--activo
+.orden-sanitaria__paso-numero {
+  background: var(--os-dorado);
+  color: var(--os-azul-oscuro);
+}
+
+
+/* ============================================================
+   CONTENIDO PRINCIPAL
+   ============================================================ */
+
+.orden-sanitaria__contenido {
+  width: min(1180px, calc(100% - 48px));
+  margin: 28px auto 110px;
+}
+
+
+.orden-sanitaria__seccion {
+  padding: 28px 32px 34px;
+
+  border: 1px solid var(--os-borde);
+  border-radius: 8px;
+
+  background: var(--os-blanco);
+
+  box-shadow:
+    0 3px 14px rgba(2, 26, 83, 0.05);
+}
+
+
+.orden-sanitaria__adaptado {
+  display: inline-block;
+
+  margin-bottom: 8px;
+
+  color: var(--os-dorado);
+
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+
+.orden-sanitaria__seccion > h2 {
+  margin: 0;
+
+  color: var(--os-azul-oscuro);
+
+  font-size: 1.42rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+
+.orden-sanitaria__descripcion {
+  max-width: 850px;
+
+  margin: 8px 0 24px;
+
+  color: var(--os-texto-secundario);
+
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+
+/* ============================================================
+   GRUPOS
+   ============================================================ */
+
+.orden-sanitaria__grupo {
+  margin-top: 24px;
+}
+
+
+.orden-sanitaria__grupo > h3,
+.orden-sanitaria__responsable > h3 {
+  margin: 0 0 18px;
+
+  color: var(--os-azul-oscuro);
+
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   FILAS
+   ============================================================ */
+
+.orden-sanitaria__fila {
+  display: grid;
+  gap: 18px;
+}
+
+
+.orden-sanitaria__fila--2 {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+
+.orden-sanitaria__fila--3 {
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+}
+
+
+/* ============================================================
+   CAMPOS
+   ============================================================ */
+
+.orden-sanitaria__campo {
+  display: flex;
+  flex-direction: column;
+
+  margin-bottom: 18px;
+}
+
+
+.orden-sanitaria__campo label {
+  margin-bottom: 7px;
+
+  color: var(--os-texto);
+
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+
+.orden-sanitaria__campo input,
+.orden-sanitaria__campo select,
+.orden-sanitaria__campo textarea {
+  width: 100%;
+
+  border: 1px solid #bfc7d2;
+  border-radius: 5px;
+
+  background: var(--os-blanco);
+  color: var(--os-texto);
+
+  font: inherit;
+  font-size: 0.9rem;
+
+  outline: none;
+
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+
+.orden-sanitaria__campo input,
+.orden-sanitaria__campo select {
+  min-height: 42px;
+  padding: 8px 11px;
+}
+
+
+.orden-sanitaria__campo textarea {
+  min-height: 105px;
+  padding: 10px 11px;
+
+  line-height: 1.5;
+
+  resize: vertical;
+}
+
+
+.orden-sanitaria__campo input:focus,
+.orden-sanitaria__campo select:focus,
+.orden-sanitaria__campo textarea:focus {
+  border-color: var(--os-azul-medio);
+
+  box-shadow:
+    0 0 0 3px rgba(22, 70, 135, 0.1);
+}
+
+
+.orden-sanitaria__campo input:disabled,
+.orden-sanitaria__campo select:disabled,
+.orden-sanitaria__campo textarea:disabled {
+  background: #eef1f4;
+  color: #707988;
+
+  cursor: not-allowed;
+}
+
+
+.orden-sanitaria__campo
+input::placeholder,
+.orden-sanitaria__campo
+textarea::placeholder {
+  color: #8c94a0;
+}
+
+
+/* ============================================================
+   ERRORES
+   ============================================================ */
+
+.orden-sanitaria__error {
+  margin: 6px 0 0;
+
+  color: var(--os-error);
+
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+
+/* ============================================================
+   PANELES DE INDICACIONES / DESPLEGABLES
+   ============================================================ */
+
+.orden-sanitaria__indicaciones {
+  margin: 18px 0;
+
+  border: 1px solid #d7dce4;
+  border-radius: 6px;
+
+  background: #f8f9fb;
+
+  overflow: hidden;
+}
+
+
+.orden-sanitaria__indicaciones-boton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+
+  border: 0;
+
+  background: transparent;
+  color: var(--os-azul-oscuro);
+
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+
+.orden-sanitaria__indicaciones-boton:hover {
+  background: #f0f3f7;
+}
+
+
+.orden-sanitaria__indicaciones-icono {
+  color: var(--os-dorado);
+
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+
+.orden-sanitaria__indicaciones-contenido {
+  padding: 4px 16px 16px;
+
+  color: #485261;
+
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+
+.orden-sanitaria__indicaciones-contenido p {
+  margin: 9px 0;
+}
+
+
+.orden-sanitaria__indicaciones-contenido ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+
+.orden-sanitaria__indicaciones-contenido li {
+  margin: 7px 0;
+}
+
+
+/* ============================================================
+   ORDENANZAS
+   ============================================================ */
+
+.orden-sanitaria__lista-ordenanzas {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  margin-top: 22px;
+}
+
+
+.orden-sanitaria__ordenanza {
+  padding: 20px;
+
+  border: 1px solid var(--os-borde);
+  border-radius: 7px;
+
+  background: #fbfcfd;
+}
+
+
+.orden-sanitaria__ordenanza-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 18px;
+}
+
+
+.orden-sanitaria__ordenanza-cabecera h3 {
+  margin: 0;
+
+  color: var(--os-azul-oscuro);
+
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+
+.orden-sanitaria__ordenanza-eliminar {
+  padding: 7px 11px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 5px;
+
+  background: var(--os-blanco);
+  color: #8b2d2d;
+
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+.orden-sanitaria__ordenanza-eliminar:hover {
+  border-color: #b42318;
+  background: #fff5f4;
+  color: #b42318;
+}
+
+
+.orden-sanitaria__agregar-ordenanza {
+  margin-top: 18px;
+  padding: 9px 14px;
+
+  border: 1px solid var(--os-azul);
+  border-radius: 5px;
+
+  background: var(--os-blanco);
+  color: var(--os-azul);
+
+  font-size: 0.84rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+
+.orden-sanitaria__agregar-ordenanza:hover {
+  background: var(--os-azul);
+  color: var(--os-blanco);
+}
+
+
+/* ============================================================
+   INFORMACIÓN LEGAL
+   ============================================================ */
+
+.orden-sanitaria__contenido-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  margin-top: 30px;
+  padding-top: 24px;
+
+  border-top: 1px solid var(--os-borde);
+}
+
+
+/*
+ * Diferenciación sutil del bloque de uso interno.
+ *
+ * Si PanelIndicaciones recibe una clase específica posteriormente,
+ * podemos hacerlo todavía más visible.
+ */
+
+.orden-sanitaria__contenido-legal
+.orden-sanitaria__indicaciones {
+  margin: 0;
+}
+
+
+/* ============================================================
+   RESPONSABLE
+   ============================================================ */
+
+.orden-sanitaria__responsable {
+  margin-top: 30px;
+  padding: 22px;
+
+  border: 1px solid var(--os-borde);
+  border-radius: 7px;
+
+  background: #fbfcfd;
+}
+
+
+/* ============================================================
+   BOTONES GENERALES
+   ============================================================ */
+
+.orden-sanitaria__boton-principal,
+.orden-sanitaria__boton-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 40px;
+  padding: 8px 17px;
+
+  border-radius: 5px;
+
+  font-size: 0.84rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+
+.orden-sanitaria__boton-principal {
+  border: 1px solid var(--os-azul);
+  background: var(--os-azul);
+  color: var(--os-blanco);
+}
+
+
+.orden-sanitaria__boton-principal:hover {
+  border-color: var(--os-azul-oscuro);
+  background: var(--os-azul-oscuro);
+}
+
+
+.orden-sanitaria__boton-secundario {
+  border: 1px solid #bfc7d2;
+  background: var(--os-blanco);
+  color: var(--os-azul);
+}
+
+
+.orden-sanitaria__boton-secundario:hover:not(:disabled) {
+  border-color: var(--os-azul);
+  background: #f5f8fc;
+}
+
+
+.orden-sanitaria__boton-secundario:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   ACCIONES INFERIORES
+   ============================================================ */
+
+.orden-sanitaria__acciones {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 90;
+
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+
+  min-height: 66px;
+  padding: 10px 32px;
+
+  border-top: 1px solid var(--os-borde);
+
+  background: rgba(255, 255, 255, 0.97);
+
+  box-shadow:
+    0 -3px 12px rgba(2, 26, 83, 0.06);
+}
+
+
+.orden-sanitaria__acciones
+.orden-sanitaria__boton-secundario {
+  justify-self: start;
+}
+
+
+.orden-sanitaria__acciones
+.orden-sanitaria__boton-principal {
+  justify-self: end;
+}
+
+
+.orden-sanitaria__contador {
+  color: var(--os-texto-secundario);
+
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+
+/* ============================================================
+   ACCESIBILIDAD
+   ============================================================ */
+
+.orden-sanitaria button:focus-visible,
+.orden-sanitaria input:focus-visible,
+.orden-sanitaria select:focus-visible,
+.orden-sanitaria textarea:focus-visible {
+  outline: 2px solid var(--os-dorado);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .orden-sanitaria__encabezado {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .orden-sanitaria__navegacion {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .orden-sanitaria__pasos {
+    grid-template-columns:
+      repeat(5, minmax(105px, 1fr));
+
+    overflow-x: auto;
+
+    padding-bottom: 4px;
+  }
+
+  .orden-sanitaria__contenido {
+    width: calc(100% - 32px);
+    margin-top: 20px;
+  }
+
+  .orden-sanitaria__seccion {
+    padding: 24px;
+  }
+
+  .orden-sanitaria__fila--3 {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* ============================================================
+   MÓVIL
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .orden-sanitaria__encabezado {
+    align-items: flex-start;
+
+    padding: 10px 14px;
+  }
+
+  .orden-sanitaria__logo {
+    max-width: 95px;
+    height: 36px;
+  }
+
+  .orden-sanitaria__encabezado h1 {
+    font-size: 1rem;
+  }
+
+  .orden-sanitaria__encabezado-subtitulo {
+    display: none;
+  }
+
+  .orden-sanitaria__volver {
+    min-height: 36px;
+    padding: 7px 10px;
+
+    font-size: 0.76rem;
+  }
+
+  .orden-sanitaria__navegacion {
+    padding: 0 14px 9px;
+
+    overflow-x: auto;
+  }
+
+  .orden-sanitaria__pasos {
+    display: flex;
+
+    width: max-content;
+    min-width: 100%;
+
+    gap: 6px;
+  }
+
+  .orden-sanitaria__paso {
+    flex: 0 0 auto;
+
+    min-width: 112px;
+    min-height: 38px;
+
+    padding: 7px 9px;
+  }
+
+  .orden-sanitaria__contenido {
+    width: calc(100% - 20px);
+
+    margin-top: 12px;
+    margin-bottom: 105px;
+  }
+
+  .orden-sanitaria__seccion {
+    padding: 20px 16px;
+
+    border-radius: 6px;
+  }
+
+  .orden-sanitaria__seccion > h2 {
+    font-size: 1.25rem;
+  }
+
+  .orden-sanitaria__descripcion {
+    font-size: 0.84rem;
+  }
+
+  .orden-sanitaria__fila--2,
+  .orden-sanitaria__fila--3 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .orden-sanitaria__ordenanza {
+    padding: 16px 14px;
+  }
+
+  .orden-sanitaria__ordenanza-cabecera {
+    align-items: flex-start;
+  }
+
+  .orden-sanitaria__responsable {
+    padding: 17px 14px;
+  }
+
+  .orden-sanitaria__acciones {
+    grid-template-columns:
+      auto 1fr auto;
+
+    min-height: 62px;
+
+    padding: 8px 12px;
+  }
+
+  .orden-sanitaria__contador {
+    justify-self: center;
+
+    font-size: 0.73rem;
+  }
+
+  .orden-sanitaria__boton-principal,
+  .orden-sanitaria__boton-secundario {
+    min-height: 38px;
+
+    padding: 7px 11px;
+
+    font-size: 0.76rem;
+  }
+}
+
+
+/* ============================================================
+   PANTALLAS MUY PEQUEÑAS
+   ============================================================ */
+
+@media (max-width: 420px) {
+  .orden-sanitaria__encabezado-identidad {
+    gap: 8px;
+  }
+
+  .orden-sanitaria__encabezado h1 {
+    font-size: 0.92rem;
+  }
+
+  .orden-sanitaria__acciones {
+    gap: 6px;
+  }
+
+  .orden-sanitaria__contador {
+    font-size: 0.68rem;
+  }
+
+  .orden-sanitaria__boton-principal,
+  .orden-sanitaria__boton-secundario {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+}
