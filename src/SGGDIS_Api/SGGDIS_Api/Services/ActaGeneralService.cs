@@ -69,6 +69,23 @@ namespace SGGDIS_Api.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task GuardarResponsableAsync(int idActa, InfoResponsableActaDto dto)
+        {
+            var acta = await _context.ActasGenerales.FindAsync(idActa)
+                ?? throw new KeyNotFoundException("El acta no existe.");
+
+            acta.NombreResponsable = LimpiarOpcional(dto.NombreResponsable);
+            acta.CargoResponsable = LimpiarOpcional(dto.CargoResponsable);
+            // El detalle libre de "Otro" solo tiene sentido si ese fue el cargo elegido;
+            // si el cargo es otro, se descarta para no dejar basura de una elección anterior.
+            acta.CargoResponsableOtro = acta.CargoResponsable == "OTRO"
+                ? LimpiarOpcional(dto.CargoResponsableOtro)
+                : null;
+            acta.NumeroIdentificacionResponsable = LimpiarOpcional(dto.NumeroIdentificacionResponsable);
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<InsActaGeneral?> ObtenerActaAsync(int idActa)
         {
             return await _context.ActasGenerales

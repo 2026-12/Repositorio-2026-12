@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
-import { crearActaGeneral, guardarInfoGeneral } from '../services/actaGeneralService';
+import {
+  crearActaGeneral,
+  guardarInfoGeneral,
+  guardarResponsable,
+} from '../services/actaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
+import { validarResponsable } from '../domain/validacionResponsable';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
@@ -36,9 +41,22 @@ function crearInfoGeneralInicial() {
   };
 }
 
+function crearResponsableInicial() {
+  return {
+    nombreResponsable: '',
+    // null = todavía sin marcar; ninguna opción de cargo debe salir preseleccionada.
+    cargoResponsable: null,
+    cargoResponsableOtro: '',
+    numeroIdentificacionResponsable: '',
+  };
+}
+
 // Maneja el ciclo de vida del Acta General: la crea en el backend al entrar,
-// guarda el estado del Apartado I (Información General) y controla en qué
-// apartado del wizard está parado el usuario.
+// guarda el estado de cada apartado del wizard y controla en cuál está
+// parado el usuario. Cada apartado con formulario real (Info General,
+// Responsable, y los que se vayan sumando en HU-008 a HU-011) tiene su propio
+// trío de estado (datos, tocado, errores); validarYGuardarApartadoActivo los
+// consulta a través de un mapa en vez de repetir el mismo bloque por cada uno.
 export function useActaGeneral() {
   const [idActa, setIdActa] = useState(null);
   const [numeroActa, setNumeroActa] = useState(null);
@@ -46,11 +64,16 @@ export function useActaGeneral() {
   const [errorCreacion, setErrorCreacion] = useState(null);
 
   const [apartadoActivo, setApartadoActivo] = useState('info-general');
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardado, setErrorGuardado] = useState(null);
+
   const [infoGeneral, setInfoGeneral] = useState(crearInfoGeneralInicial);
   const [infoGeneralTocado, setInfoGeneralTocado] = useState(false);
   const [erroresInfoGeneral, setErroresInfoGeneral] = useState({});
-  const [guardando, setGuardando] = useState(false);
-  const [errorGuardado, setErrorGuardado] = useState(null);
+
+  const [responsable, setResponsable] = useState(crearResponsableInicial);
+  const [responsableTocado, setResponsableTocado] = useState(false);
+  const [erroresResponsable, setErroresResponsable] = useState({});
 
   // Al montar el módulo se crea el acta en el backend (EN_PROCESO) y se le
   // asigna el folio; así el número de acta ya aparece en el encabezado
@@ -107,20 +130,66 @@ export function useActaGeneral() {
     });
   };
 
+  const actualizarCampoResponsable = (campo, valor) => {
+    setResponsable((actual) => {
+      const siguiente = { ...actual, [campo]: valor };
+
+      // Si deja de elegir "Otro" como cargo, el texto libre que había
+      // escrito ya no aplica.
+      if (campo === 'cargoResponsable' && valor !== 'OTRO') {
+        siguiente.cargoResponsableOtro = '';
+      }
+
+      return siguiente;
+    });
+
+    setResponsableTocado(true);
+    setErroresResponsable((actuales) => {
+      if (!actuales[campo]) return actuales;
+      const resto = { ...actuales };
+      delete resto[campo];
+      return resto;
+    });
+  };
+
+  // Un solo lugar donde vive, por cada apartado con formulario real, qué
+  // datos tiene, si el inspector ya lo empezó a llenar, cómo se valida y
+  // cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
+  // una entrada acá, no repetir el try/catch de guardado otra vez.
+  const configuracionApartados = {
+    'info-general': {
+      datos: infoGeneral,
+      tocado: infoGeneralTocado,
+      validar: validarInfoGeneral,
+      setErrores: setErroresInfoGeneral,
+      guardar: (datos) => guardarInfoGeneral(idActa, datos),
+    },
+    responsable: {
+      datos: responsable,
+      tocado: responsableTocado,
+      validar: validarResponsable,
+      setErrores: setErroresResponsable,
+      guardar: (datos) => guardarResponsable(idActa, datos),
+    },
+  };
+
   // Valida y guarda el apartado que se está abandonando. Devuelve true si se
   // puede salir de él. Al entrar al acta no se asume que el inspector va a
-  // llenar Info General primero: mientras no toque ningún campo, puede
-  // saltar libremente a cualquier otro apartado. La obligatoriedad solo se
-  // exige una vez que efectivamente empezó a llenarla.
+  // llenar el apartado activo por defecto: mientras no toque ningún campo,
+  // puede saltar libremente a cualquier otro. La obligatoriedad solo se
+  // exige una vez que efectivamente empezó a llenarlo.
   const validarYGuardarApartadoActivo = async () => {
-    if (apartadoActivo !== 'info-general' || !infoGeneralTocado) {
-      // Los demás apartados (HU-007 a HU-011) todavía no tienen formulario
-      // real, así que por ahora no hay nada que validar para salir de ellos.
+    const configuracion = configuracionApartados[apartadoActivo];
+
+    if (!configuracion || !configuracion.tocado) {
+      // Los apartados que todavía no tienen formulario real (HU-008 a
+      // HU-011) no están en el mapa, así que por ahora no hay nada que
+      // validar para salir de ellos.
       return true;
     }
 
-    const errores = validarInfoGeneral(infoGeneral);
-    setErroresInfoGeneral(errores);
+    const errores = configuracion.validar(configuracion.datos);
+    configuracion.setErrores(errores);
 
     if (Object.keys(errores).length > 0 || !idActa) {
       return false;
@@ -130,7 +199,7 @@ export function useActaGeneral() {
     setErrorGuardado(null);
 
     try {
-      await guardarInfoGeneral(idActa, infoGeneral);
+      await configuracion.guardar(configuracion.datos);
       return true;
     } catch (error) {
       setErrorGuardado(error.message);
@@ -181,6 +250,10 @@ export function useActaGeneral() {
     infoGeneral,
     erroresInfoGeneral,
     actualizarCampoInfoGeneral,
+
+    responsable,
+    erroresResponsable,
+    actualizarCampoResponsable,
 
     guardando,
     errorGuardado,

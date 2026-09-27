@@ -321,12 +321,24 @@
   gap: 10px;
 }
 
+/* Variante para grupos con varias opciones cortas (ej. el cargo del
+   responsable en el Apartado II): en vez de repartirse el ancho completo
+   como Sí/No, cada chip mide lo que necesita su texto y se acomodan en
+   varias líneas si no caben. */
+.acta-opciones--envolver {
+  flex-wrap: wrap;
+}
+
+.acta-opciones--envolver .acta-opcion {
+  flex: 0 1 auto;
+}
+
 .acta-opcion {
   flex: 1;
   border: 1px solid #d8dce3;
   background: #ffffff;
   color: #667085;
-  padding: 10px;
+  padding: 10px 16px;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;

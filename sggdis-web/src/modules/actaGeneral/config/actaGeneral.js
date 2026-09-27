@@ -14,3 +14,16 @@ export const APARTADOS_ACTA = [
   { id: 'acciones', numero: 'V', etiqueta: 'Acciones' },
   { id: 'cierre', numero: 'VI', etiqueta: 'Cierre y Firmas' },
 ];
+
+// Opciones del literal "k. Cargo de la persona que atendió la inspección" del
+// acta oficial (Apartado II). El valor es el que viaja al backend; "OTRO"
+// además habilita un campo de texto libre para especificarlo.
+export const CARGOS_RESPONSABLE = [
+  { valor: 'REPRESENTANTE_LEGAL', etiqueta: 'Representante legal' },
+  { valor: 'DENUNCIANTE', etiqueta: 'Denunciante' },
+  { valor: 'PRESIDENTE', etiqueta: 'Presidente(a)' },
+  { valor: 'DENUNCIADO', etiqueta: 'Denunciado(a)' },
+  { valor: 'ENCARGADO', etiqueta: 'Encargado(a)' },
+  { valor: 'APODERADO', etiqueta: 'Apoderado(a)' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+];

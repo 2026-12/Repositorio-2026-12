@@ -35,3 +35,17 @@ export function guardarInfoGeneral(idActa, datos) {
     }),
   });
 }
+
+// Guarda (autoguardado) el Apartado II - Información del Responsable.
+export function guardarResponsable(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/responsable`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nombreResponsable: datos.nombreResponsable,
+      cargoResponsable: datos.cargoResponsable,
+      cargoResponsableOtro: datos.cargoResponsableOtro,
+      numeroIdentificacionResponsable: datos.numeroIdentificacionResponsable,
+    }),
+  });
+}

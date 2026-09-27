@@ -88,5 +88,25 @@ namespace SGGDIS_Api.Models
         [MaxLength(1)]
         [Column("AUTORIZA_FOTOS")]
         public string? AutorizaFotos { get; set; }
+
+        // ---- Apartado II (HU-007): Información del Responsable durante la inspección ----
+
+        [MaxLength(200)]
+        [Column("NOMBRE_RESPONSABLE")]
+        public string? NombreResponsable { get; set; }
+
+        // Uno de los valores fijos de CARGOS_RESPONSABLE (frontend), ej. "REPRESENTANTE_LEGAL" u "OTRO".
+        [MaxLength(30)]
+        [Column("CARGO_RESPONSABLE")]
+        public string? CargoResponsable { get; set; }
+
+        // Solo tiene contenido cuando CargoResponsable es "OTRO": el detalle que escribió el inspector.
+        [MaxLength(200)]
+        [Column("CARGO_RESPONSABLE_OTRO")]
+        public string? CargoResponsableOtro { get; set; }
+
+        [MaxLength(30)]
+        [Column("NUMERO_IDENTIFICACION_RESPONSABLE")]
+        public string? NumeroIdentificacionResponsable { get; set; }
     }
 }
