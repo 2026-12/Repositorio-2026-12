@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+/*import { useEffect, useState } from 'react';
 import PantallaInicio from './components/PantallaInicio';
 import { InspeccionModulo, existeProgresoGuardado } from './modules/inspecciones';
 
@@ -42,6 +42,40 @@ function App() {
 
   return (
     <InspeccionModulo onVolverInicio={() => setPantallaActual('inicio')} />
+  );
+}
+
+export default App;*/
+
+/*--------------------------------------------------------------------------------------------------------------*/
+
+import OrdenSanitariaModulo from './modules/ordenSanitaria/OrdenSanitariaModulo';
+
+function App() {
+  const inspeccionRelacionada = {
+    idInspeccion: 3,
+    consecutivo: 'MS-DRRSC-ARS-G-AI-0009-2026',
+    nombreEstablecimiento: 'Soda Purris',
+    nombrePersonaNotificar: 'Juan Pérez',
+    identificacionPersonaNotificar: '1-1111-1111',
+    tipoEstablecimiento: 'Soda, Restaurante o Bar con servicio Express',
+  };
+
+  const volverAlMenu = () => {
+    console.log('Volver al menú principal');
+  };
+
+  const finalizarOrdenSanitaria = (respuesta) => {
+    console.log('Orden Sanitaria registrada:', respuesta);
+  };
+
+  return (
+    <OrdenSanitariaModulo
+      idInspeccion={inspeccionRelacionada.idInspeccion}
+      inspeccionRelacionada={inspeccionRelacionada}
+      onVolverInicio={volverAlMenu}
+      onFinalizar={finalizarOrdenSanitaria}
+    />
   );
 }
 

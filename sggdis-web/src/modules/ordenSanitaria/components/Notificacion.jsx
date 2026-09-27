@@ -1,86 +1,82 @@
-import {
-  TEXTOS_ORDEN_SANITARIA,
-} from '../config/textosOrdenSanitaria';
+import { useRef } from 'react';
 
-import PanelIndicaciones
-  from './comunes/PanelIndicaciones';
+export default function Notificacion({ datos, errores = {}, onChange }) {
+  const fechaEmisionRef = useRef(null);
+  const fechaNotificacionRef = useRef(null);
 
-export default function Notificacion({
-  datos,
-  errores = {},
-  onChange,
-}) {
-  const manejarCambio = (campo) => (event) => {
-    onChange(campo, event.target.value);
+  const obtenerFechaActual = () => {
+    const fecha = new Date();
+    const offset = fecha.getTimezoneOffset() * 60000;
+    return new Date(fecha.getTime() - offset).toISOString().slice(0, 10);
+  };
+
+  const fechaActual = obtenerFechaActual();
+
+  const abrirCalendario = (referencia) => {
+    try {
+      referencia.current?.showPicker?.();
+    } catch {
+      // El navegador utilizará el selector nativo.
+    }
+  };
+
+  const cambiarFecha = (campo, valor) => {
+    if (valor && valor < fechaActual) return;
+    onChange(campo, valor);
   };
 
   return (
-    <section className="orden-sanitaria__seccion">
-      <span className="orden-sanitaria__adaptado">
-        ORDEN SANITARIA
-      </span>
+    <>
+      <section className="orden-apartado">
+        <h2>Notificación</h2>
+        <p>Complete las fechas correspondientes a la emisión y notificación de la Orden Sanitaria.</p>
+      </section>
 
-      <h2>Notificación</h2>
+      <section className="orden-grupo orden-grupo--notificacion">
+        <div className="orden-grupo__titulo">Fechas de la Orden Sanitaria</div>
 
-      <p className="orden-sanitaria__descripcion">
-        {
-          TEXTOS_ORDEN_SANITARIA.notificacion
-            .descripcion
-        }
-      </p>
+        <div className="orden-grupo__contenido">
+          <div className="orden-grid-2">
+            <div className="orden-campo">
+              <label htmlFor="fechaEmision">Fecha de emisión </label>
 
-      <PanelIndicaciones
-        textos={
-          TEXTOS_ORDEN_SANITARIA.notificacion
-            .indicaciones ?? []
-        }
-      />
+              <input
+                ref={fechaEmisionRef}
+                id="fechaEmision"
+                type="date"
+                min={fechaActual}
+                value={datos.fechaEmision || ''}
+                onChange={(e) => cambiarFecha('fechaEmision', e.target.value)}
+                onClick={() => abrirCalendario(fechaEmisionRef)}
+                onFocus={() => abrirCalendario(fechaEmisionRef)}
+              />
 
-      <div className="orden-sanitaria__grupo">
-        <h3>Fechas de la Orden Sanitaria</h3>
-
-        <div className="orden-sanitaria__fila orden-sanitaria__fila--2">
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="fechaEmision">
-              Fecha de emisión *
-            </label>
-
-            <input
-              id="fechaEmision"
-              type="date"
-              value={datos.fechaEmision}
-              onChange={manejarCambio('fechaEmision')}
-            />
-
-            {errores.fechaEmision && (
-              <p className="orden-sanitaria__error">
-                {errores.fechaEmision}
-              </p>
-            )}
-          </div>
-
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="fechaNotificacion">
-              Fecha de notificación *
-            </label>
-
-            <input
-              id="fechaNotificacion"
-              type="date"
-              value={datos.fechaNotificacion}
-              onChange={manejarCambio(
-                'fechaNotificacion'
+              {errores.fechaEmision && (
+                <span className="orden-error">{errores.fechaEmision}</span>
               )}
-            />
+            </div>
 
-            {errores.fechaNotificacion && (
-              <p className="orden-sanitaria__error">
-                {errores.fechaNotificacion}
-              </p>
-            )}
+            <div className="orden-campo">
+              <label htmlFor="fechaNotificacion">Fecha de notificación </label>
+
+              <input
+                ref={fechaNotificacionRef}
+                id="fechaNotificacion"
+                type="date"
+                min={fechaActual}
+                value={datos.fechaNotificacion || ''}
+                onChange={(e) => cambiarFecha('fechaNotificacion', e.target.value)}
+                onClick={() => abrirCalendario(fechaNotificacionRef)}
+                onFocus={() => abrirCalendario(fechaNotificacionRef)}
+              />
+
+              {errores.fechaNotificacion && (
+                <span className="orden-error">{errores.fechaNotificacion}</span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

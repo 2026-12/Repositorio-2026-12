@@ -1,159 +1,107 @@
-function tieneValor(valor) {
-  return typeof valor === 'string'
-    ? valor.trim().length > 0
-    : valor !== null && valor !== undefined;
-}
-
-export function validarInformacionGeneral(informacionGeneral) {
+export function validarOrdenSanitaria(datos) {
   const errores = {};
 
-  if (!tieneValor(informacionGeneral.nombrePersonaNotificar)) {
-    errores.nombrePersonaNotificar =
-      'El nombre de la persona a notificar es obligatorio.';
+  const obtenerFechaActual = () => {
+    const fecha = new Date();
+    const offset = fecha.getTimezoneOffset() * 60000;
+    return new Date(fecha.getTime() - offset).toISOString().slice(0, 10);
+  };
+
+  const fechaActual = obtenerFechaActual();
+
+  if (!datos.informacionGeneral.numeroConsecutivo?.trim()) {
+    errores.numeroConsecutivo = 'No fue posible obtener el número consecutivo de la inspección relacionada.';
   }
 
-  if (!tieneValor(informacionGeneral.condicionPersonaNotificar)) {
-    errores.condicionPersonaNotificar =
-      'Debe seleccionar la condición de la persona a notificar.';
+  if (!datos.informacionGeneral.nombreCompleto?.trim()) {
+    errores.nombreCompleto = 'No fue posible obtener el nombre de la persona a notificar desde la inspección relacionada.';
+  }
+
+  if (!datos.informacionGeneral.identificacion?.trim()) {
+    errores.identificacion = 'No fue posible obtener el número de identificación desde la inspección relacionada.';
+  }
+
+  if (!datos.informacionGeneral.nombreEstablecimiento?.trim()) {
+    errores.nombreEstablecimiento = 'No fue posible obtener el nombre del establecimiento desde la inspección relacionada.';
+  }
+
+  if (!datos.informacionGeneral.condicion?.trim()) {
+    errores.condicion = 'Debe seleccionar la condición de la persona a notificar.';
   }
 
   if (
-    informacionGeneral.condicionPersonaNotificar === 'Otro'
-    && !tieneValor(informacionGeneral.otraCondicion)
+    datos.informacionGeneral.condicion === 'Otro' &&
+    !datos.informacionGeneral.otraCondicion?.trim()
   ) {
-    errores.otraCondicion =
-      'Debe especificar la condición de la persona a notificar.';
+    errores.otraCondicion = 'Debe indicar la otra condición.';
   }
 
-  if (!tieneValor(informacionGeneral.identificacion)) {
-    errores.identificacion =
-      'La identificación es obligatoria.';
+  if (!datos.ubicacion.idProvincia) {
+    errores.idProvincia = 'Debe seleccionar una provincia.';
   }
 
-  if (!tieneValor(informacionGeneral.nombreEstablecimiento)) {
-    errores.nombreEstablecimiento =
-      'El nombre del establecimiento, sitio o inmueble es obligatorio.';
+  if (!datos.ubicacion.idCanton) {
+    errores.idCanton = 'Debe seleccionar un cantón.';
   }
 
-  return errores;
-}
-
-export function validarUbicacion(ubicacion) {
-  const errores = {};
-
-  if (!tieneValor(ubicacion.provincia)) {
-    errores.provincia =
-      'Debe seleccionar una provincia.';
+  if (!datos.ubicacion.idDistrito) {
+    errores.idDistrito = 'Debe seleccionar un distrito.';
   }
 
-  if (!tieneValor(ubicacion.canton)) {
-    errores.canton =
-      'Debe seleccionar un cantón.';
+  if (!datos.ubicacion.direccionExacta?.trim()) {
+    errores.direccionExacta = 'Debe indicar la dirección exacta.';
   }
 
-  if (!tieneValor(ubicacion.distrito)) {
-    errores.distrito =
-      'Debe seleccionar un distrito.';
+  if (!datos.notificacion.fechaEmision) {
+    errores.fechaEmision = 'Debe indicar la fecha de emisión.';
+  } else if (datos.notificacion.fechaEmision < fechaActual) {
+    errores.fechaEmision = 'La fecha de emisión no puede ser anterior a la fecha actual.';
   }
 
-  if (!tieneValor(ubicacion.direccionExacta)) {
-    errores.direccionExacta =
-      'La dirección exacta para notificar es obligatoria.';
+  if (!datos.notificacion.fechaNotificacion) {
+    errores.fechaNotificacion = 'Debe indicar la fecha de notificación.';
+  } else if (datos.notificacion.fechaNotificacion < fechaActual) {
+    errores.fechaNotificacion = 'La fecha de notificación no puede ser anterior a la fecha actual.';
   }
 
-  return errores;
-}
+  if (!datos.ordenanzas?.length) {
+    errores.ordenanzas = 'Debe registrar al menos una ordenanza.';
+  } else {
+    datos.ordenanzas.forEach((ordenanza, index) => {
+      if (!ordenanza.ordenanza?.trim()) {
+        errores[`ordenanza-${index}`] = 'Debe indicar la ordenanza.';
+      }
 
-export function validarNotificacion(notificacion) {
-  const errores = {};
+      if (!ordenanza.fundamentoLegal?.trim()) {
+        errores[`fundamento-${index}`] = 'Debe indicar el fundamento legal.';
+      }
 
-  if (!tieneValor(notificacion.fechaEmision)) {
-    errores.fechaEmision =
-      'La fecha de emisión es obligatoria.';
+      if (!ordenanza.plazo?.tipoPlazo) {
+        errores[`plazo-${index}`] = 'Debe seleccionar el tipo de plazo.';
+      } else if (ordenanza.plazo.tipoPlazo === 'FECHA') {
+        if (
+          !ordenanza.plazo.diaCumplimiento ||
+          !ordenanza.plazo.mesCumplimiento ||
+          !ordenanza.plazo.anioCumplimiento
+        ) {
+          errores[`plazo-${index}`] = 'Debe indicar la fecha de cumplimiento.';
+        }
+      } else if (!ordenanza.plazo.cantidad) {
+        errores[`plazo-${index}`] = 'Debe indicar la cantidad del plazo.';
+      }
+    });
   }
 
-  if (!tieneValor(notificacion.fechaNotificacion)) {
-    errores.fechaNotificacion =
-      'La fecha de notificación es obligatoria.';
+  if (!datos.responsable.nombreCompleto?.trim()) {
+    errores.responsableNombre = 'Debe indicar el nombre del responsable.';
   }
 
-  return errores;
-}
-
-export function validarMotivo(motivo) {
-  const errores = {};
-
-  if (!tieneValor(motivo)) {
-    errores.motivo =
-      'Debe indicar el motivo de la Orden Sanitaria.';
+  if (!datos.responsable.cargo?.trim()) {
+    errores.responsableCargo = 'Debe indicar el cargo del responsable.';
   }
 
-  return errores;
-}
-
-export function validarOrdenanzas(ordenanzas) {
-  const errores = {};
-
-  if (!Array.isArray(ordenanzas) || ordenanzas.length === 0) {
-    errores.ordenanzas =
-      'Debe registrar al menos una ordenanza.';
-
-    return errores;
-  }
-
-  const erroresPorOrdenanza = ordenanzas.map((ordenanza) => {
-    const error = {};
-
-    if (!tieneValor(ordenanza.ordenanza)) {
-      error.ordenanza =
-        'La ordenanza es obligatoria.';
-    }
-
-    if (!tieneValor(ordenanza.fundamentoLegal)) {
-      error.fundamentoLegal =
-        'El fundamento legal es obligatorio.';
-    }
-
-    if (!tieneValor(ordenanza.plazoCumplimiento)) {
-      error.plazoCumplimiento =
-        'El plazo de cumplimiento es obligatorio.';
-    }
-
-    return error;
-  });
-
-  const existenErrores = erroresPorOrdenanza.some(
-    (error) => Object.keys(error).length > 0,
-  );
-
-  if (existenErrores) {
-    errores.ordenanzas = erroresPorOrdenanza;
-  }
-
-  return errores;
-}
-
-export function validarResponsable(responsable) {
-  const errores = {};
-
-  if (!tieneValor(responsable.nombreCompleto)) {
-    errores.nombreCompleto =
-      'El nombre completo del director responsable es obligatorio.';
-  }
-
-  if (!tieneValor(responsable.cargo)) {
-    errores.cargo =
-      'El cargo del responsable es obligatorio.';
-  }
-
-  if (!tieneValor(responsable.unidadOrganizativaArs)) {
-    errores.unidadOrganizativaArs =
-      'El nombre de la Unidad Organizativa o ARS es obligatorio.';
-  }
-
-  if (!tieneValor(responsable.firma)) {
-    errores.firma =
-      'La firma es obligatoria.';
+  if (!datos.responsable.unidadOrganizativaArs?.trim()) {
+    errores.responsableUnidad = 'Debe indicar la Unidad Organizativa o ARS.';
   }
 
   return errores;

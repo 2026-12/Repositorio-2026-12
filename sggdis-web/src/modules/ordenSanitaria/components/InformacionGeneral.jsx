@@ -1,194 +1,152 @@
-import {
-  CONDICIONES_PERSONA_NOTIFICADA,
-} from '../config/ordenSanitaria';
+import { useEffect, useRef, useState } from 'react';
 
-import {
-  TEXTOS_ORDEN_SANITARIA,
-} from '../config/textosOrdenSanitaria';
+const CONDICIONES = [
+  { id: 'Propietario', nombre: 'Propietario' },
+  { id: 'Inquilino', nombre: 'Inquilino' },
+  { id: 'Arrendatario', nombre: 'Arrendatario' },
+  { id: 'Presidente', nombre: 'Presidente' },
+  { id: 'Director', nombre: 'Director' },
+  { id: 'Representante legal', nombre: 'Representante legal' },
+  { id: 'Gerente', nombre: 'Gerente' },
+  { id: 'Otro', nombre: 'Otro' },
+];
 
-import PanelIndicaciones
-  from './comunes/PanelIndicaciones';
+function SelectorCondicion({ value, onChange, error }) {
+  const [abierto, setAbierto] = useState(false);
+  const referencia = useRef(null);
+  const seleccionada = CONDICIONES.find((opcion) => opcion.id === value);
 
-export default function InformacionGeneral({
-  datos,
-  errores = {},
-  onChange,
-}) {
-  const manejarCambio = (campo) => (event) => {
-    onChange(campo, event.target.value);
-  };
+  useEffect(() => {
+    const cerrarSelector = (evento) => {
+      if (referencia.current && !referencia.current.contains(evento.target)) setAbierto(false);
+    };
 
-  const mostrarOtraCondicion =
-    datos.condicionPersonaNotificar === 'Otro';
+    document.addEventListener('mousedown', cerrarSelector);
+    return () => document.removeEventListener('mousedown', cerrarSelector);
+  }, []);
 
   return (
-    <section className="orden-sanitaria__seccion">
-      <span className="orden-sanitaria__adaptado">
-        ORDEN SANITARIA
-      </span>
+    <div className="orden-campo" ref={referencia}>
+      <label htmlFor="condicion">En su condición de </label>
 
-      <h2>Información General</h2>
+      <div className={`orden-selector ${abierto ? 'orden-selector--abierto' : ''}`}>
+        <button
+          id="condicion"
+          type="button"
+          className="orden-selector__boton"
+          onClick={() => setAbierto((actual) => !actual)}
+          aria-expanded={abierto}
+        >
+          <span className={seleccionada ? '' : 'orden-selector__placeholder'}>
+            {seleccionada ? seleccionada.nombre : 'Seleccione...'}
+          </span>
 
-      <p className="orden-sanitaria__descripcion">
-        {
-          TEXTOS_ORDEN_SANITARIA.general
-            .descripcion
-        }
-      </p>
+          <span className={`orden-selector__flecha ${abierto ? 'orden-selector__flecha--abierta' : ''}`}>
+            ▾
+          </span>
+        </button>
 
-      <PanelIndicaciones
-        textos={
-          TEXTOS_ORDEN_SANITARIA.general
-            .indicaciones ?? []
-        }
-      />
-
-      <div className="orden-sanitaria__grupo">
-        <h3>Persona a notificar</h3>
-
-        <div className="orden-sanitaria__campo">
-          <label htmlFor="nombrePersonaNotificar">
-            Nombre de la persona a notificar *
-          </label>
-
-          <input
-            id="nombrePersonaNotificar"
-            type="text"
-            value={datos.nombrePersonaNotificar}
-            onChange={manejarCambio(
-              'nombrePersonaNotificar'
-            )}
-          />
-
-          {errores.nombrePersonaNotificar && (
-            <p className="orden-sanitaria__error">
-              {errores.nombrePersonaNotificar}
-            </p>
-          )}
-        </div>
-
-        <div className="orden-sanitaria__fila orden-sanitaria__fila--2">
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="condicionPersonaNotificar">
-              En su condición de *
-            </label>
-
-            <select
-              id="condicionPersonaNotificar"
-              value={datos.condicionPersonaNotificar}
-              onChange={manejarCambio(
-                'condicionPersonaNotificar'
-              )}
+        {abierto && (
+          <div className="orden-selector__opciones">
+            <button
+              type="button"
+              className="orden-selector__opcion orden-selector__opcion--placeholder"
+              onClick={() => {
+                onChange('');
+                setAbierto(false);
+              }}
             >
-              <option value="">
-                Seleccione una condición
-              </option>
+              Seleccione...
+            </button>
 
-              {CONDICIONES_PERSONA_NOTIFICADA.map(
-                (condicion) => (
-                  <option
-                    key={condicion}
-                    value={condicion}
-                  >
-                    {condicion}
-                  </option>
-                )
-              )}
-            </select>
-
-            {errores.condicionPersonaNotificar && (
-              <p className="orden-sanitaria__error">
-                {errores.condicionPersonaNotificar}
-              </p>
-            )}
-          </div>
-
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="identificacion">
-              Número de identificación *
-            </label>
-
-            <input
-              id="identificacion"
-              type="text"
-              value={datos.identificacion}
-              onChange={manejarCambio('identificacion')}
-            />
-
-            {errores.identificacion && (
-              <p className="orden-sanitaria__error">
-                {errores.identificacion}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {mostrarOtraCondicion && (
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="otraCondicion">
-              Especifique la condición *
-            </label>
-
-            <input
-              id="otraCondicion"
-              type="text"
-              value={datos.otraCondicion}
-              onChange={manejarCambio('otraCondicion')}
-            />
-
-            {errores.otraCondicion && (
-              <p className="orden-sanitaria__error">
-                {errores.otraCondicion}
-              </p>
-            )}
+            {CONDICIONES.map((opcion) => (
+              <button
+                key={opcion.id}
+                type="button"
+                className={`orden-selector__opcion ${opcion.id === value ? 'orden-selector__opcion--seleccionada' : ''}`}
+                onClick={() => {
+                  onChange(opcion.id);
+                  setAbierto(false);
+                }}
+              >
+                {opcion.nombre}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      <div className="orden-sanitaria__grupo">
-        <h3>
-          Establecimiento / sitio / inmueble
-        </h3>
+      {error && <span className="orden-error">{error}</span>}
+    </div>
+  );
+}
 
-        <div className="orden-sanitaria__fila orden-sanitaria__fila--2">
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="nombreEstablecimiento">
-              Nombre del establecimiento / sitio /
-              inmueble *
-            </label>
+export default function InformacionGeneral({ datos = {}, errores = {}, onChange }) {
+  const condicionEsOtra = (datos.condicion || '').toLowerCase() === 'otro';
 
-            <input
-              id="nombreEstablecimiento"
-              type="text"
-              value={datos.nombreEstablecimiento}
-              onChange={manejarCambio(
-                'nombreEstablecimiento'
-              )}
-            />
+  return (
+    <>
+      <section className="orden-apartado">
+        <h2>Información General de la Orden Sanitaria</h2>
+        <p>Verifique los datos provenientes de la inspección relacionada y complete la información requerida para la Orden Sanitaria.</p>
+      </section>
 
-            {errores.nombreEstablecimiento && (
-              <p className="orden-sanitaria__error">
-                {errores.nombreEstablecimiento}
-              </p>
-            )}
-          </div>
-
-          <div className="orden-sanitaria__campo">
-            <label htmlFor="numeroExpediente">
-              N.º de expediente
-            </label>
-
-            <input
-              id="numeroExpediente"
-              type="text"
-              value={datos.numeroExpediente}
-              onChange={manejarCambio(
-                'numeroExpediente'
-              )}
-            />
-          </div>
+      <div className="orden-dato-general">
+        <div className="orden-campo">
+          <label htmlFor="numeroConsecutivo">Número consecutivo de la inspección</label>
+          <input id="numeroConsecutivo" type="text" value={datos.numeroConsecutivo || ''} readOnly className="orden-campo--solo-lectura" />
+          {errores.numeroConsecutivo && <span className="orden-error">{errores.numeroConsecutivo}</span>}
         </div>
       </div>
-    </section>
+
+      <section className="orden-grupo orden-grupo--selector">
+        <div className="orden-grupo__titulo">Persona a notificar</div>
+
+        <div className="orden-grupo__contenido">
+          <div className="orden-campo">
+            <label htmlFor="nombreCompleto">Nombre de la persona a notificar</label>
+            <input id="nombreCompleto" type="text" value={datos.nombreCompleto || ''} readOnly className="orden-campo--solo-lectura" />
+            {errores.nombreCompleto && <span className="orden-error">{errores.nombreCompleto}</span>}
+          </div>
+
+          <div className="orden-grid-2">
+            <div>
+              <SelectorCondicion value={datos.condicion || ''} onChange={(valor) => onChange('condicion', valor)} error={errores.condicion} />
+
+              {condicionEsOtra && (
+                <div className="orden-campo">
+                  <label htmlFor="otraCondicion">Otra condición </label>
+                  <input id="otraCondicion" type="text" value={datos.otraCondicion || ''} onChange={(e) => onChange('otraCondicion', e.target.value)} />
+                  {errores.otraCondicion && <span className="orden-error">{errores.otraCondicion}</span>}
+                </div>
+              )}
+            </div>
+
+            <div className="orden-campo">
+              <label htmlFor="identificacion">Número de identificación</label>
+              <input id="identificacion" type="text" value={datos.identificacion || ''} readOnly className="orden-campo--solo-lectura" />
+              {errores.identificacion && <span className="orden-error">{errores.identificacion}</span>}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="orden-grupo">
+        <div className="orden-grupo__titulo">Información del establecimiento, sitio o inmueble</div>
+
+        <div className="orden-grupo__contenido">
+          <div className="orden-campo">
+            <label htmlFor="nombreEstablecimiento">Nombre del establecimiento / sitio / inmueble</label>
+            <input id="nombreEstablecimiento" type="text" value={datos.nombreEstablecimiento || ''} readOnly className="orden-campo--solo-lectura" />
+            {errores.nombreEstablecimiento && <span className="orden-error">{errores.nombreEstablecimiento}</span>}
+          </div>
+
+          <div className="orden-campo">
+            <label htmlFor="numeroExpediente">Número de expediente</label>
+            <input id="numeroExpediente" type="text" value={datos.numeroExpediente || ''} onChange={(e) => onChange('numeroExpediente', e.target.value)} />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

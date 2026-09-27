@@ -1,114 +1,101 @@
+import { useEffect, useRef, useState } from 'react';
+import PanelIndicaciones from '../comunes/PanelIndicaciones';
+import FilaOrdenanza from './FilaOrdenanza';
 import {
-  TEXTOS_ORDEN_SANITARIA,
+  TEXTO_VIGENCIA_ORDEN,
+  TEXTO_MOTIVO,
+  TEXTO_USO_INTERNO,
+  TEXTO_FUNDAMENTO_LEGAL,
+  TEXTO_APERCIBIMIENTO,
+  TEXTO_RECURRENCIA,
 } from '../../config/textosOrdenSanitaria';
 
-import PanelIndicaciones
-  from '../comunes/PanelIndicaciones';
+export default function Ordenanzas({ ordenanzas, errores = {}, onAgregar, onActualizar, onEliminar }) {
+  const nuevaOrdenanzaRef = useRef(null);
+  const [cantidadAnterior, setCantidadAnterior] = useState(ordenanzas.length);
 
-import DatosResponsable
-  from '../DatosResponsable';
+  useEffect(() => {
+    if (ordenanzas.length > cantidadAnterior) {
+      requestAnimationFrame(() => {
+        nuevaOrdenanzaRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
 
-import FilaOrdenanza
-  from './FilaOrdenanza';
-
-export default function Ordenanzas({
-  ordenanzas,
-  errores = {},
-  responsable,
-  erroresResponsable = {},
-  onAgregar,
-  onActualizar,
-  onEliminar,
-  onActualizarResponsable,
-}) {
-  const erroresPorOrdenanza = Array.isArray(
-    errores.ordenanzas,
-  )
-    ? errores.ordenanzas
-    : [];
-
-  const errorGeneral =
-    typeof errores.ordenanzas === 'string'
-      ? errores.ordenanzas
-      : null;
-
-  const textos = TEXTOS_ORDEN_SANITARIA.ordenanzas;
+    setCantidadAnterior(ordenanzas.length);
+  }, [ordenanzas.length, cantidadAnterior]);
 
   return (
-    <section className="orden-sanitaria__seccion">
-      <span className="orden-sanitaria__adaptado">
-        ORDEN SANITARIA
-      </span>
+    <>
+      <section className="orden-apartado">
+        <h2>Ordenanzas</h2>
+        <p>Registre las medidas sanitarias ordenadas y el plazo establecido para su cumplimiento.</p>
+      </section>
 
-      <h2>{textos.titulo}</h2>
+      <div className="orden-vigencia">
+        <strong>{TEXTO_VIGENCIA_ORDEN}</strong>
+      </div>
 
-      <p className="orden-sanitaria__descripcion">
-        {textos.descripcion}
-      </p>
+      <div className="orden-listado">
+        {ordenanzas.map((ordenanza, index) => {
+          const esUltima = index === ordenanzas.length - 1;
 
-      <PanelIndicaciones
-        textos={textos.indicaciones ?? []}
-      />
+          return (
+            <div
+              key={index}
+              ref={esUltima ? nuevaOrdenanzaRef : null}
+              className="orden-ordenanza-destino"
+            >
+              <FilaOrdenanza
+                ordenanza={ordenanza}
+                index={index}
+                errores={errores}
+                onChange={onActualizar}
+                onEliminar={onEliminar}
+                onAgregar={onAgregar}
+                puedeEliminar={ordenanzas.length > 1}
+                mostrarAgregar={esUltima}
+              />
+            </div>
+          );
+        })}
+      </div>
 
-      {errorGeneral && (
-        <p className="orden-sanitaria__error">
-          {errorGeneral}
-        </p>
+      {errores.ordenanzas && (
+        <span className="orden-error">{errores.ordenanzas}</span>
       )}
 
-      <div className="orden-sanitaria__lista-ordenanzas">
-        {ordenanzas.map((ordenanza, indice) => (
-          <FilaOrdenanza
-            key={indice}
-            numero={indice + 1}
-            datos={ordenanza}
-            errores={erroresPorOrdenanza[indice] ?? {}}
-            puedeEliminar={ordenanzas.length > 1}
-            onChange={(campo, valor) =>
-              onActualizar(indice, campo, valor)
-            }
-            onEliminar={() => onEliminar(indice)}
-          />
-        ))}
+      <div className="orden-paneles-legales">
+
+        <PanelIndicaciones titulo="Motivo">
+          {TEXTO_MOTIVO.map((texto, index) => (
+            <p key={index}>{texto}</p>
+          ))}
+        </PanelIndicaciones>
+
+        <PanelIndicaciones titulo="Para uso interno, considerar">
+          {TEXTO_USO_INTERNO.map((texto, index) => (
+            <p key={index}>{texto}</p>
+          ))}
+        </PanelIndicaciones>
+
+        <PanelIndicaciones titulo="Fundamento Legal">
+          <p>{TEXTO_FUNDAMENTO_LEGAL}</p>
+        </PanelIndicaciones>
+
+        <PanelIndicaciones titulo="Apercibimiento">
+          {TEXTO_APERCIBIMIENTO.map((texto, index) => (
+            <p key={index}>{texto}</p>
+          ))}
+        </PanelIndicaciones>
+
+        <PanelIndicaciones titulo="Recurrencia">
+          <p>{TEXTO_RECURRENCIA}</p>
+        </PanelIndicaciones>
+
       </div>
-
-      <button
-        type="button"
-        className="orden-sanitaria__agregar-ordenanza"
-        onClick={onAgregar}
-      >
-        + Agregar ordenanza
-      </button>
-
-      <div className="orden-sanitaria__contenido-legal">
-        <PanelIndicaciones
-          titulo={
-            textos.fundamentoLegalApercibimiento.titulo
-          }
-          textos={
-            textos.fundamentoLegalApercibimiento.contenido
-          }
-          abiertoInicialmente={false}
-        />
-
-        <PanelIndicaciones
-          titulo={textos.usoInterno.titulo}
-          textos={textos.usoInterno.contenido}
-          abiertoInicialmente={false}
-        />
-
-        <PanelIndicaciones
-          titulo={textos.recurrencia.titulo}
-          textos={textos.recurrencia.contenido}
-          abiertoInicialmente={false}
-        />
-      </div>
-
-      <DatosResponsable
-        datos={responsable}
-        errores={erroresResponsable}
-        onChange={onActualizarResponsable}
-      />
-    </section>
+    </>
   );
 }

@@ -1,44 +1,26 @@
-import { PASOS_ORDEN_SANITARIA }
-  from '../../config/ordenSanitaria';
+const PASOS = ['Información General', 'Ubicación', 'Notificación', 'Ordenanzas', 'Responsable'];
 
-export default function NavegacionOrdenSanitaria({
-  indicePaso,
-  onIrAPaso,
-}) {
+export default function NavegacionOrdenSanitaria({ pasoActual, pasosCompletos = [], onCambiarPaso }) {
   return (
-    <nav
-      className="orden-sanitaria__navegacion"
-      aria-label="Secciones de la Orden Sanitaria"
-    >
-      {PASOS_ORDEN_SANITARIA.map((paso, indice) => {
-        const activo = indice === indicePaso;
-        const completado = indice < indicePaso;
+    <nav className="orden-tabs">
+      {PASOS.map((nombre, index) => {
+        const activo = pasoActual === index;
+        const completo = pasosCompletos.includes(index);
+        const pendiente = !completo;
 
         return (
           <button
-            key={paso.id}
+            key={nombre}
             type="button"
             className={[
-              'orden-sanitaria__paso',
-              activo
-                ? 'orden-sanitaria__paso--activo'
-                : '',
-              completado
-                ? 'orden-sanitaria__paso--completado'
-                : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => onIrAPaso(paso.id)}
-            aria-current={activo ? 'step' : undefined}
+              'orden-tab',
+              pendiente ? 'orden-tab--pendiente' : '',
+              completo ? 'orden-tab--completo' : '',
+              activo ? 'orden-tab--activo' : '',
+            ].filter(Boolean).join(' ')}
+            onClick={() => onCambiarPaso(index)}
           >
-            <span className="orden-sanitaria__paso-numero">
-              {paso.numero}
-            </span>
-
-            <span className="orden-sanitaria__paso-etiqueta">
-              {paso.etiqueta}
-            </span>
+            <span className="orden-tab__texto">{nombre}</span>
           </button>
         );
       })}
