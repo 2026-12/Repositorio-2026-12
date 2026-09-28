@@ -66,9 +66,9 @@ describe('Cierre de inspección', () => {
     cy.contains('button', 'Finalizar inspección').click()
     cy.contains('Complete los siguientes campos obligatorios').should('be.visible')
 
-    cy.get('#nombre-inspector').type('Inspector Cypress')
-    cy.get('#id-inspector').type('1-2345-6789')
-    cy.get('#id-representante').type('9-8765-4321')
+    cy.get('#nombre-inspector').type('Inspector Cypress').should('have.value', 'Inspector Cypress')
+    cy.get('#id-inspector').type('123456789').should('have.value', '123456789')
+    cy.get('#id-representante').type('987654321').should('have.value', '987654321')
 
     cy.contains('button', 'Finalizar inspección').click()
     cy.contains('INSPECCIÓN FINALIZADA').should('be.visible')
