@@ -61,3 +61,11 @@ export function guardarMotivo(idActa, datos) {
     }),
   });
 }
+
+// Descarta el acta en curso (el inspector salió sin terminarla desde
+// "Volver al menú"), para que no quede ocupando un folio a medio llenar.
+export function eliminarActaGeneral(idActa) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}`, {
+    method: 'DELETE',
+  });
+}
