@@ -18,8 +18,9 @@ namespace SGGDIS_Api.Data
         public DbSet<InsInspeccion> Inspecciones { get; set; }
         public DbSet<InsRespuesta> Respuestas { get; set; }
         public DbSet<SegUsuario> Usuarios => Set<SegUsuario>();
+        public DbSet<SegRegion> Regiones => Set<SegRegion>();
+        public DbSet<SegArea> Areas => Set<SegArea>();
         public DbSet<SegSesion> Sesiones => Set<SegSesion>();
-        public DbSet<SegCodigoVerificacion> CodigosVerificacion => Set<SegCodigoVerificacion>();
 
         // Configura relaciones que EF no puede inferir solo de los atributos en Models.
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -52,6 +53,24 @@ namespace SGGDIS_Api.Data
             modelBuilder.Entity<SegSesion>()
                 .HasIndex(s => s.HashToken)
                 .IsUnique();
+
+            modelBuilder.Entity<SegRegion>()
+                .HasIndex(region => region.Codigo)
+                .IsUnique();
+
+            modelBuilder.Entity<SegArea>()
+                .HasIndex(area => new { area.IdRegion, area.Codigo })
+                .IsUnique();
+
+            modelBuilder.Entity<SegArea>()
+                .HasOne(area => area.Region)
+                .WithMany(region => region.Areas)
+                .HasForeignKey(area => area.IdRegion);
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasOne(usuario => usuario.Area)
+                .WithMany(area => area.Usuarios)
+                .HasForeignKey(usuario => usuario.IdArea);
         }
     }
 }

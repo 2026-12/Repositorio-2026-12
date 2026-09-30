@@ -57,6 +57,7 @@ namespace SGGDIS_Api.Services
             {
                 IdGuia = dto.IdGuia,
                 IdTipoEstablecimiento = dto.IdTipoEstablecimiento,
+                IdArea = dto.IdArea,
                 NombreEstablecimiento = dto.NombreEstablecimiento,
                 Consecutivo = dto.Consecutivo,
                 Fecha = dto.Fecha,

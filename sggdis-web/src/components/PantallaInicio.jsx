@@ -9,6 +9,8 @@ export default function PantallaInicio({
   onNuevaInspeccion,
   onHistorial,
   onReportes,
+  rol,
+  onAdministrarInspectores,
   onCerrarSesion,
 }) {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
@@ -83,6 +85,12 @@ export default function PantallaInicio({
           >
             Ayuda
           </button>
+
+          {rol === 'Administrador' && (
+            <button type="button" className="inicio__navLink" onClick={onAdministrarInspectores}>
+              Asignar áreas
+            </button>
+          )}
 
           <button
             type="button"

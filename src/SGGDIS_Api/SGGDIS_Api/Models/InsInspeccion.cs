@@ -20,6 +20,9 @@ namespace SGGDIS_Api.Models
         [Column("ID_TIPO_ESTABLECIMIENTO")]
         public int IdTipoEstablecimiento { get; set; }
 
+        [Column("ID_AREA")]
+        public int IdArea { get; set; }
+
         [Column("NOMBRE_ESTABLECIMIENTO")]
         [MaxLength(200)]
         public string NombreEstablecimiento { get; set; } = string.Empty;
@@ -83,6 +86,9 @@ namespace SGGDIS_Api.Models
 
         [ForeignKey(nameof(IdTipoEstablecimiento))]
         public InsTipoEstablecimiento? TipoEstablecimiento { get; set; }
+
+        [ForeignKey(nameof(IdArea))]
+        public SegArea? Area { get; set; }
 
         public ICollection<InsRespuesta> Respuestas { get; set; } = new List<InsRespuesta>();
     }

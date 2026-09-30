@@ -6,50 +6,55 @@ using Microsoft.EntityFrameworkCore;
 using SGGDIS_Api.Data;
 using SGGDIS_Api.Models;
 using SGGDIS_Api.Models.Dtos;
+using SGGDIS_Api.Security;
 
 namespace SGGDIS_Api.Services;
 
 public class AuthService : IAuthService
 {
-    private static readonly TimeSpan VigenciaCodigo = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan VigenciaSesion = TimeSpan.FromHours(8);
     private readonly SggdisDbContext _db;
-    private readonly ICorreoCodigoService _correo;
     private readonly IPasswordHasher<SegUsuario> _hasher;
 
-    public AuthService(SggdisDbContext db, ICorreoCodigoService correo, IPasswordHasher<SegUsuario> hasher)
+    public AuthService(SggdisDbContext db, IPasswordHasher<SegUsuario> hasher)
     {
         _db = db;
-        _correo = correo;
         _hasher = hasher;
     }
 
-    public async Task<int?> IniciarSesionAsync(LoginRequestDto solicitud)
+    public async Task<ResultadoInicioSesion> IniciarSesionAsync(LoginRequestDto solicitud)
     {
         var correo = solicitud.Correo.Trim().ToLowerInvariant();
-        var usuario = await _db.Usuarios.SingleOrDefaultAsync(u => u.Correo == correo && u.Activo == "S");
+        var usuario = await _db.Usuarios
+            .Include(u => u.Area)
+            .ThenInclude(area => area!.Region)
+            .SingleOrDefaultAsync(u => u.Correo == correo && u.Activo == "S");
         if (usuario is null || _hasher.VerifyHashedPassword(usuario, usuario.HashContrasena, solicitud.Contrasena) == PasswordVerificationResult.Failed)
         {
-            return null;
+            return new ResultadoInicioSesion(EstadoInicioSesion.CredencialesInvalidas);
         }
 
-        var codigo = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-        var registro = new SegCodigoVerificacion
+        if (string.IsNullOrWhiteSpace(usuario.Rol) ||
+            (usuario.Rol != RolesSistema.Administrador && !usuario.IdArea.HasValue))
         {
-            IdUsuario = usuario.IdUsuario,
-            HashCodigo = Hash(codigo),
-            FechaExpiracion = DateTime.UtcNow.Add(VigenciaCodigo)
-        };
-        _db.CodigosVerificacion.Add(registro);
-        await _db.SaveChangesAsync();
-        await _correo.EnviarCodigoAsync(usuario.Correo, codigo);
-        return registro.IdCodigo;
+            return new ResultadoInicioSesion(EstadoInicioSesion.AsignacionPendiente);
+        }
+
+        var sesion = await CrearSesionAsync(usuario);
+        return new ResultadoInicioSesion(EstadoInicioSesion.Correcto, sesion);
     }
 
     public async Task<ResultadoRegistroUsuario> RegistrarUsuarioAsync(RegistroUsuarioDto solicitud)
     {
         var correo = solicitud.Correo.Trim().ToLowerInvariant();
-        if (!CorreoInstitucionalValido(correo) || solicitud.Contrasena.Length < 12)
+        var rol = solicitud.Rol.Trim();
+        if (!CorreoInstitucionalValido(correo) || solicitud.Contrasena.Length < 12 || !RolPermitido(rol) ||
+            (rol != RolesSistema.Administrador && !solicitud.IdArea.HasValue))
+        {
+            return ResultadoRegistroUsuario.DatosInvalidos;
+        }
+
+        if (solicitud.IdArea.HasValue && !await _db.Areas.AnyAsync(area => area.IdArea == solicitud.IdArea.Value))
         {
             return ResultadoRegistroUsuario.DatosInvalidos;
         }
@@ -62,7 +67,8 @@ public class AuthService : IAuthService
         var usuario = new SegUsuario
         {
             Correo = correo,
-            Rol = "Inspector",
+            Rol = rol,
+            IdArea = solicitud.IdArea,
             Activo = "S"
         };
         usuario.HashContrasena = _hasher.HashPassword(usuario, solicitud.Contrasena);
@@ -71,22 +77,30 @@ public class AuthService : IAuthService
         return ResultadoRegistroUsuario.Creado;
     }
 
-    public async Task<SesionAutenticada?> VerificarCodigoAsync(VerificarCodigoDto solicitud)
+    public async Task<ResultadoRegistroUsuario> ActualizarAsignacionAsync(int idUsuario, string rol, int? idArea)
     {
-        var codigo = await _db.CodigosVerificacion
-            .SingleOrDefaultAsync(c => c.IdCodigo == solicitud.IdCodigo);
-        if (codigo is null || codigo.FechaUso is not null || codigo.FechaExpiracion <= DateTime.UtcNow ||
-            !CryptographicOperations.FixedTimeEquals(
-                Convert.FromHexString(codigo.HashCodigo),
-                Convert.FromHexString(Hash(solicitud.Codigo))))
+        rol = rol.Trim();
+        if (!RolPermitido(rol) || (rol != RolesSistema.Administrador && !idArea.HasValue))
         {
-            return null;
+            return ResultadoRegistroUsuario.DatosInvalidos;
         }
 
-        var usuario = await _db.Usuarios.SingleOrDefaultAsync(u => u.IdUsuario == codigo.IdUsuario && u.Activo == "S");
-        if (usuario is null) return null;
+        if (idArea.HasValue && !await _db.Areas.AnyAsync(area => area.IdArea == idArea.Value))
+        {
+            return ResultadoRegistroUsuario.DatosInvalidos;
+        }
 
-        codigo.FechaUso = DateTime.UtcNow;
+        var usuario = await _db.Usuarios.SingleOrDefaultAsync(item => item.IdUsuario == idUsuario);
+        if (usuario is null) return ResultadoRegistroUsuario.NoEncontrado;
+
+        usuario.Rol = rol;
+        usuario.IdArea = idArea;
+        await _db.SaveChangesAsync();
+        return ResultadoRegistroUsuario.Creado;
+    }
+
+    private async Task<SesionAutenticada> CrearSesionAsync(SegUsuario usuario)
+    {
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var expira = DateTime.UtcNow.Add(VigenciaSesion);
         _db.Sesiones.Add(new SegSesion
@@ -96,7 +110,8 @@ public class AuthService : IAuthService
             FechaExpiracion = expira
         });
         await _db.SaveChangesAsync();
-        return new SesionAutenticada(token, usuario.Correo, usuario.Rol, expira);
+        return new SesionAutenticada(token, usuario.Correo, usuario.Rol, expira, usuario.IdArea,
+            usuario.Area?.Region.Codigo, usuario.Area?.Codigo, usuario.Area?.Region.Nombre, usuario.Area?.Nombre);
     }
 
     public async Task CerrarSesionAsync(int idSesion)
@@ -126,4 +141,8 @@ public class AuthService : IAuthService
             return false;
         }
     }
+
+    private static bool RolPermitido(string rol) =>
+        rol is RolesSistema.Inspector or RolesSistema.DirectorRegional or RolesSistema.DirectorArea or
+            RolesSistema.AtencionCliente or RolesSistema.Administrador;
 }

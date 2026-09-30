@@ -32,7 +32,10 @@ public class SessionAuthenticationHandler : AuthenticationHandler<Authentication
         if (sesion is null || sesion.FechaRevocacion is not null || sesion.FechaExpiracion <= DateTime.UtcNow)
             return AuthenticateResult.Fail("La sesión no es válida o ha finalizado.");
 
-        var usuario = await _db.Usuarios.SingleOrDefaultAsync(u => u.IdUsuario == sesion.IdUsuario && u.Activo == "S");
+        var usuario = await _db.Usuarios
+            .Include(u => u.Area)
+            .ThenInclude(a => a!.Region)
+            .SingleOrDefaultAsync(u => u.IdUsuario == sesion.IdUsuario && u.Activo == "S");
         if (usuario is null) return AuthenticateResult.Fail("El usuario no está activo.");
 
         var claims = new[]
@@ -40,7 +43,10 @@ public class SessionAuthenticationHandler : AuthenticationHandler<Authentication
             new Claim(ClaimTypes.NameIdentifier, usuario.IdUsuario.ToString()),
             new Claim(ClaimTypes.Name, usuario.Correo),
             new Claim(ClaimTypes.Role, usuario.Rol),
-            new Claim("session_id", sesion.IdSesion.ToString())
+            new Claim("session_id", sesion.IdSesion.ToString()),
+            new Claim("area_id", usuario.IdArea?.ToString() ?? string.Empty),
+            new Claim("region_code", usuario.Area?.Region.Codigo ?? string.Empty),
+            new Claim("area_code", usuario.Area?.Codigo ?? string.Empty)
         };
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name));

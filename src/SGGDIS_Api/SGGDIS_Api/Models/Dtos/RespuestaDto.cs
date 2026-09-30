@@ -34,6 +34,8 @@ namespace SGGDIS_Api.Models.Dtos
         // Folio de la inspección.
         public string Consecutivo { get; set; } = string.Empty;
 
+        public int IdArea { get; set; }
+
         // Fecha de la inspección.
         public DateTime Fecha { get; set; }
     }

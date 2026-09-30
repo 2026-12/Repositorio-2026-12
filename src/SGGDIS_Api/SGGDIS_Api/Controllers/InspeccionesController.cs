@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using SGGDIS_Api.Data;
 using SGGDIS_Api.Models.Dtos;
+using SGGDIS_Api.Security;
 using SGGDIS_Api.Services;
 
 namespace SGGDIS_Api.Controllers
@@ -10,23 +14,42 @@ namespace SGGDIS_Api.Controllers
     /// La lógica vive en IInspeccionService, acá solo se traduce a HTTP.
     /// </summary>
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = RolesSistema.OperacionInspecciones)]
     [Route("api/inspecciones")]
     public class InspeccionesController : ControllerBase
     {
         private readonly IInspeccionService _inspeccionService;
         private readonly ILogger<InspeccionesController> _logger;
+        private readonly SggdisDbContext _db;
 
-        public InspeccionesController(IInspeccionService inspeccionService, ILogger<InspeccionesController> logger)
+        public InspeccionesController(IInspeccionService inspeccionService, ILogger<InspeccionesController> logger, SggdisDbContext db)
         {
             _inspeccionService = inspeccionService;
             _logger = logger;
+            _db = db;
+        }
+
+        private async Task<bool> PerteneceAlAreaActualAsync(int idInspeccion)
+        {
+            var areaId = User.FindFirstValue("area_id");
+            return int.TryParse(areaId, out var idArea) && await _db.Inspecciones
+                .AnyAsync(inspeccion => inspeccion.IdInspeccion == idInspeccion && inspeccion.IdArea == idArea);
         }
 
         // POST /api/inspecciones : crea una nueva inspección "EN_PROCESO".
         [HttpPost]
         public async Task<IActionResult> CrearInspeccion([FromBody] CrearInspeccionDto dto)
         {
+            var areaIdAsignada = HttpContext?.User?.FindFirstValue("area_id");
+            if (!int.TryParse(areaIdAsignada, out var idAreaAsignada))
+            {
+                return Forbid();
+            }
+            if (dto.IdArea != idAreaAsignada)
+            {
+                return Forbid();
+            }
+
             if (dto.Fecha.Date < DateTime.Today)
             {
                 return BadRequest("La fecha de inspección no puede ser anterior a la de día de hoy.");
@@ -55,6 +78,7 @@ namespace SGGDIS_Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarInspeccion(int id)
         {
+            if (!await PerteneceAlAreaActualAsync(id)) return NotFound();
             try
             {
                 var eliminada = await _inspeccionService.EliminarInspeccionAsync(id);
@@ -71,6 +95,7 @@ namespace SGGDIS_Api.Controllers
         [HttpPut("{id}/respuestas")]
         public async Task<IActionResult> GuardarRespuestas(int id, [FromBody] List<RespuestaDto> respuestas)
         {
+            if (!await PerteneceAlAreaActualAsync(id)) return NotFound();
             try
             {
                 await _inspeccionService.GuardarRespuestasAsync(id, respuestas);
@@ -87,6 +112,7 @@ namespace SGGDIS_Api.Controllers
         [HttpGet("{id}/respuestas")]
         public async Task<IActionResult> ObtenerRespuestas(int id)
         {
+            if (!await PerteneceAlAreaActualAsync(id)) return NotFound();
             try
             {
                 var respuestas = await _inspeccionService.ObtenerRespuestasAsync(id);
@@ -103,6 +129,7 @@ namespace SGGDIS_Api.Controllers
         [HttpPut("{id}/cierre")]
         public async Task<IActionResult> CerrarInspeccion(int id, [FromBody] CerrarInspeccionDto dto)
         {
+            if (!await PerteneceAlAreaActualAsync(id)) return NotFound();
             try
             {
                 var resumen = await _inspeccionService.CerrarInspeccionAsync(id, dto);

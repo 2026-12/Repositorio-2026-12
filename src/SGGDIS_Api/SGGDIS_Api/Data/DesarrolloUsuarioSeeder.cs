@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SGGDIS_Api.Models;
+using SGGDIS_Api.Security;
 
 namespace SGGDIS_Api.Data;
 
@@ -19,7 +20,7 @@ public static class DesarrolloUsuarioSeeder
         var usuario = new SegUsuario
         {
             Correo = correo,
-            Rol = configuration["Auth:SeedUser:Role"] ?? "Inspector",
+            Rol = configuration["Auth:SeedUser:Role"] ?? RolesSistema.Inspector,
             Activo = "S"
         };
         usuario.HashContrasena = new PasswordHasher<SegUsuario>().HashPassword(usuario, contrasena);

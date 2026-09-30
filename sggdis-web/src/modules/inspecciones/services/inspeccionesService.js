@@ -2,11 +2,11 @@ import { API_BASE_URL } from '../config/inspeccion';
 import { solicitarJson } from './httpClient';
 
 // Crea una nueva inspección en el backend y devuelve su id.
-export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha }) {
+export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha, idArea }) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha }),
+    body: JSON.stringify({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha, idArea }),
   });
 }
 

@@ -31,18 +31,12 @@ builder.Services.AddScoped<ISeccionService, SeccionService>();
 builder.Services.AddScoped<IInspeccionService, InspeccionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<SegUsuario>, PasswordHasher<SegUsuario>>();
-builder.Services.AddSingleton<ICorreoCodigoService, UnavailableCorreoCodigoService>();
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddSingleton<ICorreoCodigoService, DevelopmentCorreoCodigoService>();
-}
-
 // Permite que el frontend (que corre en localhost:5173 durante desarrollo)
 // pueda hacer peticiones a esta API sin ser bloqueado por el navegador.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });

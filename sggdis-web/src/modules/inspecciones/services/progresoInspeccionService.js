@@ -10,18 +10,26 @@ const PREFIJO_CLAVE_PROGRESO = 'sggdis:inspeccion-en-curso';
 
 // Clave aparte que guarda cuál fue la última inspección activa, para
 // recuperarla sola al volver a abrir la app.
-const CLAVE_INSPECCION_ACTIVA = 'sggdis:inspeccion-activa-id';
-
 // Construye la clave específica de una inspección a partir de su idInspeccion.
 function claveProgreso(idInspeccion) {
-  return `${PREFIJO_CLAVE_PROGRESO}:${idInspeccion}`;
+  return `${prefijoUsuario()}:${idInspeccion}`;
+}
+
+// Construye el prefijo de usuario a partir de la sesión actual.
+function prefijoUsuario() {
+  try {
+    const sesion = JSON.parse(sessionStorage.getItem('sggdis:sesion'));
+    return `${PREFIJO_CLAVE_PROGRESO}:${encodeURIComponent(sesion?.correo?.toLowerCase() ?? 'anonimo')}`;
+  } catch {
+    return `${PREFIJO_CLAVE_PROGRESO}:anonimo`;
+  }
 }
 
 // Chequeo liviano para que el shell decida la pantalla inicial sin tener
 // que cargar todo el progreso.
 export function existeProgresoGuardado() {
   try {
-    return Boolean(localStorage.getItem(CLAVE_INSPECCION_ACTIVA));
+    return Boolean(localStorage.getItem(`${prefijoUsuario()}:activa-id`));
   } catch {
     return false;
   }
@@ -31,7 +39,7 @@ export function existeProgresoGuardado() {
 // inspección activa y carga su progreso específico.
 export function cargarProgreso() {
   try {
-    const idActivo = localStorage.getItem(CLAVE_INSPECCION_ACTIVA);
+    const idActivo = localStorage.getItem(`${prefijoUsuario()}:activa-id`);
     if (!idActivo) return null;
 
     const guardado = localStorage.getItem(claveProgreso(idActivo));
@@ -50,7 +58,7 @@ export function guardarProgreso(progreso) {
     if (!idInspeccion) return;
 
     localStorage.setItem(claveProgreso(idInspeccion), JSON.stringify(progreso));
-    localStorage.setItem(CLAVE_INSPECCION_ACTIVA, String(idInspeccion));
+    localStorage.setItem(`${prefijoUsuario()}:activa-id`, String(idInspeccion));
   } catch {
     // Almacenamiento no disponible (modo privado, cuota llena, etc.): se ignora.
   }
@@ -60,13 +68,14 @@ export function guardarProgreso(progreso) {
 // Si no se indica idInspeccion, borra la que estaba activa.
 export function limpiarProgreso(idInspeccion) {
   try {
-    const id = idInspeccion ?? localStorage.getItem(CLAVE_INSPECCION_ACTIVA);
+    const claveActiva = `${prefijoUsuario()}:activa-id`;
+    const id = idInspeccion ?? localStorage.getItem(claveActiva);
 
     if (id) {
       localStorage.removeItem(claveProgreso(id));
     }
 
-    localStorage.removeItem(CLAVE_INSPECCION_ACTIVA);
+    localStorage.removeItem(claveActiva);
   } catch {
     // Ignorar si localStorage no está disponible.
   }

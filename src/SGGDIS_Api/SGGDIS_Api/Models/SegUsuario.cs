@@ -22,6 +22,12 @@ public class SegUsuario
     [MaxLength(40)]
     public string Rol { get; set; } = "Inspector";
 
+    [Column("ID_AREA")]
+    public int? IdArea { get; set; }
+
+    [ForeignKey(nameof(IdArea))]
+    public SegArea? Area { get; set; }
+
     [Column("ACTIVO")]
     [MaxLength(1)]
     public string Activo { get; set; } = "S";

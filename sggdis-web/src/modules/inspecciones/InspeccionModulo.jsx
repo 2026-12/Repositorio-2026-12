@@ -33,7 +33,7 @@ const COMPONENTES_POR_CODIGO = {
 // Acá vive toda la lógica del módulo: decide qué paso mostrar (selección,
 // formulario, o cierre) y guarda el estado de la inspección en curso.
 // App.jsx solo decide cuándo montar este módulo.
-function InspeccionModulo({ onVolverInicio }) {
+function InspeccionModulo({ onVolverInicio, areaAsignada }) {
   // Al montar, intenta recuperar una inspección a medias desde localStorage.
   // Se lee una sola vez.
   const [progresoGuardado] = useState(cargarProgreso);
@@ -270,6 +270,7 @@ function InspeccionModulo({ onVolverInicio }) {
       <SeleccionEstablecimiento
         onComenzar={setDatos}
         onVolverInicio={onVolverInicio}
+        areaAsignada={areaAsignada}
       />
     );
   }
