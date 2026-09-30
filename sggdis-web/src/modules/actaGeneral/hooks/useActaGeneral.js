@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   crearActaGeneral,
+  obtenerActaGeneral,
   guardarInfoGeneral,
   guardarResponsable,
   guardarMotivo,
 } from '../services/actaGeneralService';
+import { obtenerActaActiva, guardarActaActiva } from '../services/progresoActaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
 import { validarResponsable } from '../domain/validacionResponsable';
 import { validarMotivo } from '../domain/validacionMotivo';
@@ -61,6 +63,57 @@ function crearMotivoInicial() {
   };
 }
 
+// Convierte el "S"/"N" que guarda el backend a un booleano (o null si el
+// campo todavía no se ha llenado), que es el formato que usa el formulario.
+function mapearBooleanoSN(valor) {
+  if (valor === 'S') return true;
+  if (valor === 'N') return false;
+  return null;
+}
+
+// Reconstruye el estado del Apartado I a partir del acta que devuelve el
+// backend (GET /api/actas-generales/{id}), para restaurar el formulario si
+// el inspector recarga la página en medio del llenado. Si el apartado nunca
+// se llegó a guardar (el inspector no salió de él antes de recargar), se
+// usa la fecha/hora del dispositivo, igual que al crear el acta por primera vez.
+function mapearInfoGeneralDesdeActa(acta) {
+  const { fecha, hora } = obtenerFechaHoraActual();
+
+  return {
+    fechaInspeccion: acta.fechaInspeccion ? acta.fechaInspeccion.slice(0, 10) : fecha,
+    horaInicio: acta.horaInicio || hora,
+    numeroExpediente: acta.numeroExpediente ?? '',
+    numeroDenuncia: acta.numeroDenuncia ?? '',
+    nombreComercial: acta.nombreComercial ?? '',
+    provincia: acta.provincia ?? '',
+    canton: acta.canton ?? '',
+    distrito: acta.distrito ?? '',
+    direccionExacta: acta.direccionExacta ?? '',
+    telefonoContacto: acta.telefonoContacto ?? '',
+    correoNotificaciones: acta.correoNotificaciones ?? '',
+    autorizaIngreso: mapearBooleanoSN(acta.autorizaIngreso),
+    autorizaFotos: mapearBooleanoSN(acta.autorizaFotos),
+  };
+}
+
+// Reconstruye el estado del Apartado II a partir del acta guardada.
+function mapearResponsableDesdeActa(acta) {
+  return {
+    nombreResponsable: acta.nombreResponsable ?? '',
+    cargoResponsable: acta.cargoResponsable ?? null,
+    cargoResponsableOtro: acta.cargoResponsableOtro ?? '',
+    numeroIdentificacionResponsable: acta.numeroIdentificacionResponsable ?? '',
+  };
+}
+
+// Reconstruye el estado del Apartado III a partir del acta guardada.
+function mapearMotivoDesdeActa(acta) {
+  return {
+    motivoInspeccion: acta.motivoInspeccion ?? null,
+    motivoInspeccionOtro: acta.motivoInspeccionOtro ?? '',
+  };
+}
+
 // Maneja el ciclo de vida del Acta General: la crea en el backend al entrar,
 // guarda el estado de cada apartado del wizard y controla en cuál está
 // parado el usuario. Cada apartado con formulario real (Info General,
@@ -89,18 +142,61 @@ export function useActaGeneral() {
   const [motivoTocado, setMotivoTocado] = useState(false);
   const [erroresMotivo, setErroresMotivo] = useState({});
 
-  // Al montar el módulo se crea el acta en el backend (EN_PROCESO) y se le
-  // asigna el folio; así el número de acta ya aparece en el encabezado
-  // aunque el inspector todavía no haya llenado nada.
+  // Al montar el módulo, primero se revisa si ya había un acta en curso en
+  // este navegador (localStorage): si la hay, se recupera del backend con
+  // todos sus datos para no perder lo que el inspector ya había llenado al
+  // recargar la página. Si no hay ninguna (o la guardada ya no existe en la
+  // base de datos), se crea una acta nueva en EN_PROCESO y se le asigna el
+  // folio, como antes.
   useEffect(() => {
     let cancelado = false;
 
     (async () => {
       try {
-        const acta = await crearActaGeneral();
+        const activaGuardada = obtenerActaActiva();
+        let idActaFinal = null;
+        let numeroActaFinal = null;
+        let apartadoRestaurado = null;
+
+        if (activaGuardada?.idActa) {
+          try {
+            const actaExistente = await obtenerActaGeneral(activaGuardada.idActa);
+
+            if (actaExistente && actaExistente.estado !== 'FINALIZADA') {
+              idActaFinal = actaExistente.idActa;
+              numeroActaFinal = actaExistente.numeroActa;
+
+              if (!cancelado) {
+                setInfoGeneral(mapearInfoGeneralDesdeActa(actaExistente));
+                setResponsable(mapearResponsableDesdeActa(actaExistente));
+                setMotivo(mapearMotivoDesdeActa(actaExistente));
+              }
+
+              // Vuelve a dejar al inspector en el mismo apartado en el que
+              // estaba, si sigue siendo uno válido.
+              if (APARTADOS_ACTA.some((apartado) => apartado.id === activaGuardada.apartadoActivo)) {
+                apartadoRestaurado = activaGuardada.apartadoActivo;
+              }
+            }
+          } catch {
+            // El acta guardada en este navegador ya no existe en el backend
+            // (por ejemplo, se borró en la base de datos): se descarta y se
+            // crea una nueva más abajo.
+          }
+        }
+
+        if (!idActaFinal) {
+          const actaNueva = await crearActaGeneral();
+          idActaFinal = actaNueva.idActa;
+          numeroActaFinal = actaNueva.numeroActa;
+        }
+
         if (!cancelado) {
-          setIdActa(acta.idActa);
-          setNumeroActa(acta.numeroActa);
+          setIdActa(idActaFinal);
+          setNumeroActa(numeroActaFinal);
+          if (apartadoRestaurado) {
+            setApartadoActivo(apartadoRestaurado);
+          }
         }
       } catch (error) {
         if (!cancelado) {
@@ -117,6 +213,14 @@ export function useActaGeneral() {
       cancelado = true;
     };
   }, []);
+
+  // Mantiene en localStorage cuál es el acta activa y en qué apartado quedó
+  // el inspector, para poder retomarla si recarga la página en medio del
+  // llenado. Se sincroniza cada vez que cambia el apartado activo.
+  useEffect(() => {
+    if (!idActa) return;
+    guardarActaActiva({ idActa, apartadoActivo });
+  }, [idActa, apartadoActivo]);
 
   const actualizarCampoInfoGeneral = (campo, valor) => {
     setInfoGeneral((actual) => {
