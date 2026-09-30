@@ -1,3 +1,5 @@
+import { limpiarSesion, renovarSesion } from '../../auth/services/authService';
+
 // Cliente HTTP compartido: hace la petición, lanza un error con el mensaje real
 // del backend si la respuesta no es 2xx, y maneja 204 (sin contenido).
 export async function solicitarJson(url, opciones) {
@@ -5,13 +7,19 @@ export async function solicitarJson(url, opciones) {
     const token = leerTokenSesion();
     const headers = new Headers(opciones?.headers ?? {});
     if (token) headers.set('Authorization', `Bearer ${token}`);
-    const respuesta = await fetch(url, { ...opciones, headers });
+    const opcionesPeticion = { ...opciones, headers };
+    let respuesta = await fetch(url, opcionesPeticion);
+    if (respuesta.status === 401 && token && !url.includes('/api/auth/')) {
+      const sesionRenovada = await renovarSesion();
+      if (sesionRenovada) {
+        headers.set('Authorization', `Bearer ${sesionRenovada.token}`);
+        respuesta = await fetch(url, opcionesPeticion);
+      } else {
+        limpiarSesion();
+      }
+    }
     if (!respuesta.ok) {
       const cuerpo = await respuesta.json().catch(() => null);
-      if (respuesta.status === 401 && token) {
-        sessionStorage.removeItem('sggdis:sesion');
-        window.dispatchEvent(new Event('sggdis:session-changed'));
-      }
       throw new Error(cuerpo?.mensaje ?? cuerpo?.title ?? 'La solicitud no pudo completarse.');
     }
     return respuesta.status === 204 ? null : await respuesta.json();

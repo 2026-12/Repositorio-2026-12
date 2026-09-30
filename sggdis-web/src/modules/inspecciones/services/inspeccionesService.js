@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../config/inspeccion';
-import { solicitarJson } from './httpClient';
+import { API_BASE_URL } from '../../../config/api';
+import { solicitarJson } from '../../../services/httpClient';
 
 // Crea una nueva inspección en el backend y devuelve su id.
 export function crearInspeccion({ idGuia, idTipoEstablecimiento, nombreEstablecimiento, consecutivo, fecha, idArea }) {
@@ -38,6 +38,10 @@ export function cerrarInspeccion(idInspeccion, datosCierre) {
   return solicitarJson(`${API_BASE_URL}/api/inspecciones/${idInspeccion}/cierre`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(datosCierre),
+    body: JSON.stringify({
+      identificacionRepresentante: datosCierre.identificacionRepresentante,
+      observacionesFinales: datosCierre.observacionesFinales,
+      registrarOrdenSanitaria: datosCierre.registrarOrdenSanitaria,
+    }),
   });
 }

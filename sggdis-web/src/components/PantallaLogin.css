@@ -69,7 +69,7 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 21px;
+  gap: 16px;
 }
 
 .login-field {
@@ -79,6 +79,7 @@
   color: #0b2863;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .login-input-wrap {
@@ -108,9 +109,10 @@
 }
 
 .login-input-wrap input {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  height: 42px;
+  height: 44px;
   border: 0;
   outline: 0;
   color: #172b4d;
@@ -118,6 +120,7 @@
   font: inherit;
   font-size: 13px;
   font-weight: 400;
+  line-height: 1.4;
 }
 
 .login-input-wrap input::placeholder {
@@ -155,7 +158,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: -17px;
+  margin-top: 0;
   font-size: 12px;
 }
 
@@ -185,14 +188,14 @@
 }
 
 .login-inline-help {
-  margin: -14px 0 -11px;
+  margin: 0;
   color: #56667d;
   font-size: 12px;
   line-height: 1.45;
 }
 
 .login-error {
-  margin: -11px 0 -10px;
+  margin: 0;
   color: #a32828;
   font-size: 12px;
   line-height: 1.45;
@@ -280,7 +283,7 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 10px;
-    margin-top: -14px;
+    margin-top: 0;
   }
 }
 

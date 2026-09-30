@@ -1,39 +1,45 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import PanelAdministrador from './PanelAdministrador';
+import PanelAdministrador from '../modules/administracion/components/PanelAdministrador';
 
 const adminApi = vi.hoisted(() => ({
   obtenerAreas: vi.fn(),
+  obtenerRegiones: vi.fn(),
   obtenerUsuarios: vi.fn(),
-  crearUsuarioAdministrador: vi.fn(),
   actualizarAsignacionUsuario: vi.fn(),
 }));
 
-vi.mock('../modules/auth/services/adminUsuariosService', () => adminApi);
+vi.mock('../modules/administracion/services/administracionService', () => adminApi);
 
 describe('PanelAdministrador', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     adminApi.obtenerAreas.mockResolvedValue([
-      { idArea: 4, nombre: 'Florencia', nombreRegion: 'Huetar Norte' },
+      { idArea: 4, idRegion: 2, nombre: 'Florencia', nombreRegion: 'Huetar Norte' },
     ]);
-    adminApi.obtenerUsuarios.mockResolvedValue([]);
-    adminApi.crearUsuarioAdministrador.mockResolvedValue({});
+    adminApi.obtenerRegiones.mockResolvedValue([{ idRegion: 2, nombre: 'Huetar Norte' }]);
+    adminApi.obtenerUsuarios.mockResolvedValue([{
+      idUsuario: 7,
+      correo: 'persona@misalud.go.cr',
+      nombre: 'María',
+      primerApellido: 'Pérez',
+      segundoApellido: 'Solano',
+      identificacion: '001234567',
+      rol: 'Pendiente',
+      activo: 'S',
+    }]);
   });
 
-  it('permite al Administrador crear Inspector con área asignada', async () => {
+  it('asigna rol y ubicación de forma secuencial a una cuenta pendiente', async () => {
     render(<PanelAdministrador correoAdministrador="admin@misalud.go.cr" onCerrarSesion={vi.fn()} />);
-    await screen.findByRole('option', { name: 'Huetar Norte / Florencia' });
-    fireEvent.change(screen.getByLabelText('Correo institucional'), { target: { value: 'inspector@misalud.go.cr' } });
-    fireEvent.change(screen.getByLabelText('Contraseña inicial'), { target: { value: 'clave-inicial-segura' } });
-    fireEvent.change(screen.getByLabelText('Área de trabajo *'), { target: { value: '4' } });
-    fireEvent.submit(screen.getByRole('button', { name: 'Crear usuario' }).closest('form'));
+    await screen.findByRole('option', { name: 'Huetar Norte' });
+    expect(screen.getByText('María Pérez Solano')).toBeInTheDocument();
+    expect(screen.getByText('001234567')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Rol de persona@misalud.go.cr'), { target: { value: 'Inspector' } });
+    fireEvent.change(screen.getByLabelText('Región de persona@misalud.go.cr'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Área de persona@misalud.go.cr'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    await waitFor(() => expect(adminApi.crearUsuarioAdministrador).toHaveBeenCalledWith({
-      correo: 'inspector@misalud.go.cr',
-      contrasena: 'clave-inicial-segura',
-      rol: 'Inspector',
-      idArea: '4',
-    }));
+    await waitFor(() => expect(adminApi.actualizarAsignacionUsuario).toHaveBeenCalledWith(7, 'Inspector', 4, 2));
   });
 });

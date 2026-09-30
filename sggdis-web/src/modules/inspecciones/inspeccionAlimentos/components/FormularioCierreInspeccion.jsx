@@ -5,7 +5,7 @@ import { useCierreInspeccion } from '../../hooks/useCierreInspeccion';
 import { cerrarInspeccion } from '../../services/inspeccionesService';
 import AlertaError from '../../components/AlertaError';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
-import { limpiarSoloLetras, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
+import { limpiarSoloNumeros } from '../../domain/cierreInspeccion';
 import './formulario.css';
 
 // Convierte fecha localizada a formato ISO
@@ -28,6 +28,7 @@ function convertirFechaAISO(fechaLocalizada) {
 // puntaje con clasificación automática y la opción de orden sanitaria.
 // El porcentaje se calcula sobre el máximo real no sobre el máximo fijo del catálogo.
 export default function FormularioCierreInspeccion({
+  identidadInspector,
   datos,
   vistas = [],
   seccionesCache = {},
@@ -78,8 +79,6 @@ export default function FormularioCierreInspeccion({
     setEnviando(true);
     try {
       const confirmacion = await cerrarInspeccion(datos.idInspeccion, {
-        nombreInspector: datosCierre.nombreInspector.trim(),
-        identificacionInspector: datosCierre.identificacionInspector.trim(),
         identificacionRepresentante: datosCierre.identificacionRepresentante.trim(),
         observacionesFinales: datosCierre.observacionesFinales.trim() || null,
         registrarOrdenSanitaria: datosCierre.ordenSanitaria,
@@ -237,22 +236,21 @@ export default function FormularioCierreInspeccion({
             {/* CAMPOS DEL FORMULARIO EN GRID 2 COLUMNAS */}
             <div className="cierre__campos-grid">
               <div className="campo">
-                <label htmlFor="nombre-inspector">Inspector responsable *</label>
+                <label htmlFor="nombre-inspector">Inspector responsable</label>
                 <input
                   id="nombre-inspector"
                   type="text"
-                  value={datosCierre.nombreInspector}
-                  onChange={(e) => actualizarCampo('nombreInspector', limpiarSoloLetras(e.target.value))}
+                  value={identidadInspector?.nombreCompleto ?? ''}
+                  readOnly
                 />
               </div>
               <div className="campo">
-                <label htmlFor="id-inspector">Identificación del inspector *</label>
+                <label htmlFor="id-inspector">Identificación del inspector</label>
                 <input
                   id="id-inspector"
                   type="text"
-                  inputMode="numeric"
-                  value={datosCierre.identificacionInspector}
-                  onChange={(e) => actualizarCampo('identificacionInspector', limpiarSoloNumeros(e.target.value))}
+                  value={identidadInspector?.identificacion ?? ''}
+                  readOnly
                 />
               </div>
             </div>

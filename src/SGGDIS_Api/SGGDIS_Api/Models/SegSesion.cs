@@ -15,6 +15,7 @@ public class SegSesion
 
     [Column("HASH_TOKEN")]
     [MaxLength(64)]
+    [ConcurrencyCheck]
     public string HashToken { get; set; } = string.Empty;
 
     [Column("FECHA_EXPIRACION")]

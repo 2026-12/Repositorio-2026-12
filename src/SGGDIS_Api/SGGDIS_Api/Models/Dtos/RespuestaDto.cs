@@ -47,12 +47,6 @@ namespace SGGDIS_Api.Models.Dtos
     /// </summary>
     public class CerrarInspeccionDto
     {
-        // Nombre de quien realizó la inspección.
-        public string NombreInspector { get; set; } = string.Empty;
-
-        // Identificación de quien realizó la inspección.
-        public string IdentificacionInspector { get; set; } = string.Empty;
-
         // Identificación de quien representó al establecimiento en la visita.
         public string IdentificacionRepresentante { get; set; } = string.Empty;
 

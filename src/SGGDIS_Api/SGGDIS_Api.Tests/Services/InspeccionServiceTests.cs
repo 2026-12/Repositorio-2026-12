@@ -21,18 +21,35 @@ namespace SGGDIS_Api.Tests.Services
         public async Task CrearInspeccionAsync_CreaInspeccionEnProceso()
         {
             using var contexto = TestDbContextFactory.Crear();
+            contexto.Usuarios.Add(new SegUsuario
+            {
+                IdUsuario = 1,
+                Rol = "Inspector",
+                Activo = "S",
+                IdArea = 1,
+                Nombre = "Ana",
+                PrimerApellido = "Pérez",
+                SegundoApellido = "López",
+                Identificacion = "001234567",
+                Correo = "ana@misalud.go.cr",
+                HashContrasena = "hash",
+            });
+            await contexto.SaveChangesAsync();
             var servicio = CrearServicio(contexto);
 
             var inspeccion = await servicio.CrearInspeccionAsync(new CrearInspeccionDto
             {
                 IdGuia = 1,
                 IdTipoEstablecimiento = 1,
+                IdArea = 1,
                 NombreEstablecimiento = "Soda Doña Ana",
                 Consecutivo = "F-001",
                 Fecha = DateTime.Today,
-            });
+            }, 1);
 
             Assert.Equal("EN_PROCESO", inspeccion.Estado);
+            Assert.Equal("Ana Pérez López", inspeccion.NombreInspector);
+            Assert.Equal("001234567", inspeccion.IdentificacionInspector);
             Assert.Single(contexto.Inspecciones);
         }
 
@@ -45,7 +62,7 @@ namespace SGGDIS_Api.Tests.Services
             var servicio = CrearServicio(contexto);
 
             await Assert.ThrowsAsync<ConsecutivoDuplicadoException>(() =>
-                servicio.CrearInspeccionAsync(new CrearInspeccionDto { Consecutivo = "F-001", Fecha = DateTime.Today }));
+                servicio.CrearInspeccionAsync(new CrearInspeccionDto { Consecutivo = "F-001", Fecha = DateTime.Today }, 1));
         }
 
         // ---- EliminarInspeccionAsync ----
@@ -147,6 +164,8 @@ namespace SGGDIS_Api.Tests.Services
                 Consecutivo = "F-005",
                 NombreEstablecimiento = "Soda Doña Ana",
                 Fecha = DateTime.Today,
+                NombreInspector = "Ana Pérez",
+                IdentificacionInspector = "001234567",
             };
             contexto.Inspecciones.Add(inspeccion);
             await contexto.SaveChangesAsync();
@@ -164,9 +183,7 @@ namespace SGGDIS_Api.Tests.Services
             await Assert.ThrowsAsync<CamposCierreIncompletosException>(() =>
                 servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
                 {
-                    NombreInspector = "",
-                    IdentificacionInspector = "1-1111-1111",
-                    IdentificacionRepresentante = "2-2222-2222",
+                    IdentificacionRepresentante = "",
                 }));
         }
 
@@ -180,8 +197,6 @@ namespace SGGDIS_Api.Tests.Services
             await Assert.ThrowsAsync<SeccionesIncompletasException>(() =>
                 servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
                 {
-                    NombreInspector = "Ana",
-                    IdentificacionInspector = "1-1111-1111",
                     IdentificacionRepresentante = "2-2222-2222",
                 }));
         }
@@ -199,8 +214,6 @@ namespace SGGDIS_Api.Tests.Services
 
             var resumen = await servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
             {
-                NombreInspector = "Ana",
-                IdentificacionInspector = "1-1111-1111",
                 IdentificacionRepresentante = "2-2222-2222",
             });
 
@@ -223,8 +236,6 @@ namespace SGGDIS_Api.Tests.Services
 
             var resumen = await servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
             {
-                NombreInspector = "Ana",
-                IdentificacionInspector = "1-1111-1111",
                 IdentificacionRepresentante = "2-2222-2222",
             });
 
@@ -257,8 +268,6 @@ namespace SGGDIS_Api.Tests.Services
             var servicio = CrearServicio(contexto);
             var resumen = await servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
             {
-                NombreInspector = "Ana",
-                IdentificacionInspector = "1-1111-1111",
                 IdentificacionRepresentante = "2-2222-2222",
             });
 
@@ -279,8 +288,6 @@ namespace SGGDIS_Api.Tests.Services
             // La orden sanitaria debe poder registrarse aunque el puntaje no sea el foco de la prueba (Art. 65).
             await servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
             {
-                NombreInspector = "Ana Pérez",
-                IdentificacionInspector = "1-1111-1111",
                 IdentificacionRepresentante = "2-2222-2222",
                 RegistrarOrdenSanitaria = true,
             });
@@ -302,8 +309,6 @@ namespace SGGDIS_Api.Tests.Services
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 servicio.CerrarInspeccionAsync(999, new CerrarInspeccionDto
                 {
-                    NombreInspector = "Ana",
-                    IdentificacionInspector = "1-1111-1111",
                     IdentificacionRepresentante = "2-2222-2222",
                 }));
         }

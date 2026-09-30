@@ -40,6 +40,7 @@ namespace SGGDIS_Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearInspeccion([FromBody] CrearInspeccionDto dto)
         {
+            if (!int.TryParse(User.FindFirstValue("sub"), out var idUsuario)) return Unauthorized();
             var areaIdAsignada = HttpContext?.User?.FindFirstValue("area_id");
             if (!int.TryParse(areaIdAsignada, out var idAreaAsignada))
             {
@@ -57,12 +58,16 @@ namespace SGGDIS_Api.Controllers
 
             try
             {
-                var inspeccion = await _inspeccionService.CrearInspeccionAsync(dto);
+                var inspeccion = await _inspeccionService.CrearInspeccionAsync(dto, idUsuario);
                 return Ok(new { idInspeccion = inspeccion.IdInspeccion });
             }
             catch (ConsecutivoDuplicadoException ex)
             {
                 // Error esperado por el usuario (folio repetido): sí se le puede mostrar el detalle.
+                return Conflict(ex.Message);
+            }
+            catch (InspectorNoDisponibleException ex)
+            {
                 return Conflict(ex.Message);
             }
             catch (Exception ex)
@@ -129,11 +134,16 @@ namespace SGGDIS_Api.Controllers
         [HttpPut("{id}/cierre")]
         public async Task<IActionResult> CerrarInspeccion(int id, [FromBody] CerrarInspeccionDto dto)
         {
+            if (!int.TryParse(User.FindFirstValue("sub"), out var idUsuario)) return Unauthorized();
             if (!await PerteneceAlAreaActualAsync(id)) return NotFound();
             try
             {
-                var resumen = await _inspeccionService.CerrarInspeccionAsync(id, dto);
+                var resumen = await _inspeccionService.CerrarInspeccionAsync(id, dto, idUsuario);
                 return Ok(resumen);
+            }
+            catch (InspectorNoDisponibleException ex)
+            {
+                return Conflict(ex.Message);
             }
             catch (CamposCierreIncompletosException ex)
             {

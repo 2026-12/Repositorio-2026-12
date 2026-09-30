@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   actualizarAsignacionUsuario,
-  crearUsuarioAdministrador,
   obtenerAreas,
+  obtenerRegiones,
   obtenerUsuarios,
-} from '../modules/auth/services/adminUsuariosService';
+} from '../modules/administracion/services/administracionService';
 import './PanelAdministrador.css';
 
 const ROLES = [
@@ -15,30 +15,31 @@ const ROLES = [
   'Administrador',
 ];
 
+function requiereRegion(rol) {
+  return rol !== 'Administrador' && rol !== 'Pendiente';
+}
+
 function requiereArea(rol) {
-  return rol !== 'Administrador';
+  return rol !== 'Administrador' && rol !== 'Pendiente' && rol !== 'Director Regional';
 }
 
 export default function PanelAdministrador({ correoAdministrador, onCerrarSesion }) {
   const [usuarios, setUsuarios] = useState([]);
   const [areas, setAreas] = useState([]);
+  const [regiones, setRegiones] = useState([]);
   const [cambios, setCambios] = useState({});
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [rolNuevo, setRolNuevo] = useState('Inspector');
-  const [areaNueva, setAreaNueva] = useState('');
-
   async function cargarDatos() {
     setCargando(true);
     setError('');
     try {
-      const [listaUsuarios, listaAreas] = await Promise.all([obtenerUsuarios(), obtenerAreas()]);
+      const [listaUsuarios, listaAreas, listaRegiones] = await Promise.all([obtenerUsuarios(), obtenerAreas(), obtenerRegiones()]);
       setUsuarios(listaUsuarios);
       setAreas(listaAreas);
+      setRegiones(listaRegiones);
     } catch (errorCarga) {
       setError(errorCarga.message);
     } finally {
@@ -47,79 +48,68 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
   }
 
   useEffect(() => {
-    Promise.all([obtenerUsuarios(), obtenerAreas()])
-      .then(([listaUsuarios, listaAreas]) => {
+    Promise.all([obtenerUsuarios(), obtenerAreas(), obtenerRegiones()])
+      .then(([listaUsuarios, listaAreas, listaRegiones]) => {
         setUsuarios(listaUsuarios);
         setAreas(listaAreas);
+        setRegiones(listaRegiones);
       })
       .catch((errorCarga) => setError(errorCarga.message))
       .finally(() => setCargando(false));
   }, []);
 
-  async function crearUsuario(event) {
-    event.preventDefault();
-    setError('');
-    setMensaje('');
-    if (!correo.trim().toLowerCase().endsWith('@misalud.go.cr')) {
-      setError('El correo debe terminar en @misalud.go.cr.');
-      return;
-    }
-    if (contrasena.length < 12) {
-      setError('La contraseña debe tener al menos 12 caracteres.');
-      return;
-    }
-    if (requiereArea(rolNuevo) && !areaNueva) {
-      setError('Seleccione el área de trabajo del usuario.');
-      return;
-    }
-
-    setGuardando(true);
-    try {
-      await crearUsuarioAdministrador({
-        correo: correo.trim().toLowerCase(),
-        contrasena,
-        rol: rolNuevo,
-        idArea: areaNueva || null,
-      });
-      setMensaje(`Usuario ${correo.trim().toLowerCase()} creado.`);
-      setCorreo('');
-      setContrasena('');
-      setRolNuevo('Inspector');
-      setAreaNueva('');
-      await cargarDatos();
-    } catch (errorCreacion) {
-      setError(errorCreacion.message);
-    } finally {
-      setGuardando(false);
-    }
-  }
-
   function cambioUsuario(usuario, campo, valor) {
-    setCambios((actuales) => ({
-      ...actuales,
-      [usuario.idUsuario]: {
-        rol: actuales[usuario.idUsuario]?.rol ?? usuario.rol,
-        idArea: actuales[usuario.idUsuario]?.idArea ?? usuario.idArea ?? '',
-        [campo]: valor,
-      },
-    }));
+    setCambios((actuales) => {
+      const actual = actuales[usuario.idUsuario] ?? {
+        rol: usuario.rol,
+        idRegion: usuario.idRegion ?? '',
+        idArea: usuario.idArea ?? '',
+      };
+      const siguiente = { ...actual, [campo]: valor };
+      if (campo === 'idRegion') siguiente.idArea = '';
+      if (campo === 'rol') {
+        if (valor === 'Administrador') {
+          siguiente.idRegion = '';
+          siguiente.idArea = '';
+        } else if (valor === 'Director Regional') {
+          // Director Regional solo tiene región, sin área
+          siguiente.idArea = '';
+        }
+      }
+      return { ...actuales, [usuario.idUsuario]: siguiente };
+    });
   }
 
   async function guardarAsignacion(usuario) {
-    const asignacionActual = cambios[usuario.idUsuario] ?? { rol: usuario.rol, idArea: usuario.idArea ?? '' };
+    const asignacionActual = cambios[usuario.idUsuario] ?? {
+      rol: usuario.rol,
+      idRegion: usuario.idRegion ?? '',
+      idArea: usuario.idArea ?? '',
+    };
+    if (!ROLES.includes(asignacionActual.rol)) {
+      setError('Seleccione un rol permitido para activar la cuenta.');
+      return;
+    }
+    const areaSeleccionada = areas.find((area) => String(area.idArea) === String(asignacionActual.idArea));
+    if (requiereArea(asignacionActual.rol) &&
+        (!asignacionActual.idRegion || !areaSeleccionada || String(areaSeleccionada.idRegion) !== String(asignacionActual.idRegion))) {
+      setError('Seleccione primero una región y luego un área de esa región.');
+      return;
+    }
+    if (requiereRegion(asignacionActual.rol) && !requiereArea(asignacionActual.rol) && !asignacionActual.idRegion) {
+      setError('Seleccione una región para el Director Regional.');
+      return;
+    }
     const asignacion = {
       ...asignacionActual,
       idArea: requiereArea(asignacionActual.rol) ? Number(asignacionActual.idArea) : null,
+      idRegion: requiereRegion(asignacionActual.rol) ? Number(asignacionActual.idRegion) : null,
     };
-    if (requiereArea(asignacion.rol) && !asignacion.idArea) {
-      setError('Los roles operativos requieren un área asignada.');
-      return;
-    }
     setGuardando(true);
     setError('');
     setMensaje('');
     try {
-      await actualizarAsignacionUsuario(usuario.idUsuario, asignacion.rol, asignacion.idArea);
+      await actualizarAsignacionUsuario(usuario.idUsuario, asignacion.rol, asignacion.idArea, asignacion.idRegion);
       setCambios((actuales) => {
         const siguientes = { ...actuales };
         delete siguientes[usuario.idUsuario];
@@ -151,62 +141,61 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
       <section className="panel-admin__section" aria-labelledby="crear-usuario-titulo">
         <div className="panel-admin__section-heading">
           <div>
-            <h2 id="crear-usuario-titulo">Registrar usuario</h2>
-            <p>Cree la cuenta y defina su rol y área de trabajo.</p>
+            <h2 id="crear-usuario-titulo">Cuentas y asignaciones</h2>
+            <p>Las cuentas nuevas esperan aquí hasta que se les asigne un rol y una ubicación.</p>
           </div>
         </div>
-        <form className="panel-admin__form" onSubmit={crearUsuario}>
-          <label>
-            <span>Correo institucional</span>
-            <input type="email" autoComplete="email" placeholder="nombre@misalud.go.cr" value={correo} onChange={(event) => setCorreo(event.target.value)} required />
-          </label>
-          <label>
-            <span>Contraseña inicial</span>
-            <input type="password" autoComplete="new-password" minLength={12} value={contrasena} onChange={(event) => setContrasena(event.target.value)} required />
-          </label>
-          <label>
-            <span>Rol</span>
-            <select value={rolNuevo} onChange={(event) => { setRolNuevo(event.target.value); if (event.target.value === 'Administrador') setAreaNueva(''); }}>
-              {ROLES.map((rol) => <option key={rol} value={rol}>{rol}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>Área de trabajo{requiereArea(rolNuevo) ? ' *' : ''}</span>
-            <select value={areaNueva} onChange={(event) => setAreaNueva(event.target.value)} disabled={!requiereArea(rolNuevo)} required={requiereArea(rolNuevo)}>
-              <option value="">{requiereArea(rolNuevo) ? 'Seleccione región / área' : 'No aplica'}</option>
-              {areas.map((area) => <option key={area.idArea} value={area.idArea}>{area.nombreRegion} / {area.nombre}</option>)}
-            </select>
-          </label>
-          <button className="panel-admin__primary" type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear usuario'}</button>
-        </form>
       </section>
 
       <section className="panel-admin__section" aria-labelledby="usuarios-titulo">
         <div className="panel-admin__section-heading">
           <div>
             <h2 id="usuarios-titulo">Usuarios y asignaciones</h2>
-            <p>Actualice el rol o el área asignada. Los cambios aplican al próximo inicio de sesión.</p>
+            <p>Asigne el rol y seleccione la región antes del área para habilitar cada cuenta.</p>
           </div>
           <button className="panel-admin__refresh" type="button" onClick={cargarDatos} disabled={cargando}>Actualizar</button>
         </div>
         {cargando ? <p className="panel-admin__empty">Cargando usuarios…</p> : (
           <div className="panel-admin__table-wrap">
             <table className="panel-admin__table">
-              <thead><tr><th>Correo</th><th>Rol</th><th>Área</th><th>Estado</th><th>Acción</th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Identificación</th><th>Correo</th><th>Rol</th><th>Región</th><th>Área</th><th>Estado</th><th>Acción</th></tr></thead>
               <tbody>
                 {usuarios.map((usuario) => {
-                  const valores = cambios[usuario.idUsuario] ?? { rol: usuario.rol, idArea: usuario.idArea ?? '' };
+                    const valores = cambios[usuario.idUsuario] ?? {
+                      rol: usuario.rol,
+                      idRegion: usuario.idRegion ?? '',
+                      idArea: usuario.idArea ?? '',
+                    };
+                    const areasDeRegion = areas.filter((area) => String(area.idRegion) === String(valores.idRegion));
                   return (
                     <tr key={usuario.idUsuario}>
+                      <td>{[usuario.nombre, usuario.primerApellido, usuario.segundoApellido].filter(Boolean).join(' ')}</td>
+                      <td>{usuario.identificacion}</td>
                       <td>{usuario.correo}</td>
-                      <td><select aria-label={`Rol de ${usuario.correo}`} value={valores.rol} onChange={(event) => cambioUsuario(usuario, 'rol', event.target.value)}>{ROLES.map((rol) => <option key={rol} value={rol}>{rol}</option>)}</select></td>
-                      <td><select aria-label={`Área de ${usuario.correo}`} value={valores.idArea} disabled={!requiereArea(valores.rol)} onChange={(event) => cambioUsuario(usuario, 'idArea', event.target.value)}><option value="">{requiereArea(valores.rol) ? 'Seleccione área' : 'No aplica'}</option>{areas.map((area) => <option key={area.idArea} value={area.idArea}>{area.nombreRegion} / {area.nombre}</option>)}</select></td>
+                        <td>
+                          <select aria-label={`Rol de ${usuario.correo}`} value={valores.rol} onChange={(event) => cambioUsuario(usuario, 'rol', event.target.value)}>
+                            {valores.rol === 'Pendiente' && <option value="Pendiente">Pendiente de asignación</option>}
+                            {ROLES.map((rol) => <option key={rol} value={rol}>{rol}</option>)}
+                          </select>
+                        </td>
+                        <td>
+                          <select aria-label={`Región de ${usuario.correo}`} value={valores.idRegion} disabled={!requiereRegion(valores.rol)} onChange={(event) => cambioUsuario(usuario, 'idRegion', event.target.value)}>
+                            <option value="">{requiereRegion(valores.rol) ? 'Seleccione región' : 'No aplica'}</option>
+                            {regiones.map((region) => <option key={region.idRegion} value={region.idRegion}>{region.nombre}</option>)}
+                          </select>
+                        </td>
+                        <td>
+                          <select aria-label={`Área de ${usuario.correo}`} value={valores.idArea} disabled={!requiereArea(valores.rol) || !valores.idRegion} onChange={(event) => cambioUsuario(usuario, 'idArea', event.target.value)}>
+                            <option value="">{requiereArea(valores.rol) ? 'Seleccione área' : 'No aplica'}</option>
+                            {areasDeRegion.map((area) => <option key={area.idArea} value={area.idArea}>{area.nombre}</option>)}
+                          </select>
+                        </td>
                       <td>{usuario.activo === 'S' ? 'Activo' : 'Inactivo'}</td>
-                      <td><button className="panel-admin__save" type="button" disabled={guardando || (requiereArea(valores.rol) && !valores.idArea)} onClick={() => guardarAsignacion(usuario)}>Guardar</button></td>
+                        <td><button className="panel-admin__save" type="button" disabled={guardando || !ROLES.includes(valores.rol) || (requiereArea(valores.rol) && (!valores.idRegion || !valores.idArea)) || (requiereRegion(valores.rol) && !requiereArea(valores.rol) && !valores.idRegion)} onClick={() => guardarAsignacion(usuario)}>Guardar</button></td>
                     </tr>
                   );
                 })}
-                {usuarios.length === 0 && <tr><td className="panel-admin__empty" colSpan="5">No hay usuarios registrados.</td></tr>}
+                  {usuarios.length === 0 && <tr><td className="panel-admin__empty" colSpan="8">No hay usuarios pendientes de asignación.</td></tr>}
               </tbody>
             </table>
           </div>

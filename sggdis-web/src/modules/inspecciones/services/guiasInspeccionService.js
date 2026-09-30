@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../config/inspeccion';
-import { solicitarJson } from './httpClient';
+import { API_BASE_URL } from '../../../config/api';
+import { solicitarJson } from '../../../services/httpClient';
 
 // Trae los tipos de establecimiento disponibles para una guía.
 export function obtenerTiposEstablecimiento(idGuia) {

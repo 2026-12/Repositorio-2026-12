@@ -10,7 +10,7 @@ namespace SGGDIS_Api.Services
     public interface IInspeccionService
     {
         /// Crea una nueva inspección "EN_PROCESO" para un establecimiento.
-        Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto);
+        Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto, int idUsuario);
 
         /// Elimina una inspección (y sus respuestas). Devuelve false si no existía.
         Task<bool> EliminarInspeccionAsync(int idInspeccion);
@@ -24,6 +24,6 @@ namespace SGGDIS_Api.Services
         /// Cierra la inspección:
         /// - calcula puntaje final, porcentaje y clasificación
         /// - guarda los datos de cierre (inspector, observaciones, etc.)
-        Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion, CerrarInspeccionDto dto);
+        Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion, CerrarInspeccionDto dto, int? idUsuario = null);
     }
 }

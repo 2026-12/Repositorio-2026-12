@@ -50,6 +50,10 @@ namespace SGGDIS_Api.Data
                 .HasIndex(u => u.Correo)
                 .IsUnique();
 
+            modelBuilder.Entity<SegUsuario>()
+                .HasIndex(u => u.Identificacion)
+                .IsUnique();
+
             modelBuilder.Entity<SegSesion>()
                 .HasIndex(s => s.HashToken)
                 .IsUnique();
@@ -71,6 +75,11 @@ namespace SGGDIS_Api.Data
                 .HasOne(usuario => usuario.Area)
                 .WithMany(area => area.Usuarios)
                 .HasForeignKey(usuario => usuario.IdArea);
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasOne(usuario => usuario.Region)
+                .WithMany()
+                .HasForeignKey(usuario => usuario.IdRegion);
         }
     }
 }

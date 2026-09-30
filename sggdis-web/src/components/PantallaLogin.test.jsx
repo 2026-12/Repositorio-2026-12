@@ -38,8 +38,26 @@ describe('PantallaLogin', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Debe esperar');
   });
 
-  it('no ofrece registro público de cuentas desde la pantalla de login', () => {
-    render(<PantallaLogin onIniciarSesion={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: /Crear cuenta/ })).not.toBeInTheDocument();
+  it('registra una cuenta pendiente sin asignar rol desde el formulario público', async () => {
+    const onRegistrar = vi.fn().mockResolvedValue({ mensaje: 'Cuenta pendiente de asignación.' });
+    render(<PantallaLogin onIniciarSesion={vi.fn()} onRegistrar={onRegistrar} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Crear una cuenta' }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'María' } });
+    fireEvent.change(screen.getByLabelText('Primer apellido'), { target: { value: 'Pérez' } });
+    fireEvent.change(screen.getByLabelText('Segundo apellido'), { target: { value: 'Solano' } });
+    fireEvent.change(screen.getByLabelText('Identificación'), { target: { value: '001234567' } });
+    fireEvent.change(screen.getByLabelText('Usuario institucional'), { target: { value: 'persona@misalud.go.cr' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'clave-inicial-segura' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+    await waitFor(() => expect(onRegistrar).toHaveBeenCalledWith({
+      correo: 'persona@misalud.go.cr',
+      contrasena: 'clave-inicial-segura',
+      nombre: 'María',
+      primerApellido: 'Pérez',
+      segundoApellido: 'Solano',
+      identificacion: '001234567',
+    }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Cuenta pendiente de asignación.');
   });
 });

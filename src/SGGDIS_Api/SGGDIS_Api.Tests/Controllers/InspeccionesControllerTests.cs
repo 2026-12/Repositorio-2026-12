@@ -36,6 +36,7 @@ namespace SGGDIS_Api.Tests.Controllers
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(new[]
                     {
+                        new Claim("sub", "42"),
                         new Claim("area_id", "7")
                     }, "Test"))
                 }
@@ -52,14 +53,14 @@ namespace SGGDIS_Api.Tests.Controllers
             var resultado = await controlador.CrearInspeccion(new CrearInspeccionDto { Fecha = DateTime.Today.AddDays(-1), IdArea = 7 });
 
             Assert.IsType<BadRequestObjectResult>(resultado);
-            servicioMock.Verify(s => s.CrearInspeccionAsync(It.IsAny<CrearInspeccionDto>()), Times.Never);
+            servicioMock.Verify(s => s.CrearInspeccionAsync(It.IsAny<CrearInspeccionDto>(), It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
         public async Task CrearInspeccion_DevuelveConflictSiElConsecutivoYaExiste()
         {
             var servicioMock = new Mock<IInspeccionService>();
-            servicioMock.Setup(s => s.CrearInspeccionAsync(It.IsAny<CrearInspeccionDto>()))
+            servicioMock.Setup(s => s.CrearInspeccionAsync(It.IsAny<CrearInspeccionDto>(), It.IsAny<int>()))
                 .ThrowsAsync(new ConsecutivoDuplicadoException());
             var controlador = CrearControlador(servicioMock);
 
@@ -81,7 +82,7 @@ namespace SGGDIS_Api.Tests.Controllers
             });
 
             Assert.IsType<ForbidResult>(resultado);
-            servicioMock.Verify(s => s.CrearInspeccionAsync(It.IsAny<CrearInspeccionDto>()), Times.Never);
+            servicioMock.Verify(s => s.CrearInspeccionAsync(It.IsAny<CrearInspeccionDto>(), It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
@@ -99,7 +100,7 @@ namespace SGGDIS_Api.Tests.Controllers
         public async Task CerrarInspeccion_DevuelveBadRequestSiFaltanCamposObligatorios()
         {
             var servicioMock = new Mock<IInspeccionService>();
-            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>()))
+            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>(), It.IsAny<int?>()))
                 .ThrowsAsync(new CamposCierreIncompletosException());
             var controlador = CrearControlador(servicioMock);
 
@@ -112,7 +113,7 @@ namespace SGGDIS_Api.Tests.Controllers
         public async Task CerrarInspeccion_DevuelveConflictSiHaySeccionesIncompletas()
         {
             var servicioMock = new Mock<IInspeccionService>();
-            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>()))
+            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>(), It.IsAny<int?>()))
                 .ThrowsAsync(new SeccionesIncompletasException());
             var controlador = CrearControlador(servicioMock);
 
@@ -125,7 +126,7 @@ namespace SGGDIS_Api.Tests.Controllers
         public async Task CerrarInspeccion_DevuelveNotFoundSiLaInspeccionNoExiste()
         {
             var servicioMock = new Mock<IInspeccionService>();
-            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>()))
+            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>(), It.IsAny<int?>()))
                 .ThrowsAsync(new KeyNotFoundException());
             var controlador = CrearControlador(servicioMock);
 
@@ -139,7 +140,7 @@ namespace SGGDIS_Api.Tests.Controllers
         {
             var resumenEsperado = new ResumenCierreDto { PuntajeObtenido = 8, PuntajeMaximo = 14, Porcentaje = 57.14m, Clasificacion = "Condiciones inaceptables" };
             var servicioMock = new Mock<IInspeccionService>();
-            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>()))
+            servicioMock.Setup(s => s.CerrarInspeccionAsync(It.IsAny<int>(), It.IsAny<CerrarInspeccionDto>(), It.IsAny<int?>()))
                 .ReturnsAsync(resumenEsperado);
             var controlador = CrearControlador(servicioMock);
 
