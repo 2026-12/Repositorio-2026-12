@@ -17,6 +17,9 @@ namespace SGGDIS_Api.Data
         public DbSet<InsItem> Items => Set<InsItem>();
         public DbSet<InsInspeccion> Inspecciones { get; set; }
         public DbSet<InsRespuesta> Respuestas { get; set; }
+        public DbSet<SegUsuario> Usuarios => Set<SegUsuario>();
+        public DbSet<SegSesion> Sesiones => Set<SegSesion>();
+        public DbSet<SegCodigoVerificacion> CodigosVerificacion => Set<SegCodigoVerificacion>();
 
         // Configura relaciones que EF no puede inferir solo de los atributos en Models.
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -40,6 +43,14 @@ namespace SGGDIS_Api.Data
             // El consecutivo (folio) de cada inspección debe ser único en todo el sistema.
             modelBuilder.Entity<InsInspeccion>()
                 .HasIndex(i => i.Consecutivo)
+                .IsUnique();
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasIndex(u => u.Correo)
+                .IsUnique();
+
+            modelBuilder.Entity<SegSesion>()
+                .HasIndex(s => s.HashToken)
                 .IsUnique();
         }
     }

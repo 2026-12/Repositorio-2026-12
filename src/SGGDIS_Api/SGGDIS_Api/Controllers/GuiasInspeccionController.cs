@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SGGDIS_Api.Services;
 
 namespace SGGDIS_Api.Controllers
@@ -9,6 +10,7 @@ namespace SGGDIS_Api.Controllers
     /// No cambia con cada inspección, se usa para armar el formulario del frontend.
     /// </summary>
     [ApiController]
+    [Authorize]
     [Route("api/guias-inspeccion")]
     public class GuiasInspeccionController : ControllerBase
     {

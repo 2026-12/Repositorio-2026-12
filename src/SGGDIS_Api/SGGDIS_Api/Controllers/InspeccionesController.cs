@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SGGDIS_Api.Models.Dtos;
 using SGGDIS_Api.Services;
 
@@ -9,6 +10,7 @@ namespace SGGDIS_Api.Controllers
     /// La lógica vive en IInspeccionService, acá solo se traduce a HTTP.
     /// </summary>
     [ApiController]
+    [Authorize]
     [Route("api/inspecciones")]
     public class InspeccionesController : ControllerBase
     {

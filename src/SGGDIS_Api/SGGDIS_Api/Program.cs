@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using SGGDIS_Api.Data;
+using SGGDIS_Api.Models;
+using SGGDIS_Api.Security;
 using SGGDIS_Api.Services;
 
 // Punto de entrada de la API: aquí se configuran todos los servicios que la
@@ -11,6 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthentication("Session")
+    .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>("Session", _ => { });
+builder.Services.AddAuthorization();
 
 // Conecta la aplicación a la base de datos Oracle usando la cadena de
 // conexión "OracleDb" definida en la configuración (appsettings).
@@ -22,6 +29,13 @@ builder.Services.AddDbContext<SggdisDbContext>(options =>
 builder.Services.AddScoped<ISeccionService, SeccionService>();
 
 builder.Services.AddScoped<IInspeccionService, InspeccionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPasswordHasher<SegUsuario>, PasswordHasher<SegUsuario>>();
+builder.Services.AddSingleton<ICorreoCodigoService, UnavailableCorreoCodigoService>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<ICorreoCodigoService, DevelopmentCorreoCodigoService>();
+}
 
 // Permite que el frontend (que corre en localhost:5173 durante desarrollo)
 // pueda hacer peticiones a esta API sin ser bloqueado por el navegador.
@@ -48,7 +62,13 @@ app.UseHttpsRedirection();
 // Aplica la política de CORS definida arriba.
 app.UseCors("FrontendDev");
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+if (app.Environment.IsDevelopment())
+{
+    await DesarrolloUsuarioSeeder.CrearUsuarioSiConfiguradoAsync(app.Services, app.Configuration);
+}
 
 // Conecta las rutas definidas en los Controllers con las peticiones que lleguen.
 app.MapControllers();
