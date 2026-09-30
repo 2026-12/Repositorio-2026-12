@@ -23,5 +23,8 @@ namespace SGGDIS_Api.Services
 
         // Devuelve el acta completa, para restaurar el formulario si el usuario vuelve a entrar.
         Task<Models.InsActaGeneral?> ObtenerActaAsync(int idActa);
+
+        // Elimina el acta (el inspector salió sin terminarla). Devuelve false si no existía.
+        Task<bool> EliminarActaAsync(int idActa);
     }
 }

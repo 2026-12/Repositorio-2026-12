@@ -113,5 +113,23 @@ namespace SGGDIS_Api.Controllers
                 return StatusCode(500, "Ocurrió un error al guardar el motivo de la inspección.");
             }
         }
+
+        // DELETE /api/actas-generales/{id} : descarta un acta en curso (el
+        // inspector salió sin terminarla desde "Volver al menú"), para que no
+        // quede ocupando un folio a medio llenar.
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> EliminarActa(int id)
+        {
+            try
+            {
+                var eliminada = await _actaGeneralService.EliminarActaAsync(id);
+                return eliminada ? NoContent() : NotFound();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el acta general {IdActa}.", id);
+                return StatusCode(500, "Ocurrió un error al eliminar el acta.");
+            }
+        }
     }
 }

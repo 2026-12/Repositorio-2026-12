@@ -107,6 +107,21 @@ namespace SGGDIS_Api.Services
                 .FirstOrDefaultAsync(a => a.IdActa == idActa);
         }
 
+        // El acta no tiene tablas hijas todavía (a diferencia de Inspección con
+        // sus Respuestas), así que por ahora alcanza con borrar la fila.
+        public async Task<bool> EliminarActaAsync(int idActa)
+        {
+            var acta = await _context.ActasGenerales.FindAsync(idActa);
+            if (acta is null)
+            {
+                return false;
+            }
+
+            _context.ActasGenerales.Remove(acta);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         // Convierte "" en null para no guardar cadenas vacías en campos opcionales.
         private static string? LimpiarOpcional(string? valor) =>
             string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();

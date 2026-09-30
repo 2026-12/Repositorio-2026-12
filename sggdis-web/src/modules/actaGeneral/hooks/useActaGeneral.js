@@ -320,6 +320,18 @@ export function useActaGeneral() {
     },
   };
 
+  // Indicador visual de progreso: para cada apartado con formulario real, dice
+  // si ya está "completo" (sus campos obligatorios están llenos y son
+  // válidos en este momento) o "pendiente". Es independiente de si el
+  // inspector ya guardó o no ese apartado en el backend; solo mira si, tal
+  // como está el formulario ahora mismo, pasaría la validación.
+  const estadoApartados = Object.fromEntries(
+    Object.entries(configuracionApartados).map(([id, configuracion]) => [
+      id,
+      Object.keys(configuracion.validar(configuracion.datos)).length === 0 ? 'completo' : 'pendiente',
+    ])
+  );
+
   // Valida y guarda el apartado que se está abandonando. Devuelve true si se
   // puede salir de él. Al entrar al acta no se asume que el inspector va a
   // llenar el apartado activo por defecto: mientras no toque ningún campo,
@@ -393,6 +405,7 @@ export function useActaGeneral() {
 
     apartadoActivo,
     irAApartado,
+    estadoApartados,
 
     infoGeneral,
     erroresInfoGeneral,

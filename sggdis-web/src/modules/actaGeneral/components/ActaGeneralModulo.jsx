@@ -1,8 +1,13 @@
+import { useCallback } from 'react';
 import { useActaGeneral } from '../hooks/useActaGeneral';
+import { useConfirmacionSalida } from '../hooks/useConfirmacionSalida';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
+import { eliminarActaGeneral } from '../services/actaGeneralService';
+import { limpiarActaActiva } from '../services/progresoActaGeneralService';
 import ApartadoInfoGeneral from './ApartadoInfoGeneral';
 import ApartadoResponsable from './ApartadoResponsable';
 import ApartadoMotivo from './ApartadoMotivo';
+import ModalConfirmacionSalida from './ModalConfirmacionSalida';
 import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
 
@@ -19,10 +24,12 @@ function indiceApartado(id) {
 // muestran "en construcción".
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
+    idActa,
     creando,
     errorCreacion,
     apartadoActivo,
     irAApartado,
+    estadoApartados,
     infoGeneral,
     erroresInfoGeneral,
     actualizarCampoInfoGeneral,
@@ -38,7 +45,34 @@ function ActaGeneralModulo({ onVolverInicio }) {
     retrocederAlApartadoAnterior,
   } = useActaGeneral();
 
+  const salida = useConfirmacionSalida();
+
   const indiceActivo = indiceApartado(apartadoActivo);
+
+  // Confirmó que quiere salir: se descarta el acta de verdad (backend +
+  // localStorage), para que la próxima vez que entre a Acta General
+  // arranque en blanco en vez de retomar esta.
+  const salirSinGuardar = useCallback(async () => {
+    salida.setError(null);
+    salida.setEliminando(true);
+
+    if (idActa) {
+      try {
+        await eliminarActaGeneral(idActa);
+      } catch (error) {
+        salida.setError(`No se pudo salir del acta: ${error.message}`);
+        salida.setEliminando(false);
+        return;
+      }
+    }
+
+    limpiarActaActiva();
+
+    salida.cerrar();
+    salida.setEliminando(false);
+
+    onVolverInicio();
+  }, [idActa, onVolverInicio, salida]);
 
   if (creando) {
     return (
@@ -76,25 +110,35 @@ function ActaGeneralModulo({ onVolverInicio }) {
         </div>
 
         <div className="acta-cabecera__derecha">
-          <button type="button" className="acta-boton-volver" onClick={onVolverInicio}>
+          <button type="button" className="acta-boton-volver" onClick={salida.abrir}>
             ← Volver al menú
           </button>
         </div>
       </header>
 
       <nav className="acta-tabs" aria-label="Apartados del acta">
-        {APARTADOS_ACTA.map((apartado, indice) => (
-          <button
-            key={apartado.id}
-            type="button"
-            className={`acta-tab ${indice === indiceActivo ? 'acta-tab--activa' : ''}`}
-            disabled={guardando}
-            onClick={() => irAApartado(apartado.id)}
-          >
-            <span className="acta-tab__numero">{apartado.numero}</span>
-            {apartado.etiqueta}
-          </button>
-        ))}
+        {APARTADOS_ACTA.map((apartado, indice) => {
+          // Los apartados que todavía no tienen formulario real (HU-009 a
+          // HU-011) no están en estadoApartados, así que por ahora se
+          // quedan sin marca de completado/pendiente.
+          const completo = estadoApartados[apartado.id] === 'completo';
+
+          return (
+            <button
+              key={apartado.id}
+              type="button"
+              className={`acta-tab ${indice === indiceActivo ? 'acta-tab--activa' : ''} ${completo ? 'acta-tab--completa' : ''}`}
+              disabled={guardando}
+              onClick={() => irAApartado(apartado.id)}
+            >
+              <span className="acta-tab__numero" aria-hidden="true">
+                {completo ? '✓' : apartado.numero}
+              </span>
+              {apartado.etiqueta}
+              {completo && <span className="acta-tab__srSolo"> (completo)</span>}
+            </button>
+          );
+        })}
       </nav>
 
       <main className="acta-contenido">
@@ -179,6 +223,15 @@ function ActaGeneralModulo({ onVolverInicio }) {
           <span className="acta-pie__espaciador" aria-hidden="true" />
         )}
       </footer>
+
+      {salida.mostrar && (
+        <ModalConfirmacionSalida
+          error={salida.error}
+          eliminando={salida.eliminando}
+          onCancelar={salida.cancelar}
+          onConfirmar={salirSinGuardar}
+        />
+      )}
     </div>
   );
 }
