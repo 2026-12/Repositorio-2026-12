@@ -17,23 +17,19 @@ namespace SGGDIS_Api.Services.OrdenesSanitarias
 
         public async Task<OrdenSanitaria> CrearOrdenSanitariaAsync(CrearOrdenSanitariaDto dto)
         {
+            ValidarFechas(dto);
+
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
                 var distritoExiste = await _context.Distritos.AnyAsync(d => d.IdDistrito == dto.IdDistrito);
 
-                if (!distritoExiste)
-                {
-                    throw new KeyNotFoundException("El distrito seleccionado no existe.");
-                }
+                if (!distritoExiste) throw new KeyNotFoundException("El distrito seleccionado no existe.");
 
                 var consecutivoExiste = await _context.OrdenesSanitarias.AnyAsync(o => o.NumeroConsecutivo == dto.NumeroConsecutivo);
 
-                if (consecutivoExiste)
-                {
-                    throw new InvalidOperationException("Ya existe una Orden Sanitaria con ese consecutivo.");
-                }
+                if (consecutivoExiste) throw new InvalidOperationException("Ya existe una Orden Sanitaria con ese consecutivo.");
 
                 var ubicacion = new Ubicacion
                 {
@@ -52,8 +48,7 @@ namespace SGGDIS_Api.Services.OrdenesSanitarias
                     NumeroExpediente = dto.NumeroExpediente?.Trim(),
                     NombreEstablecimiento = dto.NombreEstablecimiento.Trim(),
                     FechaEmision = dto.FechaEmision,
-                    FechaNotificacion = dto.FechaNotificacion,
-                    Motivo = dto.Motivo.Trim()
+                    FechaNotificacion = dto.FechaNotificacion
                 };
 
                 _context.OrdenesSanitarias.Add(ordenSanitaria);
@@ -122,6 +117,39 @@ namespace SGGDIS_Api.Services.OrdenesSanitarias
             }
         }
 
+        private static void ValidarFechas(CrearOrdenSanitariaDto dto)
+        {
+            var fechaActual = DateTime.Today;
+
+            if (dto.FechaEmision.Date < fechaActual) throw new ArgumentException("La fecha de emisión no puede ser anterior a la fecha actual.");
+
+            if (dto.FechaNotificacion.Date < fechaActual) throw new ArgumentException("La fecha de notificación no puede ser anterior a la fecha actual.");
+
+            foreach (var ordenanza in dto.Ordenanzas)
+            {
+                if (!string.Equals(ordenanza.Plazo.TipoPlazo, "FECHA", StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (!ordenanza.Plazo.DiaCumplimiento.HasValue || !ordenanza.Plazo.MesCumplimiento.HasValue || !ordenanza.Plazo.AnioCumplimiento.HasValue) throw new ArgumentException($"Debe indicar la fecha de cumplimiento de la ordenanza {ordenanza.NumeroOrden}.");
+
+                DateTime fechaCumplimiento;
+
+                try
+                {
+                    fechaCumplimiento = new DateTime(
+                        ordenanza.Plazo.AnioCumplimiento.Value,
+                        ordenanza.Plazo.MesCumplimiento.Value,
+                        ordenanza.Plazo.DiaCumplimiento.Value
+                    );
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    throw new ArgumentException($"La fecha de cumplimiento de la ordenanza {ordenanza.NumeroOrden} no es válida.");
+                }
+
+                if (fechaCumplimiento.Date < fechaActual) throw new ArgumentException($"La fecha de cumplimiento de la ordenanza {ordenanza.NumeroOrden} no puede ser anterior a la fecha actual.");
+            }
+        }
+
         public async Task<OrdenSanitariaRespuestaDto?> ObtenerOrdenSanitariaAsync(int idOrdenSanitaria)
         {
             return await _context.OrdenesSanitarias
@@ -136,7 +164,6 @@ namespace SGGDIS_Api.Services.OrdenesSanitarias
                     NombreEstablecimiento = o.NombreEstablecimiento,
                     FechaEmision = o.FechaEmision,
                     FechaNotificacion = o.FechaNotificacion,
-                    Motivo = o.Motivo,
 
                     Ubicacion = o.Ubicacion == null
                         ? null
@@ -211,7 +238,6 @@ namespace SGGDIS_Api.Services.OrdenesSanitarias
                     NombreEstablecimiento = o.NombreEstablecimiento,
                     FechaEmision = o.FechaEmision,
                     FechaNotificacion = o.FechaNotificacion,
-                    Motivo = o.Motivo,
 
                     Ubicacion = o.Ubicacion == null
                         ? null

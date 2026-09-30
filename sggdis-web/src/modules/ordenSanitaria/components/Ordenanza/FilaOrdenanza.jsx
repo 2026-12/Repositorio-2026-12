@@ -97,9 +97,9 @@ export default function FilaOrdenanza({
   };
 
   const obtenerEtiquetaCantidad = () => {
-    if (ordenanza.plazo?.tipoPlazo === 'MESES') return 'Cantidad de meses *';
-    if (ordenanza.plazo?.tipoPlazo === 'HORAS') return 'Cantidad de horas *';
-    return 'Cantidad de días *';
+    if (ordenanza.plazo?.tipoPlazo === 'MESES') return 'Cantidad de meses';
+    if (ordenanza.plazo?.tipoPlazo === 'HORAS') return 'Cantidad de horas';
+    return 'Cantidad de días';
   };
 
   return (
@@ -124,7 +124,7 @@ export default function FilaOrdenanza({
 
       <div className="orden-ordenanza__contenido">
         <div className="orden-campo">
-          <label htmlFor={`ordenanza-${index}`}>Ordenanza </label>
+          <label htmlFor={`ordenanza-${index}`}>Ordenanza</label>
 
           <textarea
             id={`ordenanza-${index}`}
@@ -139,7 +139,7 @@ export default function FilaOrdenanza({
         </div>
 
         <div className="orden-campo">
-          <label htmlFor={`fundamento-${index}`}>Fundamento legal </label>
+          <label htmlFor={`fundamento-${index}`}>Fundamento legal</label>
 
           <textarea
             id={`fundamento-${index}`}
@@ -157,13 +157,14 @@ export default function FilaOrdenanza({
           <span className="orden-plazo__titulo">Plazo de cumplimiento</span>
 
           <div className="orden-campo">
-            <label htmlFor={`tipoPlazo-${index}`}>Tipo de plazo </label>
+            <label htmlFor={`tipoPlazo-${index}`}>Tipo de plazo</label>
 
             <select
               id={`tipoPlazo-${index}`}
-              value={ordenanza.plazo?.tipoPlazo || 'DIAS'}
+              value={ordenanza.plazo?.tipoPlazo || ''}
               onChange={(e) => cambiarTipoPlazo(e.target.value)}
             >
+              <option value="">Seleccione...</option>
               <option value="DIAS">Días</option>
               <option value="MESES">Meses</option>
               <option value="HORAS">Horas</option>
@@ -171,11 +172,27 @@ export default function FilaOrdenanza({
             </select>
           </div>
 
-          {ordenanza.plazo?.tipoPlazo === 'FECHA' ? (
+          {ordenanza.plazo?.tipoPlazo && ordenanza.plazo.tipoPlazo !== 'FECHA' && (
+            <div className="orden-campo">
+              <label htmlFor={`cantidadPlazo-${index}`}>
+                {obtenerEtiquetaCantidad()}
+              </label>
+
+              <input
+                id={`cantidadPlazo-${index}`}
+                type="number"
+                min="1"
+                value={ordenanza.plazo?.cantidad || ''}
+                onChange={(e) => actualizarPlazo('cantidad', e.target.value)}
+              />
+            </div>
+          )}
+
+          {ordenanza.plazo?.tipoPlazo === 'FECHA' && (
             <div className="orden-grid-2 orden-grid-fecha-hora">
               <div className="orden-campo">
                 <label htmlFor={`fechaCumplimiento-${index}`}>
-                  Fecha de cumplimiento 
+                  Fecha de cumplimiento
                 </label>
 
                 <input
@@ -186,7 +203,6 @@ export default function FilaOrdenanza({
                   value={obtenerFecha()}
                   onChange={(e) => cambiarFecha(e.target.value)}
                   onClick={() => abrirSelector(fechaRef)}
-                  onFocus={() => abrirSelector(fechaRef)}
                 />
               </div>
 
@@ -203,23 +219,8 @@ export default function FilaOrdenanza({
                   step="300"
                   onChange={(e) => actualizarPlazo('horaCumplimiento', e.target.value)}
                   onClick={() => abrirSelector(horaRef)}
-                  onFocus={() => abrirSelector(horaRef)}
                 />
               </div>
-            </div>
-          ) : (
-            <div className="orden-campo">
-              <label htmlFor={`cantidadPlazo-${index}`}>
-                {obtenerEtiquetaCantidad()}
-              </label>
-
-              <input
-                id={`cantidadPlazo-${index}`}
-                type="number"
-                min="1"
-                value={ordenanza.plazo?.cantidad || ''}
-                onChange={(e) => actualizarPlazo('cantidad', e.target.value)}
-              />
             </div>
           )}
 

@@ -131,14 +131,13 @@ body,
 }
 
 /* =========================================================
-   NAVEGACIÓN
+   NAVEGACIÓN PRINCIPAL
    ========================================================= */
 
 .orden-tabs {
-  padding: 8px 24px;
   display: flex;
-  align-items: center;
   gap: 8px;
+  padding: 8px 24px;
   flex-wrap: wrap;
   position: sticky;
   top: 84px;
@@ -146,6 +145,7 @@ body,
   background: var(--orden-white);
   border-bottom: 1px solid var(--orden-gray);
   box-shadow: 0 2px 8px rgba(0, 20, 60, 0.06);
+  overflow: visible;
 }
 
 .orden-tab {
@@ -153,63 +153,36 @@ body,
   border: none;
   border-radius: 999px;
   background: transparent;
-  font-size: 0.8rem;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
-}
-
-/* PENDIENTE */
-
-.orden-tab--pendiente {
-  background: transparent;
-  color: #7A838F;
-  box-shadow: none;
-}
-
-.orden-tab--pendiente:not(.orden-tab--activo):hover {
-  background: #EEF1F4;
   color: #5B6470;
+  font-size: 0.8rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
-
-/* COMPLETO */
-
-.orden-tab--completo {
-  background: var(--orden-white);
-  color: var(--orden-green);
-  box-shadow: inset 0 0 0 2px var(--orden-green);
-  font-weight: 600;
-}
-
-.orden-tab--completo:not(.orden-tab--activo):hover {
-  background: #F3F9F4;
-}
-
-/* ACTIVO */
 
 .orden-tab--activo {
-  background: var(--orden-green);
+  background: var(--orden-navy);
   color: var(--orden-white);
-  box-shadow: none;
   font-weight: 600;
 }
 
-.orden-tab--activo:hover {
-  background: var(--orden-green);
-  color: var(--orden-white);
+.orden-tab--completo {
+  color: var(--orden-green);
+  box-shadow: inset 0 0 0 2px var(--orden-green);
 }
-
-/* ACTIVO Y COMPLETO */
 
 .orden-tab--completo.orden-tab--activo {
   background: var(--orden-green);
   color: var(--orden-white);
-  box-shadow: none;
+}
+
+.orden-tab:not(.orden-tab--activo):hover {
+  background: #EEF1F4;
+}
+
+.orden-tab--bloqueado {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* =========================================================
@@ -226,8 +199,8 @@ body,
   min-height: 390px;
   padding: 22px 30px;
   overflow: visible;
-  background: var(--orden-white);
   border-radius: 12px;
+  background: var(--orden-white);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -263,7 +236,7 @@ body,
 }
 
 /* =========================================================
-   CUADROS
+   GRUPOS
    ========================================================= */
 
 .orden-grupo {
@@ -276,8 +249,8 @@ body,
 
 .orden-grupo__titulo {
   padding: 11px 16px;
-  background: var(--orden-subtitle-bg);
   border-bottom: 1px solid var(--orden-border);
+  background: var(--orden-subtitle-bg);
   color: var(--orden-navy);
   font-size: 0.85rem;
   font-weight: 700;
@@ -296,6 +269,19 @@ body,
 }
 
 .orden-grupo--selector .orden-grupo__contenido {
+  position: relative;
+}
+
+.orden-grupo--ubicacion {
+  overflow: visible;
+  padding-bottom: 10px;
+}
+
+.orden-grupo--ubicacion .orden-grupo__titulo {
+  border-radius: 10px 10px 0 0;
+}
+
+.orden-grupo--ubicacion .orden-grupo__contenido {
   position: relative;
 }
 
@@ -321,6 +307,7 @@ body,
   color: var(--orden-navy);
   font-size: 0.8rem;
   font-weight: 600;
+  line-height: 1.35;
 }
 
 .orden-campo input,
@@ -336,6 +323,11 @@ body,
   outline: none;
 }
 
+.orden-campo input,
+.orden-campo select {
+  min-height: 40px;
+}
+
 .orden-campo input:focus,
 .orden-campo select:focus,
 .orden-campo textarea:focus {
@@ -346,6 +338,7 @@ body,
 .orden-campo input[type="date"],
 .orden-campo input[type="time"] {
   min-height: 40px;
+  padding-right: 12px;
   cursor: pointer;
 }
 
@@ -405,26 +398,40 @@ body,
   gap: 16px;
 }
 
+/* =========================================================
+   FECHA Y HORA DEL PLAZO
+   ========================================================= */
+
 .orden-grid-fecha-hora {
-  align-items: end;
+  align-items: start;
+}
+
+.orden-grid-fecha-hora .orden-campo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.orden-grid-fecha-hora .orden-campo label {
+  height: 22px;
+  min-height: 22px;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+}
+
+.orden-grid-fecha-hora .orden-campo input[type="date"],
+.orden-grid-fecha-hora .orden-campo input[type="time"] {
+  width: 100%;
+  height: 50px;
+  min-height: 50px;
+  margin: 0;
+  padding: 8px 12px;
 }
 
 /* =========================================================
    SELECTORES PERSONALIZADOS
    ========================================================= */
-
-.orden-grupo--ubicacion {
-  overflow: visible;
-  padding-bottom: 10px;
-}
-
-.orden-grupo--ubicacion .orden-grupo__titulo {
-  border-radius: 10px 10px 0 0;
-}
-
-.orden-grupo--ubicacion .orden-grupo__contenido {
-  position: relative;
-}
 
 .orden-grid-ubicacion {
   position: relative;
@@ -495,9 +502,9 @@ body,
   left: 0;
   z-index: 5000;
   max-height: 180px;
+  padding: 5px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 5px;
   border: 1px solid var(--orden-gray);
   border-radius: 8px;
   background: var(--orden-white);
@@ -551,6 +558,118 @@ body,
 }
 
 /* =========================================================
+   PANELES DE INDICACIONES
+   ========================================================= */
+
+.orden-paneles-legales {
+  margin: 14px 0 18px;
+}
+
+.orden-paneles-legales__tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.orden-panel-tab {
+  min-height: 34px;
+  padding: 7px 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 1px solid #CDD4DE;
+  border-radius: 999px;
+  background: var(--orden-white);
+  color: var(--orden-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.orden-panel-tab:hover {
+  border-color: var(--orden-blue);
+  background: #F3F7FC;
+  color: var(--orden-blue);
+}
+
+.orden-panel-tab--activo {
+  border-color: var(--orden-navy);
+  background: var(--orden-navy);
+  color: var(--orden-white);
+  box-shadow: 0 2px 6px rgba(2, 26, 83, 0.14);
+}
+
+.orden-panel-tab--activo:hover {
+  border-color: var(--orden-navy);
+  background: var(--orden-navy);
+  color: var(--orden-white);
+}
+
+.orden-panel-tab__flecha {
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.orden-panel-tab__flecha--abierta {
+  transform: rotate(180deg);
+}
+
+.orden-paneles-legales__desplegable {
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid var(--orden-border);
+  border-radius: 9px;
+  background: var(--orden-white);
+  box-shadow: 0 2px 7px rgba(2, 26, 83, 0.05);
+  animation: orden-panel-desplegar 0.18s ease;
+}
+
+.orden-paneles-legales__titulo {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--orden-border);
+  background: var(--orden-subtitle-bg);
+  color: var(--orden-navy);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.orden-paneles-legales__contenido {
+  padding: 12px 15px 14px;
+  color: #505B6C;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.orden-paneles-legales__contenido p {
+  margin: 8px 0;
+}
+
+.orden-paneles-legales__contenido p:first-child {
+  margin-top: 0;
+}
+
+.orden-paneles-legales__contenido p:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes orden-panel-desplegar {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
    ORDENANZAS
    ========================================================= */
 
@@ -589,8 +708,8 @@ body,
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  background: var(--orden-subtitle-bg);
   border-bottom: 1px solid var(--orden-border);
+  background: var(--orden-subtitle-bg);
 }
 
 .orden-ordenanza__encabezado h3 {
@@ -658,79 +777,11 @@ body,
   display: block;
   margin: -16px -20px 14px;
   padding: 11px 20px;
-  background: var(--orden-subtitle-bg);
   border-bottom: 1px solid var(--orden-border);
-  color: var(--orden-navy);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-/* =========================================================
-   PANELES INFORMATIVOS
-   ========================================================= */
-
-.orden-paneles-legales {
-  margin-top: 24px;
-}
-
-.orden-panel {
-  margin: 10px 0;
-  overflow: hidden;
-  border: 1px solid var(--orden-border);
-  border-radius: 8px;
-  background: var(--orden-white);
-}
-
-.orden-panel__boton {
-  width: 100%;
-  padding: 11px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 0;
   background: var(--orden-subtitle-bg);
   color: var(--orden-navy);
   font-size: 0.82rem;
   font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-
-.orden-panel__boton:hover {
-  background: #EEF1F5;
-}
-
-.orden-panel--abierto .orden-panel__boton {
-  border-bottom: 1px solid var(--orden-border);
-}
-
-.orden-panel__contenido {
-  padding: 12px 14px 14px;
-  background: var(--orden-white);
-  color: #505B6C;
-  font-size: 0.8rem;
-  line-height: 1.55;
-}
-
-.orden-panel__contenido p {
-  margin: 8px 0;
-}
-
-.orden-panel__contenido p:first-child {
-  margin-top: 0;
-}
-
-.orden-panel__contenido p:last-child {
-  margin-bottom: 0;
-}
-
-.orden-panel__contenido strong {
-  color: var(--orden-navy);
-}
-
-.orden-panel__contenido em {
-  color: #3F4C5E;
 }
 
 /* =========================================================
@@ -890,6 +941,16 @@ body,
   .orden-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
+  }
+
+  .orden-paneles-legales__tabs {
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    overflow-x: auto;
+  }
+
+  .orden-panel-tab {
+    flex-shrink: 0;
   }
 
   .orden-contenedor {

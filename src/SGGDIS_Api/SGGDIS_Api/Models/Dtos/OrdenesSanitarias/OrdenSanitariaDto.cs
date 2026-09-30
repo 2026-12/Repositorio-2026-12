@@ -10,7 +10,6 @@
         public string NombreEstablecimiento { get; set; } = string.Empty;
         public DateTime FechaEmision { get; set; }
         public DateTime FechaNotificacion { get; set; }
-        public string Motivo { get; set; } = string.Empty;
 
         public PersonaNotificadaDto PersonaNotificada { get; set; } = new();
         public List<OrdenanzaDto> Ordenanzas { get; set; } = new();
@@ -51,30 +50,18 @@
         public string? Firma { get; set; }
     }
 
-    // ================================
-    // DTOs de respuesta
-    // ================================
-
     public class OrdenSanitariaRespuestaDto
     {
         public int IdOrdenSanitaria { get; set; }
         public int IdInspeccion { get; set; }
-
         public string NumeroConsecutivo { get; set; } = string.Empty;
         public string? NumeroExpediente { get; set; }
         public string NombreEstablecimiento { get; set; } = string.Empty;
-
         public DateTime FechaEmision { get; set; }
         public DateTime FechaNotificacion { get; set; }
-
-        public string Motivo { get; set; } = string.Empty;
-
         public UbicacionOrdenDto? Ubicacion { get; set; }
-
         public PersonaNotificadaDto? PersonaNotificada { get; set; }
-
         public List<OrdenanzaRespuestaDto> Ordenanzas { get; set; } = new();
-
         public ResponsableOrdenDto? Responsable { get; set; }
     }
 
@@ -82,13 +69,10 @@
     {
         public int IdProvincia { get; set; }
         public string Provincia { get; set; } = string.Empty;
-
         public int IdCanton { get; set; }
         public string Canton { get; set; } = string.Empty;
-
         public int IdDistrito { get; set; }
         public string Distrito { get; set; } = string.Empty;
-
         public string DireccionExacta { get; set; } = string.Empty;
     }
 
@@ -96,10 +80,8 @@
     {
         public int IdOrdenanza { get; set; }
         public int NumeroOrden { get; set; }
-
         public string Ordenanza { get; set; } = string.Empty;
         public string FundamentoLegal { get; set; } = string.Empty;
-
         public PlazoOrdenanzaDto? Plazo { get; set; }
     }
 }
