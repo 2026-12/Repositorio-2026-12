@@ -93,5 +93,25 @@ namespace SGGDIS_Api.Controllers
                 return StatusCode(500, "Ocurrió un error al guardar los datos del responsable.");
             }
         }
+
+        // PUT /api/actas-generales/{id}/motivo : guarda (autoguardado) el Apartado III.
+        [HttpPut("{id}/motivo")]
+        public async Task<IActionResult> GuardarMotivo(int id, [FromBody] InfoMotivoActaDto dto)
+        {
+            try
+            {
+                await _actaGeneralService.GuardarMotivoAsync(id, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar el apartado del motivo del acta {IdActa}.", id);
+                return StatusCode(500, "Ocurrió un error al guardar el motivo de la inspección.");
+            }
+        }
     }
 }

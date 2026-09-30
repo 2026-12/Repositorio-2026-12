@@ -86,6 +86,21 @@ namespace SGGDIS_Api.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task GuardarMotivoAsync(int idActa, InfoMotivoActaDto dto)
+        {
+            var acta = await _context.ActasGenerales.FindAsync(idActa)
+                ?? throw new KeyNotFoundException("El acta no existe.");
+
+            acta.MotivoInspeccion = LimpiarOpcional(dto.MotivoInspeccion);
+            // Igual que con el cargo del responsable: el detalle de "Otro" solo
+            // se conserva si ese es el motivo elegido.
+            acta.MotivoInspeccionOtro = acta.MotivoInspeccion == "OTRO"
+                ? LimpiarOpcional(dto.MotivoInspeccionOtro)
+                : null;
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<InsActaGeneral?> ObtenerActaAsync(int idActa)
         {
             return await _context.ActasGenerales

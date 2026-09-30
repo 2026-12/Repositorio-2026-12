@@ -3,9 +3,11 @@ import {
   crearActaGeneral,
   guardarInfoGeneral,
   guardarResponsable,
+  guardarMotivo,
 } from '../services/actaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
 import { validarResponsable } from '../domain/validacionResponsable';
+import { validarMotivo } from '../domain/validacionMotivo';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
@@ -51,6 +53,14 @@ function crearResponsableInicial() {
   };
 }
 
+function crearMotivoInicial() {
+  return {
+    // null = todavía sin marcar; ninguna opción de motivo debe salir preseleccionada.
+    motivoInspeccion: null,
+    motivoInspeccionOtro: '',
+  };
+}
+
 // Maneja el ciclo de vida del Acta General: la crea en el backend al entrar,
 // guarda el estado de cada apartado del wizard y controla en cuál está
 // parado el usuario. Cada apartado con formulario real (Info General,
@@ -74,6 +84,10 @@ export function useActaGeneral() {
   const [responsable, setResponsable] = useState(crearResponsableInicial);
   const [responsableTocado, setResponsableTocado] = useState(false);
   const [erroresResponsable, setErroresResponsable] = useState({});
+
+  const [motivo, setMotivo] = useState(crearMotivoInicial);
+  const [motivoTocado, setMotivoTocado] = useState(false);
+  const [erroresMotivo, setErroresMotivo] = useState({});
 
   // Al montar el módulo se crea el acta en el backend (EN_PROCESO) y se le
   // asigna el folio; así el número de acta ya aparece en el encabezado
@@ -152,6 +166,28 @@ export function useActaGeneral() {
     });
   };
 
+  const actualizarCampoMotivo = (campo, valor) => {
+    setMotivo((actual) => {
+      const siguiente = { ...actual, [campo]: valor };
+
+      // Si deja de elegir "Otro" como motivo, el texto libre que había
+      // escrito ya no aplica.
+      if (campo === 'motivoInspeccion' && valor !== 'OTRO') {
+        siguiente.motivoInspeccionOtro = '';
+      }
+
+      return siguiente;
+    });
+
+    setMotivoTocado(true);
+    setErroresMotivo((actuales) => {
+      if (!actuales[campo]) return actuales;
+      const resto = { ...actuales };
+      delete resto[campo];
+      return resto;
+    });
+  };
+
   // Un solo lugar donde vive, por cada apartado con formulario real, qué
   // datos tiene, si el inspector ya lo empezó a llenar, cómo se valida y
   // cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
@@ -170,6 +206,13 @@ export function useActaGeneral() {
       validar: validarResponsable,
       setErrores: setErroresResponsable,
       guardar: (datos) => guardarResponsable(idActa, datos),
+    },
+    motivo: {
+      datos: motivo,
+      tocado: motivoTocado,
+      validar: validarMotivo,
+      setErrores: setErroresMotivo,
+      guardar: (datos) => guardarMotivo(idActa, datos),
     },
   };
 
@@ -254,6 +297,10 @@ export function useActaGeneral() {
     responsable,
     erroresResponsable,
     actualizarCampoResponsable,
+
+    motivo,
+    erroresMotivo,
+    actualizarCampoMotivo,
 
     guardando,
     errorGuardado,

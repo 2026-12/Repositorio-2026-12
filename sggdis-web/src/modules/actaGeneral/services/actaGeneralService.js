@@ -49,3 +49,15 @@ export function guardarResponsable(idActa, datos) {
     }),
   });
 }
+
+// Guarda (autoguardado) el Apartado III - Motivo de la inspección.
+export function guardarMotivo(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/motivo`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      motivoInspeccion: datos.motivoInspeccion,
+      motivoInspeccionOtro: datos.motivoInspeccionOtro,
+    }),
+  });
+}

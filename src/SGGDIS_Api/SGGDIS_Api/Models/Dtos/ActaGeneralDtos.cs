@@ -53,6 +53,18 @@ namespace SGGDIS_Api.Models.Dtos
     }
 
     /// <summary>
+    /// Datos del Apartado III (Motivo de la inspección). Selección única entre
+    /// las opciones fijas del literal 3 del acta oficial; "OTRO" habilita el
+    /// detalle en MotivoInspeccionOtro.
+    /// </summary>
+    public class InfoMotivoActaDto
+    {
+        public string? MotivoInspeccion { get; set; }
+
+        public string? MotivoInspeccionOtro { get; set; }
+    }
+
+    /// <summary>
     /// Lo que se le devuelve al frontend al crear el acta o al consultarla:
     /// el id interno y el folio visible (NumeroActa).
     /// </summary>

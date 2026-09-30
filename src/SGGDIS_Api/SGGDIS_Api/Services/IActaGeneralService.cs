@@ -18,6 +18,9 @@ namespace SGGDIS_Api.Services
         // Guarda (upsert) los datos del Apartado II - Información del Responsable.
         Task GuardarResponsableAsync(int idActa, InfoResponsableActaDto dto);
 
+        // Guarda (upsert) los datos del Apartado III - Motivo de la inspección.
+        Task GuardarMotivoAsync(int idActa, InfoMotivoActaDto dto);
+
         // Devuelve el acta completa, para restaurar el formulario si el usuario vuelve a entrar.
         Task<Models.InsActaGeneral?> ObtenerActaAsync(int idActa);
     }

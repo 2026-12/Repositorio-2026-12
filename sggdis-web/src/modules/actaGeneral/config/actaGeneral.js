@@ -27,3 +27,16 @@ export const CARGOS_RESPONSABLE = [
   { valor: 'APODERADO', etiqueta: 'Apoderado(a)' },
   { valor: 'OTRO', etiqueta: 'Otro' },
 ];
+
+// Opciones del literal 3 "Motivo de la inspección" del acta oficial
+// (Apartado III). Selección única; "OTRO" habilita el campo de texto libre.
+export const MOTIVOS_INSPECCION = [
+  { valor: 'PRIMERA_VEZ_PSF', etiqueta: 'Primera vez Permiso Sanitario de Funcionamiento' },
+  { valor: 'SEGUIMIENTO', etiqueta: 'Seguimiento' },
+  { valor: 'RENOVACION_PSF', etiqueta: 'Renovación Permiso Sanitario de Funcionamiento' },
+  { valor: 'DENUNCIA', etiqueta: 'Denuncia' },
+  { valor: 'LEY_9028_10066', etiqueta: 'Ley N° 9028 y/o Ley N° 10066' },
+  { valor: 'EVENTO_MASIVO', etiqueta: 'Evento masivo' },
+  { valor: 'EMERGENCIA', etiqueta: 'Emergencia' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+];

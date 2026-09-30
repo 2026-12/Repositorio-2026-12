@@ -108,5 +108,18 @@ namespace SGGDIS_Api.Models
         [MaxLength(30)]
         [Column("NUMERO_IDENTIFICACION_RESPONSABLE")]
         public string? NumeroIdentificacionResponsable { get; set; }
+
+        // ---- Apartado III (HU-008): Motivo de la inspección ----
+
+        // Uno de los valores fijos de MOTIVOS_INSPECCION (frontend), ej. "DENUNCIA" u "OTRO".
+        // Es selección única: el literal dice "marque la opción" (singular), no "las opciones".
+        [MaxLength(30)]
+        [Column("MOTIVO_INSPECCION")]
+        public string? MotivoInspeccion { get; set; }
+
+        // Solo tiene contenido cuando MotivoInspeccion es "OTRO".
+        [MaxLength(200)]
+        [Column("MOTIVO_INSPECCION_OTRO")]
+        public string? MotivoInspeccionOtro { get; set; }
     }
 }

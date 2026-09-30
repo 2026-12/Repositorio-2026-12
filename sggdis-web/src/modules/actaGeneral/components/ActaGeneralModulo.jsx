@@ -2,6 +2,7 @@ import { useActaGeneral } from '../hooks/useActaGeneral';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 import ApartadoInfoGeneral from './ApartadoInfoGeneral';
 import ApartadoResponsable from './ApartadoResponsable';
+import ApartadoMotivo from './ApartadoMotivo';
 import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
 
@@ -13,8 +14,9 @@ function indiceApartado(id) {
 
 // Shell del wizard del Acta de Inspección General (HU-004): header con el
 // folio del acta, tabs de apartados (indicador de progreso) y el apartado
-// activo. Los Apartados I y II (HU-006, HU-007) ya tienen formulario real;
-// los demás son las próximas HU (HU-008 a HU-011) y se muestran "en construcción".
+// activo. Los Apartados I, II y III (HU-006, HU-007, HU-008) ya tienen
+// formulario real; los demás son las próximas HU (HU-009 a HU-011) y se
+// muestran "en construcción".
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
     creando,
@@ -27,6 +29,9 @@ function ActaGeneralModulo({ onVolverInicio }) {
     responsable,
     erroresResponsable,
     actualizarCampoResponsable,
+    motivo,
+    erroresMotivo,
+    actualizarCampoMotivo,
     guardando,
     errorGuardado,
     avanzarAlSiguienteApartado,
@@ -110,15 +115,25 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo !== 'info-general' && apartadoActivo !== 'responsable' && (
-            <section className="acta-apartado">
-              <p className="acta-apartado__etiqueta">Próximamente</p>
-              <h2 className="acta-apartado__titulo">Este apartado está en construcción</h2>
-              <p className="acta-apartado__descripcion">
-                Corresponde a otra historia de usuario del Acta General (HU-008 a HU-011) y todavía no está implementado.
-              </p>
-            </section>
+          {apartadoActivo === 'motivo' && (
+            <ApartadoMotivo
+              datos={motivo}
+              errores={erroresMotivo}
+              onCambiarCampo={actualizarCampoMotivo}
+            />
           )}
+
+          {apartadoActivo !== 'info-general' &&
+            apartadoActivo !== 'responsable' &&
+            apartadoActivo !== 'motivo' && (
+              <section className="acta-apartado">
+                <p className="acta-apartado__etiqueta">Próximamente</p>
+                <h2 className="acta-apartado__titulo">Este apartado está en construcción</h2>
+                <p className="acta-apartado__descripcion">
+                  Corresponde a otra historia de usuario del Acta General (HU-009 a HU-011) y todavía no está implementado.
+                </p>
+              </section>
+            )}
         </div>
 
         {errorGuardado && (
