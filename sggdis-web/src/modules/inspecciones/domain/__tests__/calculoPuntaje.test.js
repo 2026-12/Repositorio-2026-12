@@ -35,10 +35,13 @@ describe('calcularResumen', () => {
     expect(resumen.maximo).toBe(18); // el máximo no cambia, solo lo obtenido
   });
 
-  it('un ítem marcado "N/A" no cuenta ni para obtenidos ni para el máximo', () => {
+  it('un ítem marcado "N/A" no suma a obtenidos, pero el máximo de la sección se queda igual', () => {
     const respuestas = { 3: { estado: 'N/A' } };
     const resumen = calcularResumen(grupos, respuestas);
-    expect(resumen.maximo).toBe(12); // 18 - 6 (excluido por N/A)
+    // El máximo mostrado es siempre el nominal de la sección: marcar N/A no
+    // le resta puntos. La exclusión real para la nota final se hace en
+    // cierreInspeccion.js, no acá.
+    expect(resumen.maximo).toBe(18);
     expect(resumen.obtenidos).toBe(0);
   });
 

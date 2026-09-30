@@ -1375,6 +1375,15 @@ body {
   font-size: 0.9rem;
 }
 
+.cierre__confirmacion-nota {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--gris);
+  color: #5b6470;
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
 .cierre__confirmacion--inaceptable .cierre__confirmacion-check {
   background: #FBEAE9;
   color: var(--rojo);
