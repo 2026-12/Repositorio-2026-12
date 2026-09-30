@@ -7,6 +7,7 @@ import mapaCostaRica from '../assets/mapa.png';
 // dos últimos todavía sin implementar) y un modal de ayuda con FAQ.
 export default function PantallaInicio({
   onNuevaInspeccion,
+  onActaGeneral,
   onHistorial,
   onReportes,
   onCerrarSesion,
@@ -58,6 +59,14 @@ export default function PantallaInicio({
             onClick={onNuevaInspeccion}
           >
             Nueva inspección
+          </button>
+
+          <button
+            type="button"
+            className="inicio__navLink"
+            onClick={onActaGeneral}
+          >
+            Acta General
           </button>
 
           <button
@@ -213,6 +222,67 @@ export default function PantallaInicio({
 
                 <p>
                   Registro de una inspección sanitaria
+                </p>
+              </div>
+
+            </article>
+
+
+            {/* ACTA DE INSPECCIÓN GENERAL */}
+            <article
+              className="inicio__area"
+              role="button"
+              tabIndex={0}
+              onClick={onActaGeneral}
+              onKeyDown={(event) =>
+                manejarTecla(event, onActaGeneral)
+              }
+            >
+
+              <div className="inicio__areaVisual">
+
+                <div className="inicio__nube inicio__nube--derecha" />
+
+                <svg
+                  viewBox="0 0 120 120"
+                  className="inicio__areaIcono"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="30"
+                    y="16"
+                    width="60"
+                    height="88"
+                    rx="6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                  />
+
+                  <path
+                    d="M44 38h32M44 52h32M44 66h20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                  />
+
+                  <path
+                    d="M42 86h36"
+                    fill="none"
+                    stroke="#CFAC65"
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+              </div>
+
+              <div className="inicio__areaPie">
+                <h3>Acta de Inspección General</h3>
+
+                <p>
+                  Acta administrativa por apartados (HU-004)
                 </p>
               </div>
 

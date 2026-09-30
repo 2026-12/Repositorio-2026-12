@@ -17,6 +17,7 @@ namespace SGGDIS_Api.Data
         public DbSet<InsItem> Items => Set<InsItem>();
         public DbSet<InsInspeccion> Inspecciones { get; set; }
         public DbSet<InsRespuesta> Respuestas { get; set; }
+        public DbSet<InsActaGeneral> ActasGenerales => Set<InsActaGeneral>();
 
         // Configura relaciones que EF no puede inferir solo de los atributos en Models.
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -40,6 +41,11 @@ namespace SGGDIS_Api.Data
             // El consecutivo (folio) de cada inspección debe ser único en todo el sistema.
             modelBuilder.Entity<InsInspeccion>()
                 .HasIndex(i => i.Consecutivo)
+                .IsUnique();
+
+            // El folio del acta general también debe ser único.
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasIndex(a => a.NumeroActa)
                 .IsUnique();
         }
     }
