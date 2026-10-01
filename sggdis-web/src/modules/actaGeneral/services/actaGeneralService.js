@@ -74,6 +74,19 @@ export function guardarHallazgos(idActa, datos) {
   });
 }
 
+// Guarda (autoguardado) el Apartado V - Acciones a seguir.
+export function guardarAcciones(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/acciones`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      acciones: datos.acciones,
+      motivoReprogramacion: datos.motivoReprogramacion,
+      accionOtro: datos.accionOtro,
+    }),
+  });
+}
+
 // Trae el catálogo de guías de inspección (INS_GUIA) para el selector de
 // guías aplicables del Apartado IV: [{ idGuia, nombre }].
 export function obtenerGuias() {

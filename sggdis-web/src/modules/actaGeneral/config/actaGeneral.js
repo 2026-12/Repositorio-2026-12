@@ -44,3 +44,25 @@ export const MOTIVOS_INSPECCION = [
   { valor: 'EMERGENCIA', etiqueta: 'Emergencia' },
   { valor: 'OTRO', etiqueta: 'Otro' },
 ];
+
+// Opciones del Apartado V "Acciones a seguir" del acta oficial. Selección
+// múltiple; "REPROGRAMACION" y "OTRO" habilitan cada una su campo de texto.
+// Los valores deben coincidir con el CHECK CK_ACTA_GENERAL_ACCIONES de la BD.
+export const ACCIONES_A_SEGUIR = [
+  { valor: 'CIERRE_CASO', etiqueta: 'Cierre de caso' },
+  { valor: 'ORDEN_SANITARIA', etiqueta: 'Orden Sanitaria' },
+  { valor: 'RETENCION', etiqueta: 'Retención' },
+  { valor: 'APOYO_TECNICO', etiqueta: 'Solicitud de apoyo técnico' },
+  { valor: 'DECOMISO', etiqueta: 'Decomiso' },
+  { valor: 'CLAUSURA', etiqueta: 'Clausura' },
+  { valor: 'INFORME_TECNICO', etiqueta: 'Informe técnico' },
+  { valor: 'INFORME_SANITARIO_TABACO', etiqueta: 'Informe sanitario (tabaco-vapeo)' },
+  { valor: 'RETIRO_PSF', etiqueta: 'Retiro del Permiso Sanitario de Funcionamiento' },
+  { valor: 'REPROGRAMACION', etiqueta: 'Reprogramación' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+];
+
+// Máximo de caracteres de los textos del Apartado V (mismo tamaño que las
+// columnas MOTIVO_REPROGRAMACION VARCHAR2(400) y ACCION_OTRO VARCHAR2(200)).
+export const LONGITUD_MAXIMA_MOTIVO_REPROGRAMACION = 400;
+export const LONGITUD_MAXIMA_ACCION_OTRO = 200;

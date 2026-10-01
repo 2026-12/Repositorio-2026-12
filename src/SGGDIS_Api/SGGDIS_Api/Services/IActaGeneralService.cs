@@ -25,6 +25,10 @@ namespace SGGDIS_Api.Services
         // Lanza HallazgosInvalidosException si alguna guía no existe en INS_GUIA.
         Task GuardarHallazgosAsync(int idActa, InfoHallazgosActaDto dto);
 
+        // Guarda (upsert) los datos del Apartado V - Acciones a seguir.
+        // Lanza AccionesInvalidasException si llega un código de acción desconocido.
+        Task GuardarAccionesAsync(int idActa, InfoAccionesActaDto dto);
+
         // Devuelve el acta completa, para restaurar el formulario si el usuario vuelve a entrar.
         Task<Models.InsActaGeneral?> ObtenerActaAsync(int idActa);
 

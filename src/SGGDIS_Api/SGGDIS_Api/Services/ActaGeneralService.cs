@@ -12,6 +12,13 @@ namespace SGGDIS_Api.Services
         public HallazgosInvalidosException(string mensaje) : base(mensaje) { }
     }
 
+    // Se lanza si los datos del Apartado V no se pueden guardar tal como
+    // vienen (un código de acción desconocido, o textos demasiado largos).
+    public class AccionesInvalidasException : Exception
+    {
+        public AccionesInvalidasException(string mensaje) : base(mensaje) { }
+    }
+
     /// <summary>
     /// Implementación de IActaGeneralService. El folio (NumeroActa) se genera
     /// a partir del año actual y el id autonumérico, por eso el acta se debe
@@ -21,6 +28,18 @@ namespace SGGDIS_Api.Services
     {
         // Mismo tamaño que la columna HALLAZGOS VARCHAR2(4000).
         private const int LongitudMaximaHallazgos = 4000;
+
+        // Códigos válidos del Apartado V, en el mismo orden que ACCIONES_A_SEGUIR
+        // (frontend) y que el CHECK CK_ACTA_GENERAL_ACCIONES de la base de datos.
+        private static readonly string[] AccionesValidas =
+        {
+            "CIERRE_CASO", "ORDEN_SANITARIA", "RETENCION", "APOYO_TECNICO", "DECOMISO", "CLAUSURA",
+            "INFORME_TECNICO", "INFORME_SANITARIO_TABACO", "RETIRO_PSF", "REPROGRAMACION", "OTRO",
+        };
+
+        // Mismos tamaños que las columnas MOTIVO_REPROGRAMACION y ACCION_OTRO.
+        private const int LongitudMaximaMotivoReprogramacion = 400;
+        private const int LongitudMaximaAccionOtro = 200;
 
         private readonly SggdisDbContext _context;
         private readonly ILogger<ActaGeneralService> _logger;
@@ -146,6 +165,54 @@ namespace SGGDIS_Api.Services
 
             acta.GuiasAplicables = idsGuias.Count > 0 ? string.Join(",", idsGuias) : null;
             acta.Hallazgos = hallazgos;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task GuardarAccionesAsync(int idActa, InfoAccionesActaDto dto)
+        {
+            var acta = await _context.ActasGenerales.FindAsync(idActa)
+                ?? throw new KeyNotFoundException("El acta no existe.");
+
+            var acciones = (dto.Acciones ?? new List<string>())
+                .Select(accion => accion?.Trim() ?? string.Empty)
+                .Distinct()
+                .ToList();
+
+            if (acciones.Any(accion => !AccionesValidas.Contains(accion)))
+            {
+                throw new AccionesInvalidasException("Alguna de las acciones seleccionadas no es válida.");
+            }
+
+            // Igual que el detalle de "Otro" en cargo y motivo: cada texto solo se
+            // conserva si su acción está seleccionada, para no dejar basura de una
+            // selección anterior.
+            var motivoReprogramacion = acciones.Contains("REPROGRAMACION")
+                ? LimpiarOpcional(dto.MotivoReprogramacion)
+                : null;
+            var accionOtro = acciones.Contains("OTRO")
+                ? LimpiarOpcional(dto.AccionOtro)
+                : null;
+
+            if (motivoReprogramacion is not null && motivoReprogramacion.Length > LongitudMaximaMotivoReprogramacion)
+            {
+                throw new AccionesInvalidasException(
+                    $"El motivo de la reprogramación no puede superar los {LongitudMaximaMotivoReprogramacion} caracteres.");
+            }
+
+            if (accionOtro is not null && accionOtro.Length > LongitudMaximaAccionOtro)
+            {
+                throw new AccionesInvalidasException(
+                    $"La descripción de la otra acción no puede superar los {LongitudMaximaAccionOtro} caracteres.");
+            }
+
+            // Se guardan en el orden del catálogo, para que la misma selección
+            // siempre quede igual sin importar en qué orden se marcó.
+            var accionesOrdenadas = AccionesValidas.Where(acciones.Contains).ToList();
+
+            acta.AccionesSeguir = accionesOrdenadas.Count > 0 ? string.Join(",", accionesOrdenadas) : null;
+            acta.MotivoReprogramacion = motivoReprogramacion;
+            acta.AccionOtro = accionOtro;
 
             await _context.SaveChangesAsync();
         }

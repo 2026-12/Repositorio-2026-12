@@ -8,6 +8,7 @@ import ApartadoInfoGeneral from './ApartadoInfoGeneral';
 import ApartadoResponsable from './ApartadoResponsable';
 import ApartadoMotivo from './ApartadoMotivo';
 import ApartadoHallazgos from './ApartadoHallazgos';
+import ApartadoAcciones from './ApartadoAcciones';
 import ModalConfirmacionSalida from './ModalConfirmacionSalida';
 import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
@@ -20,9 +21,8 @@ function indiceApartado(id) {
 
 // Shell del wizard del Acta de Inspección General (HU-004): header con el
 // folio del acta, tabs de apartados (indicador de progreso) y el apartado
-// activo. Los Apartados I a IV (HU-006 a HU-009) ya tienen formulario
-// real; los demás son las próximas HU (HU-010 y HU-011) y se muestran
-// "en construcción".
+// activo. Los Apartados I a V (HU-006 a HU-010) ya tienen formulario
+// real; el VI es la próxima HU (HU-011) y se muestra "en construcción".
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
     idActa,
@@ -43,6 +43,9 @@ function ActaGeneralModulo({ onVolverInicio }) {
     hallazgos,
     erroresHallazgos,
     actualizarCampoHallazgos,
+    acciones,
+    erroresAcciones,
+    actualizarCampoAcciones,
     guardando,
     errorGuardado,
     avanzarAlSiguienteApartado,
@@ -122,9 +125,9 @@ function ActaGeneralModulo({ onVolverInicio }) {
 
       <nav className="acta-tabs" aria-label="Apartados del acta">
         {APARTADOS_ACTA.map((apartado, indice) => {
-          // Los apartados que todavía no tienen formulario real (HU-010 y
-          // HU-011) no están en estadoApartados, así que por ahora se
-          // quedan sin marca de completado/pendiente.
+          // Los apartados que todavía no tienen formulario real (HU-011) no
+          // están en estadoApartados, así que por ahora se quedan sin marca
+          // de completado/pendiente.
           const completo = estadoApartados[apartado.id] === 'completo';
 
           return (
@@ -179,15 +182,24 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
+          {apartadoActivo === 'acciones' && (
+            <ApartadoAcciones
+              datos={acciones}
+              errores={erroresAcciones}
+              onCambiarCampo={actualizarCampoAcciones}
+            />
+          )}
+
           {apartadoActivo !== 'info-general' &&
             apartadoActivo !== 'responsable' &&
             apartadoActivo !== 'motivo' &&
-            apartadoActivo !== 'hallazgos' && (
+            apartadoActivo !== 'hallazgos' &&
+            apartadoActivo !== 'acciones' && (
               <section className="acta-apartado">
                 <p className="acta-apartado__etiqueta">Próximamente</p>
                 <h2 className="acta-apartado__titulo">Este apartado está en construcción</h2>
                 <p className="acta-apartado__descripcion">
-                  Corresponde a otra historia de usuario del Acta General (HU-010 y HU-011) y todavía no está implementado.
+                  Corresponde a otra historia de usuario del Acta General (HU-011) y todavía no está implementado.
                 </p>
               </section>
             )}

@@ -138,6 +138,30 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // PUT /api/actas-generales/{id}/acciones : guarda (autoguardado) el Apartado V.
+        [HttpPut("{id}/acciones")]
+        public async Task<IActionResult> GuardarAcciones(int id, [FromBody] InfoAccionesActaDto dto)
+        {
+            try
+            {
+                await _actaGeneralService.GuardarAccionesAsync(id, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (AccionesInvalidasException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar el apartado de acciones a seguir del acta {IdActa}.", id);
+                return StatusCode(500, "Ocurrió un error al guardar las acciones a seguir.");
+            }
+        }
+
         // DELETE /api/actas-generales/{id} : descarta un acta en curso (el
         // inspector salió sin terminarla desde "Volver al menú"), para que no
         // quede ocupando un folio a medio llenar.

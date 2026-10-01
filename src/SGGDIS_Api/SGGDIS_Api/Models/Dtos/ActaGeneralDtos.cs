@@ -76,6 +76,19 @@ namespace SGGDIS_Api.Models.Dtos
     }
 
     /// <summary>
+    /// Datos del Apartado V (Acciones a seguir): selección múltiple de códigos
+    /// de acción; "REPROGRAMACION" y "OTRO" habilitan su texto correspondiente.
+    /// </summary>
+    public class InfoAccionesActaDto
+    {
+        public List<string>? Acciones { get; set; }
+
+        public string? MotivoReprogramacion { get; set; }
+
+        public string? AccionOtro { get; set; }
+    }
+
+    /// <summary>
     /// Lo que se le devuelve al frontend al crear el acta o al consultarla:
     /// el id interno y el folio visible (NumeroActa).
     /// </summary>

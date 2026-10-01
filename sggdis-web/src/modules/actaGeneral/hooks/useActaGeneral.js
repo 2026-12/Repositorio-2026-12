@@ -6,12 +6,14 @@ import {
   guardarResponsable,
   guardarMotivo,
   guardarHallazgos,
+  guardarAcciones,
 } from '../services/actaGeneralService';
 import { obtenerActaActiva, guardarActaActiva } from '../services/progresoActaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
 import { validarResponsable } from '../domain/validacionResponsable';
 import { validarMotivo } from '../domain/validacionMotivo';
 import { validarHallazgos } from '../domain/validacionHallazgos';
+import { validarAcciones } from '../domain/validacionAcciones';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
@@ -70,6 +72,15 @@ function crearHallazgosIniciales() {
     // Ninguna guía sale preseleccionada: el inspector marca las que aplicó.
     idsGuias: [],
     hallazgos: '',
+  };
+}
+
+function crearAccionesIniciales() {
+  return {
+    // Ninguna acción sale preseleccionada.
+    acciones: [],
+    motivoReprogramacion: '',
+    accionOtro: '',
   };
 }
 
@@ -135,6 +146,17 @@ function mapearHallazgosDesdeActa(acta) {
   };
 }
 
+// Reconstruye el estado del Apartado V a partir del acta guardada. El
+// backend guarda las acciones como códigos separados por coma
+// ("ORDEN_SANITARIA,DECOMISO").
+function mapearAccionesDesdeActa(acta) {
+  return {
+    acciones: acta.accionesSeguir ? acta.accionesSeguir.split(',').filter(Boolean) : [],
+    motivoReprogramacion: acta.motivoReprogramacion ?? '',
+    accionOtro: acta.accionOtro ?? '',
+  };
+}
+
 // Maneja el ciclo de vida del Acta General: la crea en el backend al entrar,
 // guarda el estado de cada apartado del wizard y controla en cuál está
 // parado el usuario. Cada apartado con formulario real (Info General,
@@ -167,6 +189,10 @@ export function useActaGeneral() {
   const [hallazgosTocado, setHallazgosTocado] = useState(false);
   const [erroresHallazgos, setErroresHallazgos] = useState({});
 
+  const [acciones, setAcciones] = useState(crearAccionesIniciales);
+  const [accionesTocado, setAccionesTocado] = useState(false);
+  const [erroresAcciones, setErroresAcciones] = useState({});
+
   // Al montar el módulo, primero se revisa si ya había un acta en curso en
   // este navegador (localStorage): si la hay, se recupera del backend con
   // todos sus datos para no perder lo que el inspector ya había llenado al
@@ -196,6 +222,7 @@ export function useActaGeneral() {
                 setResponsable(mapearResponsableDesdeActa(actaExistente));
                 setMotivo(mapearMotivoDesdeActa(actaExistente));
                 setHallazgos(mapearHallazgosDesdeActa(actaExistente));
+                setAcciones(mapearAccionesDesdeActa(actaExistente));
               }
 
               // Vuelve a dejar al inspector en el mismo apartado en el que
@@ -330,6 +357,34 @@ export function useActaGeneral() {
     });
   };
 
+  const actualizarCampoAcciones = (campo, valor) => {
+    setAcciones((actual) => {
+      const siguiente = { ...actual, [campo]: valor };
+
+      // Si se desmarca Reprogramación u Otro, el texto que se había escrito
+      // para esa acción ya no aplica (y deja de ser obligatorio).
+      if (campo === 'acciones') {
+        if (!valor.includes('REPROGRAMACION')) siguiente.motivoReprogramacion = '';
+        if (!valor.includes('OTRO')) siguiente.accionOtro = '';
+      }
+
+      return siguiente;
+    });
+
+    setAccionesTocado(true);
+    setErroresAcciones((actuales) => {
+      // Al cambiar la selección también se limpian los errores de los textos
+      // que dependen de ella, porque pueden haber dejado de aplicar.
+      const camposALimpiar = campo === 'acciones'
+        ? ['acciones', 'motivoReprogramacion', 'accionOtro']
+        : [campo];
+      if (!camposALimpiar.some((nombre) => actuales[nombre])) return actuales;
+      const resto = { ...actuales };
+      camposALimpiar.forEach((nombre) => delete resto[nombre]);
+      return resto;
+    });
+  };
+
   // Un solo lugar donde vive, por cada apartado con formulario real, qué
   // datos tiene, si el inspector ya lo empezó a llenar, cómo se valida y
   // cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
@@ -363,6 +418,13 @@ export function useActaGeneral() {
       setErrores: setErroresHallazgos,
       guardar: (datos) => guardarHallazgos(idActa, datos),
     },
+    acciones: {
+      datos: acciones,
+      tocado: accionesTocado,
+      validar: validarAcciones,
+      setErrores: setErroresAcciones,
+      guardar: (datos) => guardarAcciones(idActa, datos),
+    },
   };
 
   // Indicador visual de progreso: para cada apartado con formulario real, dice
@@ -386,9 +448,9 @@ export function useActaGeneral() {
     const configuracion = configuracionApartados[apartadoActivo];
 
     if (!configuracion || !configuracion.tocado) {
-      // Los apartados que todavía no tienen formulario real (HU-010 y
-      // HU-011) no están en el mapa, así que por ahora no hay nada que
-      // validar para salir de ellos.
+      // Los apartados que todavía no tienen formulario real (HU-011) no
+      // están en el mapa, así que por ahora no hay nada que validar para
+      // salir de ellos.
       return true;
     }
 
@@ -467,6 +529,10 @@ export function useActaGeneral() {
     hallazgos,
     erroresHallazgos,
     actualizarCampoHallazgos,
+
+    acciones,
+    erroresAcciones,
+    actualizarCampoAcciones,
 
     guardando,
     errorGuardado,

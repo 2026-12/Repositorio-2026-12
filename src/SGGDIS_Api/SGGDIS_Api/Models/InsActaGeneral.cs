@@ -133,5 +133,23 @@ namespace SGGDIS_Api.Models
         [MaxLength(4000)]
         [Column("HALLAZGOS")]
         public string? Hallazgos { get; set; }
+
+        // ---- Apartado V (HU-010): Acciones a seguir ----
+
+        // Códigos de ACCIONES_A_SEGUIR (frontend) separados por coma, en el
+        // orden del catálogo, ej. "ORDEN_SANITARIA,DECOMISO". Selección múltiple.
+        [MaxLength(200)]
+        [Column("ACCIONES_SEGUIR")]
+        public string? AccionesSeguir { get; set; }
+
+        // Solo tiene contenido cuando "REPROGRAMACION" está entre las acciones.
+        [MaxLength(400)]
+        [Column("MOTIVO_REPROGRAMACION")]
+        public string? MotivoReprogramacion { get; set; }
+
+        // Solo tiene contenido cuando "OTRO" está entre las acciones.
+        [MaxLength(200)]
+        [Column("ACCION_OTRO")]
+        public string? AccionOtro { get; set; }
     }
 }
