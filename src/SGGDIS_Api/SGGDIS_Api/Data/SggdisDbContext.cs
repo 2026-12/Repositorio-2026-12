@@ -1,14 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SGGDIS_Api.Models;
+using SGGDIS_Api.Models.OrdenesSanitarias;
+using SGGDIS_Api.Models.Ubicaciones;
 
 namespace SGGDIS_Api.Data
 {
-    /// <summary>
-    /// DbContext de EF Core: acá se declaran las tablas (DbSet) y sus relaciones.
-    /// </summary>
+    /// <summary> 
+    /// DbContext de EF Core: acá se declaran las tablas (DbSet) y sus relaciones. 
+    /// </summary> 
     public class SggdisDbContext : DbContext
     {
-        // Recibe la configuración de conexión (definida en Program.cs) y se la pasa a EF Core.
+        // Recibe la configuración de conexión (definida en Program.cs) y se la pasa a EF Core. 
         public SggdisDbContext(DbContextOptions<SggdisDbContext> options) : base(options) { }
 
         public DbSet<InsGuia> Guias => Set<InsGuia>();
@@ -21,11 +23,27 @@ namespace SGGDIS_Api.Data
         public DbSet<SegRegion> Regiones => Set<SegRegion>();
         public DbSet<SegArea> Areas => Set<SegArea>();
         public DbSet<SegSesion> Sesiones => Set<SegSesion>();
+        public DbSet<InsActaGeneral> ActasGenerales => Set<InsActaGeneral>();
 
-        // Configura relaciones que EF no puede inferir solo de los atributos en Models.
+        // Órdenes Sanitarias 
+        public DbSet<OrdenSanitaria> OrdenesSanitarias => Set<OrdenSanitaria>();
+        public DbSet<Ordenanza> Ordenanzas => Set<Ordenanza>();
+
+        // Nuevas tablas relacionadas con Órdenes Sanitarias
+        public DbSet<OrdenPersonaNotificada> PersonasNotificadas => Set<OrdenPersonaNotificada>();
+        public DbSet<OrdenanzaPlazo> PlazosOrdenanza => Set<OrdenanzaPlazo>();
+        public DbSet<OrdenResponsable> ResponsablesOrden => Set<OrdenResponsable>();
+
+        // Ubicaciones
+        public DbSet<Provincia> Provincias => Set<Provincia>();
+        public DbSet<Canton> Cantones => Set<Canton>();
+        public DbSet<Distrito> Distritos => Set<Distrito>();
+        public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
+
+        // Configura relaciones que EF no puede inferir solo de los atributos en Models. 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Muchos-a-muchos: qué secciones aplican a cada tipo de establecimiento (tabla INS_TIPO_SECCION).
+            // Muchos-a-muchos: qué secciones aplican a cada tipo de establecimiento (tabla INS_TIPO_SECCION). 
             modelBuilder.Entity<InsTipoEstablecimiento>()
                 .HasMany(t => t.Secciones)
                 .WithMany(s => s.TiposEstablecimiento)
@@ -36,12 +54,12 @@ namespace SGGDIS_Api.Data
 
             base.OnModelCreating(modelBuilder);
 
-            // No se puede responder dos veces el mismo ítem dentro de una misma inspección.
+            // No se puede responder dos veces el mismo ítem dentro de una misma inspección. 
             modelBuilder.Entity<InsRespuesta>()
                 .HasIndex(r => new { r.IdInspeccion, r.IdItem })
                 .IsUnique();
 
-            // El consecutivo (folio) de cada inspección debe ser único en todo el sistema.
+            // El consecutivo (folio) de cada inspección debe ser único en todo el sistema. 
             modelBuilder.Entity<InsInspeccion>()
                 .HasIndex(i => i.Consecutivo)
                 .IsUnique();
@@ -80,6 +98,77 @@ namespace SGGDIS_Api.Data
                 .HasOne(usuario => usuario.Region)
                 .WithMany()
                 .HasForeignKey(usuario => usuario.IdRegion);
+
+            // Una Orden Sanitaria puede contener varias ordenanzas. 
+            modelBuilder.Entity<OrdenSanitaria>()
+                .HasMany(ordenSanitaria => ordenSanitaria.Ordenanzas)
+                .WithOne(ordenanza => ordenanza.OrdenSanitaria)
+                .HasForeignKey(ordenanza => ordenanza.IdOrdenSanitaria)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ============================================================
+            // Relaciones nuevas de Ubicaciones
+            // ============================================================
+
+            // Una provincia puede tener varios cantones.
+            modelBuilder.Entity<Canton>()
+                .HasOne(canton => canton.Provincia)
+                .WithMany(provincia => provincia.Cantones)
+                .HasForeignKey(canton => canton.IdProvincia);
+
+            // Un cantón puede tener varios distritos.
+            modelBuilder.Entity<Distrito>()
+                .HasOne(distrito => distrito.Canton)
+                .WithMany(canton => canton.Distritos)
+                .HasForeignKey(distrito => distrito.IdCanton);
+
+            // Un distrito puede tener varias ubicaciones.
+            modelBuilder.Entity<Ubicacion>()
+                .HasOne(ubicacion => ubicacion.Distrito)
+                .WithMany(distrito => distrito.Ubicaciones)
+                .HasForeignKey(ubicacion => ubicacion.IdDistrito);
+
+            // Una ubicación puede estar asociada con varias órdenes sanitarias.
+            modelBuilder.Entity<OrdenSanitaria>()
+                .HasOne(ordenSanitaria => ordenSanitaria.Ubicacion)
+                .WithMany(ubicacion => ubicacion.OrdenesSanitarias)
+                .HasForeignKey(ordenSanitaria => ordenSanitaria.IdUbicacion);
+
+            // ============================================================
+            // Relaciones nuevas de Orden Sanitaria
+            // ============================================================
+
+            // Una Orden Sanitaria tiene una persona notificada.
+            modelBuilder.Entity<OrdenPersonaNotificada>()
+                .HasOne(persona => persona.OrdenSanitaria)
+                .WithOne(orden => orden.PersonaNotificada)
+                .HasForeignKey<OrdenPersonaNotificada>(
+                    persona => persona.IdOrdenSanitaria);
+
+            // Cada ordenanza tiene un único plazo.
+            modelBuilder.Entity<OrdenanzaPlazo>()
+                .HasOne(plazo => plazo.Ordenanza)
+                .WithOne(ordenanza => ordenanza.Plazo)
+                .HasForeignKey<OrdenanzaPlazo>(
+                    plazo => plazo.IdOrdenanza);
+
+            // Una Orden Sanitaria tiene un responsable.
+            modelBuilder.Entity<OrdenResponsable>()
+                .HasOne(responsable => responsable.OrdenSanitaria)
+                .WithOne(orden => orden.Responsable)
+                .HasForeignKey<OrdenResponsable>(
+                    responsable => responsable.IdOrdenSanitaria);
+
+            // El número consecutivo de la Orden Sanitaria debe ser único.
+            modelBuilder.Entity<OrdenSanitaria>()
+                .HasIndex(orden => orden.NumeroConsecutivo)
+                .IsUnique();
+
+            // El folio del acta general también debe ser único.
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasIndex(a => a.NumeroActa)
+                .IsUnique();
+>>>>>>> origin/main
         }
     }
 }

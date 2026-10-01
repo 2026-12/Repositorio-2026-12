@@ -9,6 +9,8 @@ using SGGDIS_Api.Data;
 using SGGDIS_Api.Models;
 using SGGDIS_Api.Security;
 using SGGDIS_Api.Services;
+using SGGDIS_Api.Services.OrdenesSanitarias;
+using SGGDIS_Api.Services.Ubicaciones;
 
 // Punto de entrada de la API: aquí se configuran todos los servicios que la
 // aplicación necesita antes de empezar a atender peticiones.
@@ -107,6 +109,14 @@ builder.Services.AddScoped<IInspeccionService, InspeccionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<SegUsuario>, PasswordHasher<SegUsuario>>();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+
+// Registra el servicio encargado de la lógica de negocio de las Órdenes Sanitarias.
+builder.Services.AddScoped<IOrdenSanitariaService, OrdenSanitariaService>();
+
+// Registra el servicio encargado de consultar provincias, cantones y distritos.
+builder.Services.AddScoped<IUbicacionService, UbicacionService>();
+
+builder.Services.AddScoped<IActaGeneralService, ActaGeneralService>();
 // Permite que el frontend (que corre en localhost:5173 durante desarrollo)
 // pueda hacer peticiones a esta API sin ser bloqueado por el navegador.
 builder.Services.AddCors(options =>
