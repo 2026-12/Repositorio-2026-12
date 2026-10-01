@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SGGDIS_Api.Data;
 using SGGDIS_Api.Services;
+using SGGDIS_Api.Services.OrdenesSanitarias;
+using SGGDIS_Api.Services.Ubicaciones;
 
 // Punto de entrada de la API: aquí se configuran todos los servicios que la
 // aplicación necesita antes de empezar a atender peticiones.
@@ -22,6 +24,12 @@ builder.Services.AddDbContext<SggdisDbContext>(options =>
 builder.Services.AddScoped<ISeccionService, SeccionService>();
 
 builder.Services.AddScoped<IInspeccionService, InspeccionService>();
+
+// Registra el servicio encargado de la lógica de negocio de las Órdenes Sanitarias.
+builder.Services.AddScoped<IOrdenSanitariaService, OrdenSanitariaService>();
+
+// Registra el servicio encargado de consultar provincias, cantones y distritos.
+builder.Services.AddScoped<IUbicacionService, UbicacionService>();
 
 builder.Services.AddScoped<IActaGeneralService, ActaGeneralService>();
 

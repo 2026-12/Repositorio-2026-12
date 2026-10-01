@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
+
 import './PantallaInicio.css';
+
 import logoMinisterio from '../assets/logo-ministerio-salud.png';
 import mapaCostaRica from '../assets/mapa.png';
 
-// Menú principal: accesos a Nueva inspección, Historial y Reportes (estos
-// dos últimos todavía sin implementar) y un modal de ayuda con FAQ.
 export default function PantallaInicio({
   onNuevaInspeccion,
+  onOrdenSanitaria,
   onActaGeneral,
   onHistorial,
   onReportes,
@@ -14,16 +15,16 @@ export default function PantallaInicio({
 }) {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
-  // Permite activar las tarjetas de "Áreas principales" con el teclado
-  // (Enter o Espacio), ya que son <article> con role="button" en vez de <button> reales.
   const manejarTecla = (event, accion) => {
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (
+      event.key === 'Enter' ||
+      event.key === ' '
+    ) {
       event.preventDefault();
       accion?.();
     }
   };
 
-  // Permite cerrar el modal de ayuda presionando Escape.
   useEffect(() => {
     const manejarEscape = (event) => {
       if (event.key === 'Escape') {
@@ -31,15 +32,25 @@ export default function PantallaInicio({
       }
     };
 
-    document.addEventListener('keydown', manejarEscape);
+    document.addEventListener(
+      'keydown',
+      manejarEscape
+    );
 
     return () => {
-      document.removeEventListener('keydown', manejarEscape);
+      document.removeEventListener(
+        'keydown',
+        manejarEscape
+      );
     };
   }, []);
 
   return (
     <div className="inicio">
+
+      {/* =====================================================
+          ENCABEZADO
+          ===================================================== */}
 
       <header className="inicio__cabecera">
 
@@ -53,12 +64,25 @@ export default function PantallaInicio({
           className="inicio__nav"
           aria-label="Navegación principal"
         >
+
           <button
             type="button"
             className="inicio__navLink"
-            onClick={onNuevaInspeccion}
+            onClick={
+              onNuevaInspeccion
+            }
           >
             Nueva inspección
+          </button>
+
+          <button
+            type="button"
+            className="inicio__navLink"
+            onClick={
+              onOrdenSanitaria
+            }
+          >
+            Orden Sanitaria
           </button>
 
           <button
@@ -72,7 +96,9 @@ export default function PantallaInicio({
           <button
             type="button"
             className="inicio__navLink"
-            onClick={onHistorial}
+            onClick={
+              onHistorial
+            }
           >
             Historial
           </button>
@@ -80,7 +106,9 @@ export default function PantallaInicio({
           <button
             type="button"
             className="inicio__navLink"
-            onClick={onReportes}
+            onClick={
+              onReportes
+            }
           >
             Reportes
           </button>
@@ -88,7 +116,9 @@ export default function PantallaInicio({
           <button
             type="button"
             className="inicio__navLink"
-            onClick={() => setMostrarAyuda(true)}
+            onClick={() =>
+              setMostrarAyuda(true)
+            }
           >
             Ayuda
           </button>
@@ -96,14 +126,20 @@ export default function PantallaInicio({
           <button
             type="button"
             className="inicio__cerrarSesion"
-            onClick={onCerrarSesion}
+            onClick={
+              onCerrarSesion
+            }
           >
             Cerrar sesión
           </button>
+
         </nav>
 
       </header>
 
+      {/* =====================================================
+          CONTENIDO
+          ===================================================== */}
 
       <main>
 
@@ -130,6 +166,7 @@ export default function PantallaInicio({
               className="inicio__titulo"
             >
               Ministerio de Salud{' '}
+
               <span className="inicio__tituloAcento">
                 de Costa Rica.
               </span>
@@ -143,7 +180,9 @@ export default function PantallaInicio({
             <button
               type="button"
               className="inicio__accionPrincipal"
-              onClick={onNuevaInspeccion}
+              onClick={
+                onNuevaInspeccion
+              }
             >
               Nueva inspección
             </button>
@@ -151,6 +190,10 @@ export default function PantallaInicio({
           </div>
 
         </section>
+
+        {/* ===================================================
+            ÁREAS PRINCIPALES
+            =================================================== */}
 
         <section
           className="inicio__areas"
@@ -167,13 +210,19 @@ export default function PantallaInicio({
           <div className="inicio__areasGrid">
 
             {/* NUEVA INSPECCIÓN */}
+
             <article
               className="inicio__area"
               role="button"
               tabIndex={0}
-              onClick={onNuevaInspeccion}
+              onClick={
+                onNuevaInspeccion
+              }
               onKeyDown={(event) =>
-                manejarTecla(event, onNuevaInspeccion)
+                manejarTecla(
+                  event,
+                  onNuevaInspeccion
+                )
               }
             >
 
@@ -186,6 +235,7 @@ export default function PantallaInicio({
                   className="inicio__areaIcono"
                   aria-hidden="true"
                 >
+
                   <rect
                     x="28"
                     y="18"
@@ -213,22 +263,27 @@ export default function PantallaInicio({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
+
                 </svg>
 
               </div>
 
               <div className="inicio__areaPie">
-                <h3>Nueva inspección</h3>
+
+                <h3>
+                  Nueva inspección
+                </h3>
 
                 <p>
                   Registro de una inspección sanitaria
                 </p>
+
               </div>
 
             </article>
 
-
             {/* ACTA DE INSPECCIÓN GENERAL */}
+
             <article
               className="inicio__area"
               role="button"
@@ -248,6 +303,7 @@ export default function PantallaInicio({
                   className="inicio__areaIcono"
                   aria-hidden="true"
                 >
+
                   <rect
                     x="30"
                     y="16"
@@ -274,6 +330,7 @@ export default function PantallaInicio({
                     strokeWidth="7"
                     strokeLinecap="round"
                   />
+
                 </svg>
 
               </div>
@@ -284,19 +341,25 @@ export default function PantallaInicio({
                 <p>
                   Acta administrativa por apartados (HU-004)
                 </p>
+
               </div>
 
             </article>
 
-
             {/* HISTORIAL */}
+
             <article
               className="inicio__area"
               role="button"
               tabIndex={0}
-              onClick={onHistorial}
+              onClick={
+                onHistorial
+              }
               onKeyDown={(event) =>
-                manejarTecla(event, onHistorial)
+                manejarTecla(
+                  event,
+                  onHistorial
+                )
               }
             >
 
@@ -309,6 +372,7 @@ export default function PantallaInicio({
                   className="inicio__areaIcono"
                   aria-hidden="true"
                 >
+
                   <circle
                     cx="60"
                     cy="60"
@@ -340,6 +404,7 @@ export default function PantallaInicio({
               </div>
 
               <div className="inicio__areaPie">
+
                 <h3>
                   Historial de inspecciones
                 </h3>
@@ -347,19 +412,25 @@ export default function PantallaInicio({
                 <p>
                   Consulta y seguimiento de registros
                 </p>
+
               </div>
 
             </article>
 
-
             {/* REPORTES */}
+
             <article
               className="inicio__area"
               role="button"
               tabIndex={0}
-              onClick={onReportes}
+              onClick={
+                onReportes
+              }
               onKeyDown={(event) =>
-                manejarTecla(event, onReportes)
+                manejarTecla(
+                  event,
+                  onReportes
+                )
               }
             >
 
@@ -413,6 +484,7 @@ export default function PantallaInicio({
               </div>
 
               <div className="inicio__areaPie">
+
                 <h3>
                   Reportes y seguimiento
                 </h3>
@@ -420,6 +492,7 @@ export default function PantallaInicio({
                 <p>
                   Consulta de información consolidada
                 </p>
+
               </div>
 
             </article>
@@ -429,6 +502,10 @@ export default function PantallaInicio({
         </section>
 
       </main>
+
+      {/* =====================================================
+          PIE
+          ===================================================== */}
 
       <footer className="inicio__pie">
 
@@ -446,17 +523,23 @@ export default function PantallaInicio({
 
       </footer>
 
+      {/* =====================================================
+          AYUDA
+          ===================================================== */}
 
-      {/* AYUDA */}
       {mostrarAyuda && (
         <div
           className="inicio__ayudaOverlay"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
               setMostrarAyuda(false);
             }
           }}
         >
+
           <section
             className="inicio__ayudaModal"
             role="dialog"
@@ -467,6 +550,7 @@ export default function PantallaInicio({
             <div className="inicio__ayudaEncabezado">
 
               <div>
+
                 <span className="inicio__ayudaEtiqueta">
                   AYUDA
                 </span>
@@ -474,12 +558,15 @@ export default function PantallaInicio({
                 <h2 id="titulo-ayuda">
                   Preguntas frecuentes
                 </h2>
+
               </div>
 
               <button
                 type="button"
                 className="inicio__ayudaCerrar"
-                onClick={() => setMostrarAyuda(false)}
+                onClick={() =>
+                  setMostrarAyuda(false)
+                }
                 aria-label="Cerrar ayuda"
               >
                 ×
@@ -493,6 +580,7 @@ export default function PantallaInicio({
                 className="inicio__pregunta"
                 open
               >
+
                 <summary>
                   ¿Qué significa Cumple, No cumple y N/A?
                 </summary>
@@ -500,29 +588,38 @@ export default function PantallaInicio({
                 <div className="inicio__respuesta">
 
                   <p>
-                    <strong>Cumple:</strong>{' '}
+                    <strong>
+                      Cumple:
+                    </strong>{' '}
                     el establecimiento satisface el requisito evaluado.
                   </p>
 
                   <p>
-                    <strong>No cumple:</strong>{' '}
+                    <strong>
+                      No cumple:
+                    </strong>{' '}
                     se identifica un incumplimiento del requisito evaluado.
                   </p>
 
                   <p>
-                    <strong>N/A:</strong>{' '}
+                    <strong>
+                      N/A:
+                    </strong>{' '}
                     el requisito no aplica al establecimiento inspeccionado.
                   </p>
 
                 </div>
+
               </details>
 
               <details className="inicio__pregunta">
+
                 <summary>
                   ¿Qué es un punto crítico?
                 </summary>
 
                 <div className="inicio__respuesta">
+
                   <p>
                     Es un criterio de especial importancia dentro de la
                     inspección. Si un punto crítico se marca como
@@ -530,22 +627,29 @@ export default function PantallaInicio({
                     sanitaria según la normativa aplicable, como la emisión
                     de una Orden Sanitaria.
                   </p>
+
                 </div>
+
               </details>
 
             </div>
 
             <div className="inicio__ayudaPie">
+
               <button
                 type="button"
                 className="inicio__ayudaBoton"
-                onClick={() => setMostrarAyuda(false)}
+                onClick={() =>
+                  setMostrarAyuda(false)
+                }
               >
                 Cerrar
               </button>
+
             </div>
 
           </section>
+
         </div>
       )}
 
