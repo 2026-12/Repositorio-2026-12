@@ -23,6 +23,12 @@
   border-bottom: 1px solid #d4deea;
 }
 
+.panel-admin__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .panel-admin__eyebrow {
   margin: 0 0 7px;
   color: #9b7a26;

@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SGGDIS_Api.Models.Dtos;
+using SGGDIS_Api.Security;
 using SGGDIS_Api.Services;
 
 namespace SGGDIS_Api.Controllers
@@ -9,6 +11,7 @@ namespace SGGDIS_Api.Controllers
     /// HU-011). Cada apartado del wizard se guarda por su propia ruta, así el
     /// autoguardado de un apartado no obliga a que los demás estén completos.
     /// </summary>
+    [Authorize(Roles = RolesSistema.OperacionActasYOrdenes)]
     [ApiController]
     [Route("api/actas-generales")]
     public class ActaGeneralController : ControllerBase

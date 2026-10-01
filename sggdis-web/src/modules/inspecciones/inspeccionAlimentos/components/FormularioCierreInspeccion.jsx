@@ -37,6 +37,7 @@ export default function FormularioCierreInspeccion({
   onDatosCierreChange,
   onAnterior,
   onFinalizado,
+  onCrearOrdenSanitaria,
   paso,
   totalPasos,
 }) {
@@ -126,9 +127,18 @@ export default function FormularioCierreInspeccion({
             </div>
 
             {datosCierre.ordenSanitaria && (
-              <p className="cierre__confirmacion-orden">
-                ⚠ Se registró la notificación por Orden Sanitaria (Art. 65).
-              </p>
+              <>
+                <p className="cierre__confirmacion-orden">
+                  Se indicó que se requiere emitir una Orden Sanitaria (Art. 65).
+                </p>
+                <button
+                  type="button"
+                  className="boton boton--secundario boton--ancho"
+                  onClick={onCrearOrdenSanitaria}
+                >
+                  Continuar con la Orden Sanitaria
+                </button>
+              </>
             )}
 
             <button type="button" className="boton boton--primario boton--ancho" onClick={onFinalizado}>

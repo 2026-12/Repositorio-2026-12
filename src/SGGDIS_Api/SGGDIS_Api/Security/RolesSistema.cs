@@ -11,4 +11,5 @@ public static class RolesSistema
 
     public const string OperacionInspecciones = Inspector;
     public const string AdministracionGuias = Inspector + "," + Administrador;
+    public const string OperacionActasYOrdenes = Inspector + "," + Administrador;
 }

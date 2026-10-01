@@ -23,7 +23,15 @@ function RutaInspeccion() {
   const { sesion } = useAuth();
   const navigate = useNavigate();
 
-  return <InspeccionModulo onVolverInicio={() => navigate('/inicio')} sesion={sesion} />;
+  return (
+    <InspeccionModulo
+      onVolverInicio={() => navigate('/inicio')}
+      onCrearOrdenSanitaria={(inspeccionRelacionada) =>
+        navigate('/orden-sanitaria', { state: { inspeccionRelacionada } })
+      }
+      sesion={sesion}
+    />
+  );
 }
 
 export const rutasInspecciones = [

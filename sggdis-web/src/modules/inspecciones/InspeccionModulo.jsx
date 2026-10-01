@@ -33,7 +33,7 @@ const COMPONENTES_POR_CODIGO = {
 // Acá vive toda la lógica del módulo: decide qué paso mostrar (selección,
 // formulario, o cierre) y guarda el estado de la inspección en curso.
 // App.jsx solo decide cuándo montar este módulo.
-function InspeccionModulo({ onVolverInicio, sesion }) {
+function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
   const areaAsignada = sesion.idArea ? {
     idArea: sesion.idArea,
     codigoRegion: sesion.codigoRegion,
@@ -395,6 +395,14 @@ function InspeccionModulo({ onVolverInicio, sesion }) {
             onDatosCierreChange={actualizarDatosCierre}
             onAnterior={volverDeCierre}
             onFinalizado={manejarInspeccionFinalizada}
+            onCrearOrdenSanitaria={() => onCrearOrdenSanitaria?.({
+              idInspeccion: datos.idInspeccion,
+              consecutivo: datos.consecutivo,
+              nombreEstablecimiento: datos.nombre,
+              nombrePersonaNotificar: '',
+              identificacionPersonaNotificar: datosCierre.identificacionRepresentante,
+              tipoEstablecimiento: datos.tipoLabel,
+            })}
             paso={TOTAL_PASOS_ALIMENTOS}
             totalPasos={TOTAL_PASOS_ALIMENTOS}
           />

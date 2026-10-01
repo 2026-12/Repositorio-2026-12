@@ -33,6 +33,7 @@ describe('PanelAdministrador', () => {
   it('asigna rol y ubicación de forma secuencial a una cuenta pendiente', async () => {
     render(<PanelAdministrador correoAdministrador="admin@misalud.go.cr" onCerrarSesion={vi.fn()} />);
     await screen.findByRole('option', { name: 'Huetar Norte' });
+    expect(screen.queryByRole('button', { name: 'Crear región' })).not.toBeInTheDocument();
     expect(screen.getByText('María Pérez Solano')).toBeInTheDocument();
     expect(screen.getByText('001234567')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Rol de persona@misalud.go.cr'), { target: { value: 'Inspector' } });

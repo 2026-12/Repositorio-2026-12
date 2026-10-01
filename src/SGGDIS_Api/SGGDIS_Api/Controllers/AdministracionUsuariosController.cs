@@ -6,6 +6,7 @@ using SGGDIS_Api.Models.Dtos;
 using SGGDIS_Api.Security;
 using SGGDIS_Api.Services;
 
+
 namespace SGGDIS_Api.Controllers;
 
 [ApiController]
@@ -64,7 +65,6 @@ public class AdministracionUsuariosController(SggdisDbContext db, IAuthService a
             .ToListAsync();
         return Ok(regiones);
     }
-
     [HttpPost]
     public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto solicitud)
     {

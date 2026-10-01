@@ -46,7 +46,6 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
       setCargando(false);
     }
   }
-
   useEffect(() => {
     Promise.all([obtenerUsuarios(), obtenerAreas(), obtenerRegiones()])
       .then(([listaUsuarios, listaAreas, listaRegiones]) => {
@@ -146,7 +145,6 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
           </div>
         </div>
       </section>
-
       <section className="panel-admin__section" aria-labelledby="usuarios-titulo">
         <div className="panel-admin__section-heading">
           <div>

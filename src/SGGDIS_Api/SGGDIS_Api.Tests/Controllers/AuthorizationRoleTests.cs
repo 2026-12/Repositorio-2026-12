@@ -42,4 +42,15 @@ public class AuthorizationRoleTests
         Assert.NotNull(authorize);
         Assert.Equal(RolesSistema.Administrador, authorize.Roles);
     }
+
+    [Theory]
+    [InlineData(typeof(ActaGeneralController))]
+    [InlineData(typeof(SGGDIS_Api.Controllers.OrdenesSanitarias.OrdenesSanitariasController))]
+    public void ActasYOrdenes_RestringenAccesoAInspectorYAdministrador(Type controllerType)
+    {
+        var authorize = Assert.Single(controllerType.GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)) as AuthorizeAttribute;
+
+        Assert.NotNull(authorize);
+        Assert.Equal(RolesSistema.OperacionActasYOrdenes, authorize.Roles);
+    }
 }

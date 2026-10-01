@@ -23,7 +23,7 @@ function requiereArea(rol) {
   return rol !== 'Administrador' && rol !== 'Pendiente' && rol !== 'Director Regional';
 }
 
-export default function PanelAdministrador({ correoAdministrador, onCerrarSesion }) {
+export default function PanelAdministrador({ correoAdministrador, onAbrirActaGeneral, onAbrirOrdenSanitaria, onCerrarSesion }) {
   const [usuarios, setUsuarios] = useState([]);
   const [areas, setAreas] = useState([]);
   const [regiones, setRegiones] = useState([]);
@@ -132,7 +132,11 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
           <h1>Panel de administración</h1>
           <p className="panel-admin__identity">Sesión: {correoAdministrador}</p>
         </div>
-        <button className="panel-admin__logout" type="button" onClick={onCerrarSesion}>Cerrar sesión</button>
+        <div className="panel-admin__header-actions">
+          <button className="panel-admin__refresh" type="button" onClick={onAbrirActaGeneral}>Acta General</button>
+          <button className="panel-admin__refresh" type="button" onClick={onAbrirOrdenSanitaria}>Orden Sanitaria</button>
+          <button className="panel-admin__logout" type="button" onClick={onCerrarSesion}>Cerrar sesión</button>
+        </div>
       </header>
 
       {error && <p className="panel-admin__notice panel-admin__notice--error" role="alert">{error}</p>}

@@ -168,7 +168,6 @@ namespace SGGDIS_Api.Data
             modelBuilder.Entity<InsActaGeneral>()
                 .HasIndex(a => a.NumeroActa)
                 .IsUnique();
->>>>>>> origin/main
         }
     }
 }
