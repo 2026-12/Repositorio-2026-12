@@ -121,5 +121,17 @@ namespace SGGDIS_Api.Models
         [MaxLength(200)]
         [Column("MOTIVO_INSPECCION_OTRO")]
         public string? MotivoInspeccionOtro { get; set; }
+
+        // ---- Apartado IV (HU-009): Hallazgos de la inspección ----
+
+        // Ids de INS_GUIA seleccionados, separados por coma y ordenados, ej. "1,3".
+        // Se guardan ids (no nombres) para que renombrar una guía no deje datos huérfanos.
+        [MaxLength(200)]
+        [Column("GUIAS_APLICABLES")]
+        public string? GuiasAplicables { get; set; }
+
+        [MaxLength(4000)]
+        [Column("HALLAZGOS")]
+        public string? Hallazgos { get; set; }
     }
 }

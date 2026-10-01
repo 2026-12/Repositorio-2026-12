@@ -65,6 +65,17 @@ namespace SGGDIS_Api.Models.Dtos
     }
 
     /// <summary>
+    /// Datos del Apartado IV (Hallazgos de la inspección): las guías aplicables
+    /// (selección múltiple, por id de INS_GUIA) y la descripción de los hallazgos.
+    /// </summary>
+    public class InfoHallazgosActaDto
+    {
+        public List<int>? IdsGuias { get; set; }
+
+        public string? Hallazgos { get; set; }
+    }
+
+    /// <summary>
     /// Lo que se le devuelve al frontend al crear el acta o al consultarla:
     /// el id interno y el folio visible (NumeroActa).
     /// </summary>

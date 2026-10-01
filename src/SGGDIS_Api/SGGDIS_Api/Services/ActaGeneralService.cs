@@ -5,6 +5,13 @@ using SGGDIS_Api.Models.Dtos;
 
 namespace SGGDIS_Api.Services
 {
+    // Se lanza si los datos del Apartado IV no se pueden guardar tal como
+    // vienen (una guía que no existe en INS_GUIA, o hallazgos demasiado largos).
+    public class HallazgosInvalidosException : Exception
+    {
+        public HallazgosInvalidosException(string mensaje) : base(mensaje) { }
+    }
+
     /// <summary>
     /// Implementación de IActaGeneralService. El folio (NumeroActa) se genera
     /// a partir del año actual y el id autonumérico, por eso el acta se debe
@@ -12,6 +19,9 @@ namespace SGGDIS_Api.Services
     /// </summary>
     public class ActaGeneralService : IActaGeneralService
     {
+        // Mismo tamaño que la columna HALLAZGOS VARCHAR2(4000).
+        private const int LongitudMaximaHallazgos = 4000;
+
         private readonly SggdisDbContext _context;
         private readonly ILogger<ActaGeneralService> _logger;
 
@@ -97,6 +107,45 @@ namespace SGGDIS_Api.Services
             acta.MotivoInspeccionOtro = acta.MotivoInspeccion == "OTRO"
                 ? LimpiarOpcional(dto.MotivoInspeccionOtro)
                 : null;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task GuardarHallazgosAsync(int idActa, InfoHallazgosActaDto dto)
+        {
+            var acta = await _context.ActasGenerales.FindAsync(idActa)
+                ?? throw new KeyNotFoundException("El acta no existe.");
+
+            // Sin repetidos y ordenados, para que la misma selección siempre
+            // quede guardada igual ("1,3" y no "3,1,3").
+            var idsGuias = (dto.IdsGuias ?? new List<int>())
+                .Distinct()
+                .OrderBy(id => id)
+                .ToList();
+
+            if (idsGuias.Count > 0)
+            {
+                // GUIAS_APLICABLES no puede tener FK (es una lista), así que se
+                // valida acá que cada id exista en el catálogo INS_GUIA.
+                var existentes = await _context.Guias
+                    .Where(guia => idsGuias.Contains(guia.IdGuia))
+                    .CountAsync();
+
+                if (existentes != idsGuias.Count)
+                {
+                    throw new HallazgosInvalidosException("Alguna de las guías seleccionadas no existe.");
+                }
+            }
+
+            var hallazgos = LimpiarOpcional(dto.Hallazgos);
+            if (hallazgos is not null && hallazgos.Length > LongitudMaximaHallazgos)
+            {
+                throw new HallazgosInvalidosException(
+                    $"La descripción de los hallazgos no puede superar los {LongitudMaximaHallazgos} caracteres.");
+            }
+
+            acta.GuiasAplicables = idsGuias.Count > 0 ? string.Join(",", idsGuias) : null;
+            acta.Hallazgos = hallazgos;
 
             await _context.SaveChangesAsync();
         }

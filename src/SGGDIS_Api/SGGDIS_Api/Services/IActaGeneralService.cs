@@ -21,6 +21,10 @@ namespace SGGDIS_Api.Services
         // Guarda (upsert) los datos del Apartado III - Motivo de la inspección.
         Task GuardarMotivoAsync(int idActa, InfoMotivoActaDto dto);
 
+        // Guarda (upsert) los datos del Apartado IV - Hallazgos de la inspección.
+        // Lanza HallazgosInvalidosException si alguna guía no existe en INS_GUIA.
+        Task GuardarHallazgosAsync(int idActa, InfoHallazgosActaDto dto);
+
         // Devuelve el acta completa, para restaurar el formulario si el usuario vuelve a entrar.
         Task<Models.InsActaGeneral?> ObtenerActaAsync(int idActa);
 

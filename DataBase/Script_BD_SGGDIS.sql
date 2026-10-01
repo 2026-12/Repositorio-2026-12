@@ -705,6 +705,12 @@ CREATE TABLE INS_ACTA_GENERAL (
   -- Apartado III: Motivo de la inspección (HU-008)
   MOTIVO_INSPECCION             VARCHAR2(30),
   MOTIVO_INSPECCION_OTRO        VARCHAR2(200),
+  -- Apartado IV: Hallazgos de la inspección (HU-009)
+  -- GUIAS_APLICABLES guarda los ID_GUIA (INS_GUIA) seleccionados separados
+  -- por coma, ej. '1,3'. No lleva FK porque es una lista; el backend valida
+  -- que cada id exista en INS_GUIA antes de guardar.
+  GUIAS_APLICABLES              VARCHAR2(200),
+  HALLAZGOS                     VARCHAR2(4000),
   CONSTRAINT PK_ACTA_GENERAL PRIMARY KEY (ID_ACTA),
   CONSTRAINT UQ_ACTA_GENERAL_NUMERO UNIQUE (NUMERO_ACTA),
   CONSTRAINT CK_ACTA_GENERAL_ESTADO CHECK (ESTADO IN ('EN_PROCESO','FINALIZADA')),
@@ -715,10 +721,26 @@ CREATE TABLE INS_ACTA_GENERAL (
   )),
   CONSTRAINT CK_ACTA_GENERAL_MOTIVO CHECK (MOTIVO_INSPECCION IN (
     'PRIMERA_VEZ_PSF','SEGUIMIENTO','RENOVACION_PSF','DENUNCIA','LEY_9028_10066','EVENTO_MASIVO','EMERGENCIA','OTRO'
-  ))
+  )),
+  CONSTRAINT CK_ACTA_GENERAL_GUIAS CHECK (
+    GUIAS_APLICABLES IS NULL OR REGEXP_LIKE(GUIAS_APLICABLES, '^[0-9]+(,[0-9]+)*$')
+  )
 );
 
 COMMIT;
+
+-- ============================================================
+-- HU-009: solo para bases de datos donde INS_ACTA_GENERAL ya existia
+-- antes de agregar el Apartado IV (si se corre el script completo desde
+-- cero, las columnas ya vienen en el CREATE TABLE de arriba).
+-- ============================================================
+-- ALTER TABLE INS_ACTA_GENERAL ADD (
+--   GUIAS_APLICABLES VARCHAR2(200),
+--   HALLAZGOS        VARCHAR2(4000)
+-- );
+-- ALTER TABLE INS_ACTA_GENERAL ADD CONSTRAINT CK_ACTA_GENERAL_GUIAS CHECK (
+--   GUIAS_APLICABLES IS NULL OR REGEXP_LIKE(GUIAS_APLICABLES, '^[0-9]+(,[0-9]+)*$')
+-- );
 
 -- SELECT * FROM INS_INSPECCION;
 -- SELECT * FROM INS_RESPUESTA;

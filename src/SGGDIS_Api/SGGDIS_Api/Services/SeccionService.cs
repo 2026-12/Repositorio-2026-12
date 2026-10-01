@@ -17,6 +17,14 @@ namespace SGGDIS_Api.Services
             _context = context;
         }
 
+        // Trae el catálogo de guías (ej. para el selector de guías aplicables del Acta General).
+        public async Task<List<InsGuia>> ObtenerGuiasAsync()
+        {
+            return await _context.Guias
+                .OrderBy(guia => guia.Nombre)
+                .ToListAsync();
+        }
+
         // Trae los tipos de establecimiento de una guía con sus secciones, ordenados por "Orden".
         public async Task<List<InsTipoEstablecimiento>> ObtenerTiposPorGuiaAsync(int idGuia)
         {

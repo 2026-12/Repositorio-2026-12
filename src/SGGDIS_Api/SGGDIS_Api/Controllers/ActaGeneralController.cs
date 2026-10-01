@@ -114,6 +114,30 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // PUT /api/actas-generales/{id}/hallazgos : guarda (autoguardado) el Apartado IV.
+        [HttpPut("{id}/hallazgos")]
+        public async Task<IActionResult> GuardarHallazgos(int id, [FromBody] InfoHallazgosActaDto dto)
+        {
+            try
+            {
+                await _actaGeneralService.GuardarHallazgosAsync(id, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HallazgosInvalidosException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar el apartado de hallazgos del acta {IdActa}.", id);
+                return StatusCode(500, "Ocurrió un error al guardar los hallazgos de la inspección.");
+            }
+        }
+
         // DELETE /api/actas-generales/{id} : descarta un acta en curso (el
         // inspector salió sin terminarla desde "Volver al menú"), para que no
         // quede ocupando un folio a medio llenar.
