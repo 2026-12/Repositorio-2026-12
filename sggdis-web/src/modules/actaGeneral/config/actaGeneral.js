@@ -15,6 +15,10 @@ export const APARTADOS_ACTA = [
   { id: 'cierre', numero: 'VI', etiqueta: 'Cierre y Firmas' },
 ];
 
+// Máximo de caracteres de la descripción de hallazgos (Apartado IV). Es el
+// mismo tamaño de la columna HALLAZGOS VARCHAR2(4000) de INS_ACTA_GENERAL.
+export const LONGITUD_MAXIMA_HALLAZGOS = 4000;
+
 // Opciones del literal "k. Cargo de la persona que atendió la inspección" del
 // acta oficial (Apartado II). El valor es el que viaja al backend; "OTRO"
 // además habilita un campo de texto libre para especificarlo.

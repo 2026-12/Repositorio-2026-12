@@ -62,6 +62,24 @@ export function guardarMotivo(idActa, datos) {
   });
 }
 
+// Guarda (autoguardado) el Apartado IV - Hallazgos de la inspección.
+export function guardarHallazgos(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/hallazgos`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      idsGuias: datos.idsGuias,
+      hallazgos: datos.hallazgos,
+    }),
+  });
+}
+
+// Trae el catálogo de guías de inspección (INS_GUIA) para el selector de
+// guías aplicables del Apartado IV: [{ idGuia, nombre }].
+export function obtenerGuias() {
+  return solicitarJson(`${API_BASE_URL}/api/guias-inspeccion`);
+}
+
 // Descarta el acta en curso (el inspector salió sin terminarla desde
 // "Volver al menú"), para que no quede ocupando un folio a medio llenar.
 export function eliminarActaGeneral(idActa) {

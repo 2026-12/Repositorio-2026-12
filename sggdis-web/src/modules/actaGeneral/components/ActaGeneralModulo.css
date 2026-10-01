@@ -344,6 +344,13 @@
   color: #c0392b;
 }
 
+/* Mensaje mientras se carga un catálogo del backend dentro de un campo
+   (ej. las guías aplicables del Apartado IV). */
+.acta-campo__cargando {
+  font-size: 0.85rem;
+  color: #667085;
+}
+
 .acta-opciones {
   display: flex;
   gap: 10px;

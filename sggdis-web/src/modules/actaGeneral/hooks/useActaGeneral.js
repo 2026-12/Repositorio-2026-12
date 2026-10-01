@@ -5,11 +5,13 @@ import {
   guardarInfoGeneral,
   guardarResponsable,
   guardarMotivo,
+  guardarHallazgos,
 } from '../services/actaGeneralService';
 import { obtenerActaActiva, guardarActaActiva } from '../services/progresoActaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
 import { validarResponsable } from '../domain/validacionResponsable';
 import { validarMotivo } from '../domain/validacionMotivo';
+import { validarHallazgos } from '../domain/validacionHallazgos';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
@@ -60,6 +62,14 @@ function crearMotivoInicial() {
     // null = todavía sin marcar; ninguna opción de motivo debe salir preseleccionada.
     motivoInspeccion: null,
     motivoInspeccionOtro: '',
+  };
+}
+
+function crearHallazgosIniciales() {
+  return {
+    // Ninguna guía sale preseleccionada: el inspector marca las que aplicó.
+    idsGuias: [],
+    hallazgos: '',
   };
 }
 
@@ -114,6 +124,17 @@ function mapearMotivoDesdeActa(acta) {
   };
 }
 
+// Reconstruye el estado del Apartado IV a partir del acta guardada. El
+// backend guarda las guías como ids separados por coma ("1,3").
+function mapearHallazgosDesdeActa(acta) {
+  return {
+    idsGuias: acta.guiasAplicables
+      ? acta.guiasAplicables.split(',').map(Number).filter((id) => Number.isInteger(id) && id > 0)
+      : [],
+    hallazgos: acta.hallazgos ?? '',
+  };
+}
+
 // Maneja el ciclo de vida del Acta General: la crea en el backend al entrar,
 // guarda el estado de cada apartado del wizard y controla en cuál está
 // parado el usuario. Cada apartado con formulario real (Info General,
@@ -141,6 +162,10 @@ export function useActaGeneral() {
   const [motivo, setMotivo] = useState(crearMotivoInicial);
   const [motivoTocado, setMotivoTocado] = useState(false);
   const [erroresMotivo, setErroresMotivo] = useState({});
+
+  const [hallazgos, setHallazgos] = useState(crearHallazgosIniciales);
+  const [hallazgosTocado, setHallazgosTocado] = useState(false);
+  const [erroresHallazgos, setErroresHallazgos] = useState({});
 
   // Al montar el módulo, primero se revisa si ya había un acta en curso en
   // este navegador (localStorage): si la hay, se recupera del backend con
@@ -170,6 +195,7 @@ export function useActaGeneral() {
                 setInfoGeneral(mapearInfoGeneralDesdeActa(actaExistente));
                 setResponsable(mapearResponsableDesdeActa(actaExistente));
                 setMotivo(mapearMotivoDesdeActa(actaExistente));
+                setHallazgos(mapearHallazgosDesdeActa(actaExistente));
               }
 
               // Vuelve a dejar al inspector en el mismo apartado en el que
@@ -292,6 +318,18 @@ export function useActaGeneral() {
     });
   };
 
+  const actualizarCampoHallazgos = (campo, valor) => {
+    setHallazgos((actual) => ({ ...actual, [campo]: valor }));
+
+    setHallazgosTocado(true);
+    setErroresHallazgos((actuales) => {
+      if (!actuales[campo]) return actuales;
+      const resto = { ...actuales };
+      delete resto[campo];
+      return resto;
+    });
+  };
+
   // Un solo lugar donde vive, por cada apartado con formulario real, qué
   // datos tiene, si el inspector ya lo empezó a llenar, cómo se valida y
   // cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
@@ -318,6 +356,13 @@ export function useActaGeneral() {
       setErrores: setErroresMotivo,
       guardar: (datos) => guardarMotivo(idActa, datos),
     },
+    hallazgos: {
+      datos: hallazgos,
+      tocado: hallazgosTocado,
+      validar: validarHallazgos,
+      setErrores: setErroresHallazgos,
+      guardar: (datos) => guardarHallazgos(idActa, datos),
+    },
   };
 
   // Indicador visual de progreso: para cada apartado con formulario real, dice
@@ -341,7 +386,7 @@ export function useActaGeneral() {
     const configuracion = configuracionApartados[apartadoActivo];
 
     if (!configuracion || !configuracion.tocado) {
-      // Los apartados que todavía no tienen formulario real (HU-008 a
+      // Los apartados que todavía no tienen formulario real (HU-010 y
       // HU-011) no están en el mapa, así que por ahora no hay nada que
       // validar para salir de ellos.
       return true;
@@ -418,6 +463,10 @@ export function useActaGeneral() {
     motivo,
     erroresMotivo,
     actualizarCampoMotivo,
+
+    hallazgos,
+    erroresHallazgos,
+    actualizarCampoHallazgos,
 
     guardando,
     errorGuardado,
