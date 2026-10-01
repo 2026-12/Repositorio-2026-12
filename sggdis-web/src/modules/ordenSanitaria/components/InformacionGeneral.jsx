@@ -27,7 +27,7 @@ function SelectorCondicion({ value, onChange, error }) {
 
   return (
     <div className="orden-campo" ref={referencia}>
-      <label htmlFor="condicion">En su condición de </label>
+      <label htmlFor="condicion">En su condición de</label>
 
       <div className={`orden-selector ${abierto ? 'orden-selector--abierto' : ''}`}>
         <button
@@ -41,9 +41,7 @@ function SelectorCondicion({ value, onChange, error }) {
             {seleccionada ? seleccionada.nombre : 'Seleccione...'}
           </span>
 
-          <span className={`orden-selector__flecha ${abierto ? 'orden-selector__flecha--abierta' : ''}`}>
-            ▾
-          </span>
+          <span className={`orden-selector__flecha ${abierto ? 'orden-selector__flecha--abierta' : ''}`}>▾</span>
         </button>
 
         {abierto && (
@@ -92,10 +90,30 @@ export default function InformacionGeneral({ datos = {}, errores = {}, onChange 
       </section>
 
       <div className="orden-dato-general">
-        <div className="orden-campo">
-          <label htmlFor="numeroConsecutivo">Número consecutivo de la inspección</label>
-          <input id="numeroConsecutivo" type="text" value={datos.numeroConsecutivo || ''} readOnly className="orden-campo--solo-lectura" />
-          {errores.numeroConsecutivo && <span className="orden-error">{errores.numeroConsecutivo}</span>}
+        <div className="orden-grid-2">
+          <div className="orden-campo">
+            <label htmlFor="numeroConsecutivo">Número de consecutivo de Orden Sanitaria</label>
+            <input
+              id="numeroConsecutivo"
+              type="text"
+              value={datos.numeroConsecutivo || ''}
+              placeholder="Se genera al emitir la Orden Sanitaria"
+              readOnly
+              className="orden-campo--solo-lectura"
+            />
+            {errores.numeroConsecutivo && <span className="orden-error">{errores.numeroConsecutivo}</span>}
+          </div>
+
+          <div className="orden-campo">
+            <label htmlFor="numeroExpediente">Número de expediente / número de consecutivo / número de denuncia</label>
+            <input
+              id="numeroExpediente"
+              type="text"
+              value={datos.numeroExpediente || ''}
+              readOnly
+              className="orden-campo--solo-lectura"
+            />
+          </div>
         </div>
       </div>
 
@@ -105,18 +123,33 @@ export default function InformacionGeneral({ datos = {}, errores = {}, onChange 
         <div className="orden-grupo__contenido">
           <div className="orden-campo">
             <label htmlFor="nombreCompleto">Nombre de la persona a notificar</label>
-            <input id="nombreCompleto" type="text" value={datos.nombreCompleto || ''} readOnly className="orden-campo--solo-lectura" />
+            <input
+              id="nombreCompleto"
+              type="text"
+              value={datos.nombreCompleto || ''}
+              readOnly
+              className="orden-campo--solo-lectura"
+            />
             {errores.nombreCompleto && <span className="orden-error">{errores.nombreCompleto}</span>}
           </div>
 
           <div className="orden-grid-2">
             <div>
-              <SelectorCondicion value={datos.condicion || ''} onChange={(valor) => onChange('condicion', valor)} error={errores.condicion} />
+              <SelectorCondicion
+                value={datos.condicion || ''}
+                onChange={(valor) => onChange('condicion', valor)}
+                error={errores.condicion}
+              />
 
               {condicionEsOtra && (
                 <div className="orden-campo">
-                  <label htmlFor="otraCondicion">Otra condición </label>
-                  <input id="otraCondicion" type="text" value={datos.otraCondicion || ''} onChange={(e) => onChange('otraCondicion', e.target.value)} />
+                  <label htmlFor="otraCondicion">Otra condición</label>
+                  <input
+                    id="otraCondicion"
+                    type="text"
+                    value={datos.otraCondicion || ''}
+                    onChange={(e) => onChange('otraCondicion', e.target.value)}
+                  />
                   {errores.otraCondicion && <span className="orden-error">{errores.otraCondicion}</span>}
                 </div>
               )}
@@ -124,7 +157,13 @@ export default function InformacionGeneral({ datos = {}, errores = {}, onChange 
 
             <div className="orden-campo">
               <label htmlFor="identificacion">Número de identificación</label>
-              <input id="identificacion" type="text" value={datos.identificacion || ''} readOnly className="orden-campo--solo-lectura" />
+              <input
+                id="identificacion"
+                type="text"
+                value={datos.identificacion || ''}
+                readOnly
+                className="orden-campo--solo-lectura"
+              />
               {errores.identificacion && <span className="orden-error">{errores.identificacion}</span>}
             </div>
           </div>
@@ -137,13 +176,14 @@ export default function InformacionGeneral({ datos = {}, errores = {}, onChange 
         <div className="orden-grupo__contenido">
           <div className="orden-campo">
             <label htmlFor="nombreEstablecimiento">Nombre del establecimiento / sitio / inmueble</label>
-            <input id="nombreEstablecimiento" type="text" value={datos.nombreEstablecimiento || ''} readOnly className="orden-campo--solo-lectura" />
+            <input
+              id="nombreEstablecimiento"
+              type="text"
+              value={datos.nombreEstablecimiento || ''}
+              readOnly
+              className="orden-campo--solo-lectura"
+            />
             {errores.nombreEstablecimiento && <span className="orden-error">{errores.nombreEstablecimiento}</span>}
-          </div>
-
-          <div className="orden-campo">
-            <label htmlFor="numeroExpediente">Número de expediente</label>
-            <input id="numeroExpediente" type="text" value={datos.numeroExpediente || ''} onChange={(e) => onChange('numeroExpediente', e.target.value)} />
           </div>
         </div>
       </section>

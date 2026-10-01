@@ -35,16 +35,28 @@ const SEGUNDOS_CONFIRMACION = 20;
 const MENSAJE_VALIDACION =
   'Existen campos obligatorios pendientes. Revise las secciones marcadas en rojo antes de continuar.';
 
-/* =========================================================
-   PASOS CON ERROR
-   ========================================================= */
+// PROVISIONAL: el consecutivo se genera en frontend al emitir.
+// Luego se reemplazará por la generación definitiva en backend.
+function generarConsecutivoOrdenSanitaria() {
+  const fecha = new Date();
+
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const horas = String(fecha.getHours()).padStart(2, '0');
+  const minutos = String(fecha.getMinutes()).padStart(2, '0');
+  const segundos = String(fecha.getSeconds()).padStart(2, '0');
+  const milisegundos = String(fecha.getMilliseconds()).padStart(3, '0');
+
+  return `OS-${anio}${mes}${dia}-${horas}${minutos}${segundos}-${milisegundos}`;
+}
 
 function obtenerPasosConError(errores) {
   const pasos = [];
 
   if (
     [
-      'numeroConsecutivo',
+      'numeroExpediente',
       'nombreCompleto',
       'identificacion',
       'nombreEstablecimiento',
@@ -81,10 +93,6 @@ function obtenerPasosConError(errores) {
 
   return pasos;
 }
-
-/* =========================================================
-   COMPONENTE
-   ========================================================= */
 
 export default function OrdenSanitariaModulo({
   idInspeccion,
@@ -125,21 +133,10 @@ export default function OrdenSanitariaModulo({
   const [guardando, setGuardando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
   const [ordenRegistrada, setOrdenRegistrada] = useState(null);
-
-  const [validacionIntentada, setValidacionIntentada] = useState(
-    progresoGuardado?.validacionIntentada ?? false
-  );
-
-  const [mostrandoVistaPrevia, setMostrandoVistaPrevia] = useState(
-    progresoGuardado?.mostrandoVistaPrevia ?? false
-  );
-
+  const [validacionIntentada, setValidacionIntentada] = useState(progresoGuardado?.validacionIntentada ?? false);
+  const [mostrandoVistaPrevia, setMostrandoVistaPrevia] = useState(progresoGuardado?.mostrandoVistaPrevia ?? false);
   const [mostrarModalSalida, setMostrarModalSalida] = useState(false);
   const [segundosRestantes, setSegundosRestantes] = useState(SEGUNDOS_CONFIRMACION);
-
-  /* =========================================================
-     DATOS DE LA INSPECCIÓN
-     ========================================================= */
 
   useEffect(() => {
     if (progresoGuardado?.datos) return;
@@ -149,10 +146,15 @@ export default function OrdenSanitariaModulo({
       idInspeccion: infoInspeccion.idInspeccion || actual.idInspeccion,
       informacionGeneral: {
         ...actual.informacionGeneral,
-        numeroConsecutivo:
-          infoInspeccion.consecutivo || actual.informacionGeneral.numeroConsecutivo || '',
+        numeroConsecutivo: '',
+        numeroExpediente:
+          infoInspeccion.consecutivo ||
+          actual.informacionGeneral.numeroExpediente ||
+          '',
         nombreCompleto:
-          infoInspeccion.nombrePersonaNotificar || actual.informacionGeneral.nombreCompleto || '',
+          infoInspeccion.nombrePersonaNotificar ||
+          actual.informacionGeneral.nombreCompleto ||
+          '',
         identificacion:
           infoInspeccion.identificacionPersonaNotificar ||
           actual.informacionGeneral.identificacion ||
@@ -164,10 +166,6 @@ export default function OrdenSanitariaModulo({
       },
     }));
   }, [infoInspeccion, progresoGuardado]);
-
-  /* =========================================================
-     AUTOGUARDADO LOCAL
-     ========================================================= */
 
   useEffect(() => {
     if (ordenRegistrada || !datos.idInspeccion) return;
@@ -188,19 +186,11 @@ export default function OrdenSanitariaModulo({
     infoInspeccion,
   ]);
 
-  /* =========================================================
-     PROVINCIAS
-     ========================================================= */
-
   useEffect(() => {
     obtenerProvincias()
       .then(setProvincias)
       .catch(() => setErrorEnvio('No fue posible cargar las provincias.'));
   }, []);
-
-  /* =========================================================
-     CANTONES
-     ========================================================= */
 
   useEffect(() => {
     if (!datos.ubicacion.idProvincia) {
@@ -213,10 +203,6 @@ export default function OrdenSanitariaModulo({
       .catch(() => setErrorEnvio('No fue posible cargar los cantones.'));
   }, [datos.ubicacion.idProvincia]);
 
-  /* =========================================================
-     DISTRITOS
-     ========================================================= */
-
   useEffect(() => {
     if (!datos.ubicacion.idCanton) {
       setDistritos([]);
@@ -227,10 +213,6 @@ export default function OrdenSanitariaModulo({
       .then(setDistritos)
       .catch(() => setErrorEnvio('No fue posible cargar los distritos.'));
   }, [datos.ubicacion.idCanton]);
-
-  /* =========================================================
-     VALIDACIÓN EN TIEMPO REAL
-     ========================================================= */
 
   useEffect(() => {
     if (!validacionIntentada) return;
@@ -250,42 +232,32 @@ export default function OrdenSanitariaModulo({
     }
   }, [datos, validacionIntentada, pasoActual, errorEnvio]);
 
-/* =========================================================
-   REDIRECCIÓN DESPUÉS DE EMITIR
-   ========================================================= */
+  useEffect(() => {
+    if (!ordenRegistrada) return undefined;
 
-useEffect(() => {
-  if (!ordenRegistrada) return undefined;
+    const duracionMs = SEGUNDOS_CONFIRMACION * 1000;
+    const fechaLimite = Date.now() + duracionMs;
 
-  const duracionMs = SEGUNDOS_CONFIRMACION * 1000;
-  const fechaLimite = Date.now() + duracionMs;
+    setSegundosRestantes(SEGUNDOS_CONFIRMACION);
 
-  setSegundosRestantes(SEGUNDOS_CONFIRMACION);
+    const actualizarContador = () => {
+      const tiempoRestante = fechaLimite - Date.now();
+      setSegundosRestantes(Math.max(0, Math.ceil(tiempoRestante / 1000)));
+    };
 
-  const actualizarContador = () => {
-    const tiempoRestante = fechaLimite - Date.now();
-    const segundos = Math.max(0, Math.ceil(tiempoRestante / 1000));
+    const intervalo = window.setInterval(actualizarContador, 250);
 
-    setSegundosRestantes(segundos);
-  };
+    const temporizador = window.setTimeout(() => {
+      setSegundosRestantes(0);
+      onFinalizar?.(ordenRegistrada);
+      onVolverInicio?.();
+    }, duracionMs);
 
-  const intervalo = window.setInterval(actualizarContador, 250);
-
-  const temporizador = window.setTimeout(() => {
-    setSegundosRestantes(0);
-    onFinalizar?.(ordenRegistrada);
-    onVolverInicio?.();
-  }, duracionMs);
-
-  return () => {
-    window.clearInterval(intervalo);
-    window.clearTimeout(temporizador);
-  };
-}, [ordenRegistrada, onFinalizar, onVolverInicio]);
-
-  /* =========================================================
-     INFORMACIÓN GENERAL
-     ========================================================= */
+    return () => {
+      window.clearInterval(intervalo);
+      window.clearTimeout(temporizador);
+    };
+  }, [ordenRegistrada, onFinalizar, onVolverInicio]);
 
   const actualizarInformacionGeneral = (campo, valor) => {
     setDatos((actual) => {
@@ -299,20 +271,12 @@ useEffect(() => {
     });
   };
 
-  /* =========================================================
-     UBICACIÓN
-     ========================================================= */
-
   const actualizarUbicacion = (campo, valor) => {
     setDatos((actual) => ({
       ...actual,
       ubicacion: { ...actual.ubicacion, [campo]: valor },
     }));
   };
-
-  /* =========================================================
-     NOTIFICACIÓN
-     ========================================================= */
 
   const actualizarNotificacion = (campo, valor) => {
     setDatos((actual) => {
@@ -362,20 +326,12 @@ useEffect(() => {
     });
   };
 
-  /* =========================================================
-     RESPONSABLE
-     ========================================================= */
-
   const actualizarResponsable = (campo, valor) => {
     setDatos((actual) => ({
       ...actual,
       responsable: { ...actual.responsable, [campo]: valor },
     }));
   };
-
-  /* =========================================================
-     ORDENANZAS
-     ========================================================= */
 
   const agregarOrdenanza = () => {
     setDatos((actual) => ({
@@ -406,21 +362,10 @@ useEffect(() => {
     });
   };
 
-  /* =========================================================
-     ESTADO DE LAS SECCIONES
-     ========================================================= */
-
   const erroresActuales = validarOrdenSanitaria(datos);
   const pasosPendientesActuales = obtenerPasosConError(erroresActuales);
   const pasosConError = validacionIntentada ? pasosPendientesActuales : [];
-
-  const pasosCompletos = [0, 1, 2, 3, 4].filter(
-    (paso) => !pasosPendientesActuales.includes(paso)
-  );
-
-  /* =========================================================
-     MODAL DE SALIDA
-     ========================================================= */
+  const pasosCompletos = [0, 1, 2, 3, 4].filter((paso) => !pasosPendientesActuales.includes(paso));
 
   const solicitarVolverInicio = () => setMostrarModalSalida(true);
   const cancelarSalida = () => setMostrarModalSalida(false);
@@ -431,10 +376,6 @@ useEffect(() => {
     setErrorEnvio('');
     onVolverInicio?.();
   };
-
-  /* =========================================================
-     ANTERIOR
-     ========================================================= */
 
   const manejarAnterior = () => {
     setErrorEnvio('');
@@ -449,10 +390,6 @@ useEffect(() => {
     setPasoActual((actual) => Math.max(0, actual - 1));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  /* =========================================================
-     SIGUIENTE
-     ========================================================= */
 
   const manejarSiguiente = () => {
     if (!validacionIntentada) {
@@ -492,10 +429,6 @@ useEffect(() => {
     setPasoActual((actual) => Math.min(TOTAL_PASOS - 1, actual + 1));
   };
 
-  /* =========================================================
-     CAMBIAR PESTAÑA
-     ========================================================= */
-
   const manejarCambiarPaso = (paso) => {
     setMostrandoVistaPrevia(false);
     setPasoActual(paso);
@@ -508,10 +441,6 @@ useEffect(() => {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  /* =========================================================
-     VISTA PREVIA
-     ========================================================= */
 
   const manejarVistaPrevia = () => {
     const nuevosErrores = validarOrdenSanitaria(datos);
@@ -533,10 +462,6 @@ useEffect(() => {
     setMostrandoVistaPrevia(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  /* =========================================================
-     EMITIR
-     ========================================================= */
 
   const manejarGuardar = async () => {
     const nuevosErrores = validarOrdenSanitaria(datos);
@@ -563,11 +488,28 @@ useEffect(() => {
       setGuardando(true);
       setErrorEnvio('');
 
-      const payload = prepararOrdenSanitariaParaApi(datos);
+      // PROVISIONAL: generar consecutivo justo al emitir.
+      const numeroConsecutivo = generarConsecutivoOrdenSanitaria();
+
+      const datosConConsecutivo = {
+        ...datos,
+        informacionGeneral: {
+          ...datos.informacionGeneral,
+          numeroConsecutivo,
+        },
+      };
+
+      setDatos(datosConConsecutivo);
+
+      const payload = prepararOrdenSanitariaParaApi(datosConConsecutivo);
       const respuesta = await crearOrdenSanitaria(payload);
 
       limpiarProgresoOrdenSanitaria(datos.idInspeccion);
-      setOrdenRegistrada(respuesta);
+
+      setOrdenRegistrada({
+        ...respuesta,
+        numeroConsecutivo: respuesta?.numeroConsecutivo || numeroConsecutivo,
+      });
     } catch (error) {
       console.error('Error al crear la Orden Sanitaria:', error);
 
@@ -579,18 +521,10 @@ useEffect(() => {
     }
   };
 
-  /* =========================================================
-     SALIR DESDE ÉXITO
-     ========================================================= */
-
   const volverAlMenuDespuesDeEmitir = () => {
     onFinalizar?.(ordenRegistrada);
     onVolverInicio?.();
   };
-
-  /* =========================================================
-     RENDERIZAR PASO
-     ========================================================= */
 
   const renderizarPaso = () => {
     switch (pasoActual) {
@@ -650,19 +584,13 @@ useEffect(() => {
     }
   };
 
-  /* =========================================================
-     CONFIRMACIÓN DE ÉXITO
-     ========================================================= */
-
   if (ordenRegistrada) {
     return (
       <div className="orden-pagina orden-pagina--confirmacion">
         <main className="orden-exito">
           <span className="orden-exito__etiqueta">ORDEN SANITARIA</span>
 
-          <div className="orden-exito__icono" aria-hidden="true">
-            ✓
-          </div>
+          <div className="orden-exito__icono" aria-hidden="true">✓</div>
 
           <p className="orden-exito__estado">PROCESO FINALIZADO</p>
 
@@ -677,12 +605,16 @@ useEffect(() => {
 
           <div className="orden-exito__detalle">
             <span className="orden-exito__detalle-etiqueta">
-              ESTADO DE LA ORDEN
+              NÚMERO DE CONSECUTIVO
             </span>
 
             <strong className="orden-exito__detalle-valor">
-              Emitida correctamente
+              {ordenRegistrada.numeroConsecutivo}
             </strong>
+
+            <span className="orden-exito__detalle-tiempo">
+              Orden Sanitaria emitida correctamente
+            </span>
 
             <span className="orden-exito__detalle-tiempo">
               Regresando al menú principal en{' '}
@@ -704,10 +636,6 @@ useEffect(() => {
   }
 
   const esMensajeValidacion = errorEnvio === MENSAJE_VALIDACION;
-
-  /* =========================================================
-     FORMULARIO
-     ========================================================= */
 
   return (
     <div className="orden-pagina">

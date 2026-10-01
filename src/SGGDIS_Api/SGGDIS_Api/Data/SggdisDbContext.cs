@@ -19,6 +19,7 @@ namespace SGGDIS_Api.Data
         public DbSet<InsItem> Items => Set<InsItem>();
         public DbSet<InsInspeccion> Inspecciones { get; set; }
         public DbSet<InsRespuesta> Respuestas { get; set; }
+        public DbSet<InsActaGeneral> ActasGenerales => Set<InsActaGeneral>();
 
         // Órdenes Sanitarias 
         public DbSet<OrdenSanitaria> OrdenesSanitarias => Set<OrdenSanitaria>();
@@ -122,6 +123,11 @@ namespace SGGDIS_Api.Data
             // El número consecutivo de la Orden Sanitaria debe ser único.
             modelBuilder.Entity<OrdenSanitaria>()
                 .HasIndex(orden => orden.NumeroConsecutivo)
+                .IsUnique();
+
+            // El folio del acta general también debe ser único.
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasIndex(a => a.NumeroActa)
                 .IsUnique();
         }
     }

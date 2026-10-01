@@ -31,6 +31,8 @@ builder.Services.AddScoped<IOrdenSanitariaService, OrdenSanitariaService>();
 // Registra el servicio encargado de consultar provincias, cantones y distritos.
 builder.Services.AddScoped<IUbicacionService, UbicacionService>();
 
+builder.Services.AddScoped<IActaGeneralService, ActaGeneralService>();
+
 // Permite que el frontend (que corre en localhost:5173 durante desarrollo)
 // pueda hacer peticiones a esta API sin ser bloqueado por el navegador.
 builder.Services.AddCors(options =>

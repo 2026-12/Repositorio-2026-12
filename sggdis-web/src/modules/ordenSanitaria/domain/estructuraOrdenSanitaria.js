@@ -3,7 +3,6 @@ export function crearOrdenanzaVacia(numeroOrden = 1) {
     numeroOrden,
     ordenanza: '',
     fundamentoLegal: '',
-
     plazo: {
       tipoPlazo: 'DIAS',
       cantidad: '',
@@ -17,18 +16,12 @@ export function crearOrdenanzaVacia(numeroOrden = 1) {
 
 function obtenerFechaActual() {
   const fecha = new Date();
-  const offset =
-    fecha.getTimezoneOffset() * 60000;
+  const offset = fecha.getTimezoneOffset() * 60000;
 
-  return new Date(fecha.getTime() - offset)
-    .toISOString()
-    .slice(0, 10);
+  return new Date(fecha.getTime() - offset).toISOString().slice(0, 10);
 }
 
-export function crearOrdenSanitariaInicial({
-  idInspeccion = '',
-  nombreEstablecimiento = '',
-} = {}) {
+export function crearOrdenSanitariaInicial({ idInspeccion = '', nombreEstablecimiento = '' } = {}) {
   const fechaActual = obtenerFechaActual();
 
   return {
@@ -53,12 +46,10 @@ export function crearOrdenSanitariaInicial({
 
     notificacion: {
       fechaEmision: fechaActual,
-      fechaNotificacion: fechaActual,
+      fechaNotificacion: '',
     },
 
-    ordenanzas: [
-      crearOrdenanzaVacia(1),
-    ],
+    ordenanzas: [crearOrdenanzaVacia(1)],
 
     responsable: {
       nombreCompleto: '',
@@ -71,133 +62,67 @@ export function crearOrdenSanitariaInicial({
 
 export function prepararOrdenSanitariaParaApi(datos) {
   return {
-    idInspeccion:
-      Number(datos.idInspeccion),
+    idInspeccion: Number(datos.idInspeccion),
+    idDistrito: Number(datos.ubicacion.idDistrito),
+    direccionExacta: datos.ubicacion.direccionExacta.trim(),
 
-    idDistrito:
-      Number(datos.ubicacion.idDistrito),
+    numeroConsecutivo: datos.informacionGeneral.numeroConsecutivo.trim(),
+    numeroExpediente: datos.informacionGeneral.numeroExpediente?.trim() || null,
+    nombreEstablecimiento: datos.informacionGeneral.nombreEstablecimiento.trim(),
 
-    direccionExacta:
-      datos.ubicacion.direccionExacta.trim(),
-
-    numeroConsecutivo:
-      datos.informacionGeneral
-        .numeroConsecutivo
-        .trim(),
-
-    numeroExpediente:
-      datos.informacionGeneral
-        .numeroExpediente
-        ?.trim() || null,
-
-    nombreEstablecimiento:
-      datos.informacionGeneral
-        .nombreEstablecimiento
-        .trim(),
-
-    fechaEmision:
-      datos.notificacion.fechaEmision,
-
-    fechaNotificacion:
-      datos.notificacion.fechaNotificacion,
+    fechaEmision: datos.notificacion.fechaEmision,
+    fechaNotificacion: datos.notificacion.fechaNotificacion,
 
     personaNotificada: {
-      nombreCompleto:
-        datos.informacionGeneral
-          .nombreCompleto
-          .trim(),
-
-      condicion:
-        datos.informacionGeneral
-          .condicion
-          .trim(),
-
+      nombreCompleto: datos.informacionGeneral.nombreCompleto.trim(),
+      condicion: datos.informacionGeneral.condicion.trim(),
       otraCondicion:
         datos.informacionGeneral.condicion === 'Otro'
-          ? datos.informacionGeneral
-              .otraCondicion
-              ?.trim() || null
+          ? datos.informacionGeneral.otraCondicion?.trim() || null
           : null,
-
-      identificacion:
-        datos.informacionGeneral
-          .identificacion
-          .trim(),
+      identificacion: datos.informacionGeneral.identificacion.trim(),
     },
 
-    ordenanzas:
-      datos.ordenanzas.map(
-        (ordenanza, index) => ({
-          numeroOrden:
-            index + 1,
+    ordenanzas: datos.ordenanzas.map((ordenanza, index) => ({
+      numeroOrden: index + 1,
+      ordenanza: ordenanza.ordenanza.trim(),
+      fundamentoLegal: ordenanza.fundamentoLegal.trim(),
 
-          ordenanza:
-            ordenanza.ordenanza.trim(),
+      plazo: {
+        tipoPlazo: ordenanza.plazo.tipoPlazo,
 
-          fundamentoLegal:
-            ordenanza.fundamentoLegal.trim(),
+        cantidad:
+          ordenanza.plazo.tipoPlazo === 'FECHA'
+            ? null
+            : Number(ordenanza.plazo.cantidad) || null,
 
-          plazo: {
-            tipoPlazo:
-              ordenanza.plazo.tipoPlazo,
+        diaCumplimiento:
+          ordenanza.plazo.tipoPlazo === 'FECHA'
+            ? Number(ordenanza.plazo.diaCumplimiento) || null
+            : null,
 
-            cantidad:
-              ordenanza.plazo.tipoPlazo === 'FECHA'
-                ? null
-                : Number(
-                    ordenanza.plazo.cantidad
-                  ) || null,
+        mesCumplimiento:
+          ordenanza.plazo.tipoPlazo === 'FECHA'
+            ? Number(ordenanza.plazo.mesCumplimiento) || null
+            : null,
 
-            diaCumplimiento:
-              ordenanza.plazo.tipoPlazo === 'FECHA'
-                ? Number(
-                    ordenanza.plazo.diaCumplimiento
-                  ) || null
-                : null,
+        anioCumplimiento:
+          ordenanza.plazo.tipoPlazo === 'FECHA'
+            ? Number(ordenanza.plazo.anioCumplimiento) || null
+            : null,
 
-            mesCumplimiento:
-              ordenanza.plazo.tipoPlazo === 'FECHA'
-                ? Number(
-                    ordenanza.plazo.mesCumplimiento
-                  ) || null
-                : null,
-
-            anioCumplimiento:
-              ordenanza.plazo.tipoPlazo === 'FECHA'
-                ? Number(
-                    ordenanza.plazo.anioCumplimiento
-                  ) || null
-                : null,
-
-            horaCumplimiento:
-              ordenanza.plazo.tipoPlazo === 'FECHA'
-                ? ordenanza.plazo
-                    .horaCumplimiento || null
-                : null,
-          },
-        })
-      ),
+        horaCumplimiento:
+          ordenanza.plazo.tipoPlazo === 'FECHA'
+            ? ordenanza.plazo.horaCumplimiento || null
+            : null,
+      },
+    })),
 
     responsable: {
-      nombreCompleto:
-        datos.responsable
-          .nombreCompleto
-          .trim(),
-
-      cargo:
-        datos.responsable
-          .cargo
-          .trim(),
-
-      unidadOrganizativaArs:
-        datos.responsable
-          .unidadOrganizativaArs
-          .trim(),
-
-      firma:
-        datos.responsable
-          .firma
-          ?.trim() || null,
+      nombreCompleto: datos.responsable.nombreCompleto.trim(),
+      cargo: datos.responsable.cargo.trim(),
+      unidadOrganizativaArs: datos.responsable.unidadOrganizativaArs.trim(),
+      firma: datos.responsable.firma?.trim() || null,
     },
   };
 }

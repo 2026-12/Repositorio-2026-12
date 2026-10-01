@@ -108,11 +108,22 @@ export default function FormularioCierreInspeccion({
             <div className="cierre__confirmacion-resultado">
               <span className="cierre__confirmacion-resultado-label">PUNTAJE FINAL</span>
               <strong className="cierre__confirmacion-resultado-numero">
-                {cierreConfirmado.puntajeObtenido} / {cierreConfirmado.puntajeMaximo}
+                {cierreConfirmado.puntajeObtenido} / {cierreConfirmado.puntajeMaximoReferencia}
               </strong>
               <span className="cierre__confirmacion-resultado-estado">
                 {clasificacion.icono} {cierreConfirmado.porcentaje}% · {cierreConfirmado.clasificacion}
               </span>
+              {/* El porcentaje/clasificación de arriba ya excluye los ítems "No
+                  aplica" del máximo (no penalizan). Acá se muestra el puntaje
+                  sobre el total nominal de la guía, y aparte se aclara cuántos
+                  puntos no se tomaron en cuenta por no aplicar, para que no
+                  parezca que el establecimiento "perdió" esos puntos. */}
+              {cierreConfirmado.puntajeMaximoReferencia > cierreConfirmado.puntajeMaximo && (
+                <p className="cierre__confirmacion-nota">
+                  {cierreConfirmado.puntajeMaximoReferencia - cierreConfirmado.puntajeMaximo} pts no
+                  aplicaron ("N/A") y no se tomaron en cuenta para la nota final.
+                </p>
+              )}
             </div>
 
             {datosCierre.ordenSanitaria && (
