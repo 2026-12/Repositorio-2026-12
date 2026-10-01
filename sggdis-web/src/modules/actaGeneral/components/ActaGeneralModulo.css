@@ -406,6 +406,75 @@
   cursor: pointer;
 }
 
+/* Lista dinámica de personas presentes (Apartado VI): cada persona es una
+   tarjeta con borde suave dentro de la tarjeta del apartado, con los mismos
+   campos y filas de dos columnas que el resto del acta. */
+.acta-personas__vacio {
+  font-size: 0.85rem;
+  color: #667085;
+}
+
+.acta-persona {
+  border: 1px solid #e6e8ec;
+  border-radius: 10px;
+  padding: 14px 16px 16px;
+  margin-bottom: 6px;
+  background: #fcfdff;
+}
+
+.acta-persona__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.acta-persona__titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--acta-azul-medio);
+}
+
+.acta-persona .acta-campo-fila {
+  margin-bottom: 0;
+}
+
+/* Botones de la lista ("Agregar persona" / "Eliminar"): mismo aspecto que
+   los chips .acta-opcion, para no introducir un estilo de botón nuevo. */
+.acta-boton-lista {
+  align-self: flex-start;
+  border: 1px solid var(--acta-azul-medio);
+  background: #eef4ff;
+  color: var(--acta-azul-medio);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.acta-boton-lista--eliminar {
+  padding: 6px 12px;
+  border-color: #f5c2bd;
+  background: #ffffff;
+  color: #c0392b;
+}
+
+/* En pantallas angostas cada persona muestra sus campos en una sola
+   columna (solo dentro de .acta-persona, para no alterar otros apartados). */
+@media (max-width: 640px) {
+  .acta-persona {
+    padding: 12px;
+  }
+
+  .acta-persona .acta-campo-fila {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
 /* Mensaje mientras se carga un catálogo del backend dentro de un campo
    (ej. las guías aplicables del Apartado IV). */
 .acta-campo__cargando {

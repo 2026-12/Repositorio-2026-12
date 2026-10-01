@@ -66,3 +66,10 @@ export const ACCIONES_A_SEGUIR = [
 // columnas MOTIVO_REPROGRAMACION VARCHAR2(400) y ACCION_OTRO VARCHAR2(200)).
 export const LONGITUD_MAXIMA_MOTIVO_REPROGRAMACION = 400;
 export const LONGITUD_MAXIMA_ACCION_OTRO = 200;
+
+// Máximo de caracteres de cada dato de una persona presente (Apartado VI).
+// Deben coincidir con las longitudes que valida el backend al guardar.
+export const LONGITUD_MAXIMA_NOMBRE_PERSONA = 200;
+export const LONGITUD_MAXIMA_CARGO_INSTITUCION = 200;
+export const LONGITUD_MAXIMA_IDENTIFICACION_PERSONA = 30;
+export const LONGITUD_MAXIMA_FIRMA = 200;

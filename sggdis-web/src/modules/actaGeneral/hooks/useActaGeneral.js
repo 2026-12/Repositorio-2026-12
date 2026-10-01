@@ -7,6 +7,7 @@ import {
   guardarMotivo,
   guardarHallazgos,
   guardarAcciones,
+  guardarCierre,
 } from '../services/actaGeneralService';
 import { obtenerActaActiva, guardarActaActiva } from '../services/progresoActaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
@@ -14,6 +15,7 @@ import { validarResponsable } from '../domain/validacionResponsable';
 import { validarMotivo } from '../domain/validacionMotivo';
 import { validarHallazgos } from '../domain/validacionHallazgos';
 import { validarAcciones } from '../domain/validacionAcciones';
+import { validarCierre, clavePersona } from '../domain/validacionCierre';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
@@ -81,6 +83,32 @@ function crearAccionesIniciales() {
     acciones: [],
     motivoReprogramacion: '',
     accionOtro: '',
+  };
+}
+
+// Identificador local de cada persona presente (Apartado VI): solo sirve
+// como key estable de React y para las claves de error por persona; no se
+// guarda en el backend. Es un contador simple (y no crypto.randomUUID)
+// porque randomUUID no está disponible si la app se abre por http desde
+// otro dispositivo de la red.
+let ultimoIdPersona = 0;
+
+function crearPersonaPresente(datos = {}) {
+  ultimoIdPersona += 1;
+
+  return {
+    id: ultimoIdPersona,
+    nombreCompleto: datos.nombreCompleto ?? '',
+    cargoInstitucion: datos.cargoInstitucion ?? '',
+    numeroIdentificacion: datos.numeroIdentificacion ?? '',
+    firma: datos.firma ?? '',
+  };
+}
+
+function crearCierreInicial() {
+  return {
+    // Arranca sin personas: el inspector las agrega con "Agregar persona".
+    personasPresentes: [],
   };
 }
 
@@ -157,6 +185,28 @@ function mapearAccionesDesdeActa(acta) {
   };
 }
 
+// Reconstruye el estado del Apartado VI a partir del acta guardada. El
+// backend guarda las personas presentes como un arreglo JSON; si viene vacío
+// o no se puede leer, se arranca con la lista vacía.
+function mapearCierreDesdeActa(acta) {
+  let personasGuardadas = [];
+
+  if (acta.personasPresentes) {
+    try {
+      const lista = JSON.parse(acta.personasPresentes);
+      personasGuardadas = Array.isArray(lista) ? lista : [];
+    } catch {
+      personasGuardadas = [];
+    }
+  }
+
+  return {
+    personasPresentes: personasGuardadas
+      .filter((persona) => persona && typeof persona === 'object')
+      .map((persona) => crearPersonaPresente(persona)),
+  };
+}
+
 // Maneja el ciclo de vida del Acta General: la crea en el backend al entrar,
 // guarda el estado de cada apartado del wizard y controla en cuál está
 // parado el usuario. Cada apartado con formulario real (Info General,
@@ -193,6 +243,10 @@ export function useActaGeneral() {
   const [accionesTocado, setAccionesTocado] = useState(false);
   const [erroresAcciones, setErroresAcciones] = useState({});
 
+  const [cierre, setCierre] = useState(crearCierreInicial);
+  const [cierreTocado, setCierreTocado] = useState(false);
+  const [erroresCierre, setErroresCierre] = useState({});
+
   // Al montar el módulo, primero se revisa si ya había un acta en curso en
   // este navegador (localStorage): si la hay, se recupera del backend con
   // todos sus datos para no perder lo que el inspector ya había llenado al
@@ -223,6 +277,7 @@ export function useActaGeneral() {
                 setMotivo(mapearMotivoDesdeActa(actaExistente));
                 setHallazgos(mapearHallazgosDesdeActa(actaExistente));
                 setAcciones(mapearAccionesDesdeActa(actaExistente));
+                setCierre(mapearCierreDesdeActa(actaExistente));
               }
 
               // Vuelve a dejar al inspector en el mismo apartado en el que
@@ -385,6 +440,60 @@ export function useActaGeneral() {
     });
   };
 
+  // Apartado VI: la lista de personas presentes no se edita con un único
+  // (campo, valor) como los demás apartados, sino con agregar / eliminar /
+  // editar una persona. Las tres marcan el apartado como "tocado" y limpian
+  // los errores que dejan de aplicar, igual que actualizarCampoX.
+  const agregarPersonaPresente = () => {
+    setCierre((actual) => ({
+      ...actual,
+      personasPresentes: [...actual.personasPresentes, crearPersonaPresente()],
+    }));
+
+    setCierreTocado(true);
+    setErroresCierre((actuales) => {
+      if (!actuales.personasPresentes) return actuales;
+      const resto = { ...actuales };
+      delete resto.personasPresentes;
+      return resto;
+    });
+  };
+
+  const eliminarPersonaPresente = (idPersona) => {
+    setCierre((actual) => ({
+      ...actual,
+      personasPresentes: actual.personasPresentes.filter((persona) => persona.id !== idPersona),
+    }));
+
+    setCierreTocado(true);
+    setErroresCierre((actuales) => {
+      const prefijo = clavePersona(idPersona, '');
+      const claves = Object.keys(actuales).filter((clave) => clave.startsWith(prefijo));
+      if (claves.length === 0) return actuales;
+      const resto = { ...actuales };
+      claves.forEach((clave) => delete resto[clave]);
+      return resto;
+    });
+  };
+
+  const actualizarPersonaPresente = (idPersona, campo, valor) => {
+    setCierre((actual) => ({
+      ...actual,
+      personasPresentes: actual.personasPresentes.map((persona) =>
+        persona.id === idPersona ? { ...persona, [campo]: valor } : persona
+      ),
+    }));
+
+    setCierreTocado(true);
+    setErroresCierre((actuales) => {
+      const clave = clavePersona(idPersona, campo);
+      if (!actuales[clave]) return actuales;
+      const resto = { ...actuales };
+      delete resto[clave];
+      return resto;
+    });
+  };
+
   // Un solo lugar donde vive, por cada apartado con formulario real, qué
   // datos tiene, si el inspector ya lo empezó a llenar, cómo se valida y
   // cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
@@ -425,6 +534,13 @@ export function useActaGeneral() {
       setErrores: setErroresAcciones,
       guardar: (datos) => guardarAcciones(idActa, datos),
     },
+    cierre: {
+      datos: cierre,
+      tocado: cierreTocado,
+      validar: validarCierre,
+      setErrores: setErroresCierre,
+      guardar: (datos) => guardarCierre(idActa, datos),
+    },
   };
 
   // Indicador visual de progreso: para cada apartado con formulario real, dice
@@ -444,13 +560,15 @@ export function useActaGeneral() {
   // llenar el apartado activo por defecto: mientras no toque ningún campo,
   // puede saltar libremente a cualquier otro. La obligatoriedad solo se
   // exige una vez que efectivamente empezó a llenarlo.
-  const validarYGuardarApartadoActivo = async () => {
+  // Con { forzar: true } (botón "Guardar" del último apartado) se valida y
+  // guarda aunque el inspector no haya tocado nada, porque es un pedido
+  // explícito de guardar y debe mostrar lo que falte.
+  const validarYGuardarApartadoActivo = async ({ forzar = false } = {}) => {
     const configuracion = configuracionApartados[apartadoActivo];
 
-    if (!configuracion || !configuracion.tocado) {
-      // Los apartados que todavía no tienen formulario real (HU-011) no
-      // están en el mapa, así que por ahora no hay nada que validar para
-      // salir de ellos.
+    if (!configuracion || (!configuracion.tocado && !forzar)) {
+      // Un apartado sin cambios se puede abandonar sin validar (la
+      // obligatoriedad se exige solo una vez que el inspector lo empezó a llenar).
       return true;
     }
 
@@ -487,6 +605,11 @@ export function useActaGeneral() {
     setApartadoActivo(idDestino);
     return true;
   };
+
+  // Botón "Guardar" del último apartado (Cierre y Firmas): como no hay un
+  // apartado siguiente al cual salir, el guardado se pide explícitamente,
+  // con la misma validación y el mismo manejo de errores que al avanzar.
+  const guardarApartadoActivo = () => validarYGuardarApartadoActivo({ forzar: true });
 
   // Botón "Siguiente →": avanza al que sigue en el orden del wizard.
   const avanzarAlSiguienteApartado = () => {
@@ -534,9 +657,17 @@ export function useActaGeneral() {
     erroresAcciones,
     actualizarCampoAcciones,
 
+    horaInicio: infoGeneral.horaInicio,
+    cierre,
+    erroresCierre,
+    agregarPersonaPresente,
+    eliminarPersonaPresente,
+    actualizarPersonaPresente,
+
     guardando,
     errorGuardado,
     avanzarAlSiguienteApartado,
     retrocederAlApartadoAnterior,
+    guardarApartadoActivo,
   };
 }

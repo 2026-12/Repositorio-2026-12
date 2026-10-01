@@ -162,6 +162,30 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // PUT /api/actas-generales/{id}/cierre : guarda (autoguardado) el Apartado VI.
+        [HttpPut("{id}/cierre")]
+        public async Task<IActionResult> GuardarCierre(int id, [FromBody] InfoCierreActaDto dto)
+        {
+            try
+            {
+                await _actaGeneralService.GuardarCierreAsync(id, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (CierreInvalidoException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar el apartado de cierre del acta {IdActa}.", id);
+                return StatusCode(500, "Ocurrió un error al guardar el cierre de la inspección.");
+            }
+        }
+
         // DELETE /api/actas-generales/{id} : descarta un acta en curso (el
         // inspector salió sin terminarla desde "Volver al menú"), para que no
         // quede ocupando un folio a medio llenar.

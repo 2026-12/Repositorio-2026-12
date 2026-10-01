@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useActaGeneral } from '../hooks/useActaGeneral';
 import { useConfirmacionSalida } from '../hooks/useConfirmacionSalida';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
@@ -9,6 +9,7 @@ import ApartadoResponsable from './ApartadoResponsable';
 import ApartadoMotivo from './ApartadoMotivo';
 import ApartadoHallazgos from './ApartadoHallazgos';
 import ApartadoAcciones from './ApartadoAcciones';
+import ApartadoCierre from './ApartadoCierre';
 import ModalConfirmacionSalida from './ModalConfirmacionSalida';
 import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
@@ -21,8 +22,7 @@ function indiceApartado(id) {
 
 // Shell del wizard del Acta de Inspección General (HU-004): header con el
 // folio del acta, tabs de apartados (indicador de progreso) y el apartado
-// activo. Los Apartados I a V (HU-006 a HU-010) ya tienen formulario
-// real; el VI es la próxima HU (HU-011) y se muestra "en construcción".
+// activo. Los seis apartados (HU-006 a HU-011) tienen formulario real.
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
     idActa,
@@ -46,15 +46,39 @@ function ActaGeneralModulo({ onVolverInicio }) {
     acciones,
     erroresAcciones,
     actualizarCampoAcciones,
+    horaInicio,
+    cierre,
+    erroresCierre,
+    agregarPersonaPresente,
+    eliminarPersonaPresente,
+    actualizarPersonaPresente,
     guardando,
     errorGuardado,
     avanzarAlSiguienteApartado,
     retrocederAlApartadoAnterior,
+    guardarApartadoActivo,
   } = useActaGeneral();
 
   const salida = useConfirmacionSalida();
 
   const indiceActivo = indiceApartado(apartadoActivo);
+
+  // Confirmación breve en el botón "Guardar" del último apartado, ya que ahí
+  // no se cambia de apartado al guardar y el inspector necesita saber que
+  // se guardó.
+  const [guardadoReciente, setGuardadoReciente] = useState(false);
+
+  useEffect(() => {
+    if (!guardadoReciente) return undefined;
+    const temporizador = setTimeout(() => setGuardadoReciente(false), 2500);
+    return () => clearTimeout(temporizador);
+  }, [guardadoReciente]);
+
+  const guardarUltimoApartado = async () => {
+    setGuardadoReciente(false);
+    const guardado = await guardarApartadoActivo();
+    if (guardado) setGuardadoReciente(true);
+  };
 
   // Confirmó que quiere salir: se descarta el acta de verdad (backend +
   // localStorage), para que la próxima vez que entre a Acta General
@@ -125,9 +149,6 @@ function ActaGeneralModulo({ onVolverInicio }) {
 
       <nav className="acta-tabs" aria-label="Apartados del acta">
         {APARTADOS_ACTA.map((apartado, indice) => {
-          // Los apartados que todavía no tienen formulario real (HU-011) no
-          // están en estadoApartados, así que por ahora se quedan sin marca
-          // de completado/pendiente.
           const completo = estadoApartados[apartado.id] === 'completo';
 
           return (
@@ -190,19 +211,16 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo !== 'info-general' &&
-            apartadoActivo !== 'responsable' &&
-            apartadoActivo !== 'motivo' &&
-            apartadoActivo !== 'hallazgos' &&
-            apartadoActivo !== 'acciones' && (
-              <section className="acta-apartado">
-                <p className="acta-apartado__etiqueta">Próximamente</p>
-                <h2 className="acta-apartado__titulo">Este apartado está en construcción</h2>
-                <p className="acta-apartado__descripcion">
-                  Corresponde a otra historia de usuario del Acta General (HU-011) y todavía no está implementado.
-                </p>
-              </section>
-            )}
+          {apartadoActivo === 'cierre' && (
+            <ApartadoCierre
+              horaInicio={horaInicio}
+              datos={cierre}
+              errores={erroresCierre}
+              onAgregarPersona={agregarPersonaPresente}
+              onEliminarPersona={eliminarPersonaPresente}
+              onCambiarPersona={actualizarPersonaPresente}
+            />
+          )}
         </div>
 
         {errorGuardado && (
@@ -245,7 +263,16 @@ function ActaGeneralModulo({ onVolverInicio }) {
             {guardando ? 'Guardando…' : 'Siguiente →'}
           </button>
         ) : (
-          <span className="acta-pie__espaciador" aria-hidden="true" />
+          // Último apartado: no hay "Siguiente", así que el guardado se pide
+          // con este botón (misma validación y errores que al avanzar).
+          <button
+            type="button"
+            className="acta-boton acta-boton--secundario"
+            disabled={guardando}
+            onClick={guardarUltimoApartado}
+          >
+            {guardando ? 'Guardando…' : guardadoReciente ? '✓ Guardado' : 'Guardar'}
+          </button>
         )}
       </footer>
 

@@ -29,8 +29,13 @@ namespace SGGDIS_Api.Services
         // Lanza AccionesInvalidasException si llega un código de acción desconocido.
         Task GuardarAccionesAsync(int idActa, InfoAccionesActaDto dto);
 
-        // Devuelve el acta completa, para restaurar el formulario si el usuario vuelve a entrar.
-        Task<Models.InsActaGeneral?> ObtenerActaAsync(int idActa);
+        // Guarda (upsert) los datos del Apartado VI - Cierre de la inspección
+        // (personas presentes). Lanza CierreInvalidoException si un dato es demasiado largo.
+        Task GuardarCierreAsync(int idActa, InfoCierreActaDto dto);
+
+        // Devuelve el acta completa (tabla principal + cada apartado, en un solo
+        // objeto plano), para restaurar el formulario si el usuario vuelve a entrar.
+        Task<ActaGeneralDto?> ObtenerActaAsync(int idActa);
 
         // Elimina el acta (el inspector salió sin terminarla). Devuelve false si no existía.
         Task<bool> EliminarActaAsync(int idActa);

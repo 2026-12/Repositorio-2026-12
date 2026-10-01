@@ -87,6 +87,23 @@ export function guardarAcciones(idActa, datos) {
   });
 }
 
+// Guarda (autoguardado) el Apartado VI - Cierre de la inspección. El "id" de
+// cada persona solo existe en el frontend (key de React), no se envía.
+export function guardarCierre(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/cierre`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      personasPresentes: datos.personasPresentes.map((persona) => ({
+        nombreCompleto: persona.nombreCompleto,
+        cargoInstitucion: persona.cargoInstitucion,
+        numeroIdentificacion: persona.numeroIdentificacion,
+        firma: persona.firma,
+      })),
+    }),
+  });
+}
+
 // Trae el catálogo de guías de inspección (INS_GUIA) para el selector de
 // guías aplicables del Apartado IV: [{ idGuia, nombre }].
 export function obtenerGuias() {
