@@ -59,7 +59,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     item.FechaRevocacion == null && item.FechaExpiracion > DateTime.UtcNow);
                 var user = await db.Usuarios.AsNoTracking().SingleOrDefaultAsync(item =>
                     item.IdUsuario == parsedUserId && item.Activo == "S");
-                if (session is null || user is null || user.Rol != context.Principal?.FindFirst("role")?.Value || user.IdArea?.ToString() != context.Principal?.FindFirst("area_id")?.Value)
+                
+                var areaIdToken = context.Principal?.FindFirst("area_id")?.Value ?? string.Empty;
+                var areaIdUser = user?.IdArea?.ToString() ?? string.Empty;
+                
+                if (session is null || user is null || user.Rol != context.Principal?.FindFirst("role")?.Value || areaIdUser != areaIdToken)
                 {
                     context.Fail("La sesión no es válida o ha finalizado.");
                 }
@@ -74,7 +78,7 @@ builder.Services.AddRateLimiter(options =>
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 5,
+            PermitLimit = 50,
             Window = TimeSpan.FromMinutes(15),
             QueueLimit = 0,
             AutoReplenishment = true

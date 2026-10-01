@@ -59,7 +59,8 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
         var origen = Request.Headers.Origin.ToString();
         var origenesPermitidos = configuration.GetSection("Frontend:AllowedOrigins").Get<string[]>()
             ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
-        if (!origenesPermitidos.Contains(origen, StringComparer.OrdinalIgnoreCase)) return Forbid();
+        if (!string.IsNullOrEmpty(origen) && !origenesPermitidos.Contains(origen, StringComparer.OrdinalIgnoreCase)) 
+            return Forbid();
 
         var refreshToken = Request.Cookies[CookieRefresh];
         var sesion = await authService.RenovarSesionAsync(refreshToken ?? string.Empty);
