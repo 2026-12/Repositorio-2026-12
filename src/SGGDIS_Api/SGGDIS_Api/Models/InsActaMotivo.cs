@@ -15,9 +15,9 @@ namespace SGGDIS_Api.Models
         [Column("ID_ACTA")]
         public int IdActa { get; set; }
 
-        // Uno de los valores fijos de MOTIVOS_INSPECCION (frontend), ej. "DENUNCIA" u "OTRO".
-        // Es selección única: el literal dice "marque la opción" (singular), no "las opciones".
-        [MaxLength(30)]
+        // Códigos de MOTIVOS_INSPECCION (frontend) separados por coma, en el
+        // orden del catálogo, ej. "DENUNCIA,EMERGENCIA". Selección múltiple.
+        [MaxLength(200)]
         [Column("MOTIVO_INSPECCION")]
         public string? MotivoInspeccion { get; set; }
 

@@ -54,8 +54,8 @@ function crearInfoGeneralInicial() {
 function crearResponsableInicial() {
   return {
     nombreResponsable: '',
-    // null = todavía sin marcar; ninguna opción de cargo debe salir preseleccionada.
-    cargoResponsable: null,
+    // Selección múltiple: ningún cargo sale preseleccionado.
+    cargoResponsable: [],
     cargoResponsableOtro: '',
     numeroIdentificacionResponsable: '',
   };
@@ -63,8 +63,8 @@ function crearResponsableInicial() {
 
 function crearMotivoInicial() {
   return {
-    // null = todavía sin marcar; ninguna opción de motivo debe salir preseleccionada.
-    motivoInspeccion: null,
+    // Selección múltiple: ningún motivo sale preseleccionado.
+    motivoInspeccion: [],
     motivoInspeccionOtro: '',
   };
 }
@@ -145,20 +145,24 @@ function mapearInfoGeneralDesdeActa(acta) {
   };
 }
 
-// Reconstruye el estado del Apartado II a partir del acta guardada.
+// Reconstruye el estado del Apartado II a partir del acta guardada. El
+// backend guarda los cargos como códigos separados por coma
+// ("REPRESENTANTE_LEGAL,OTRO"), igual que las acciones del Apartado V.
 function mapearResponsableDesdeActa(acta) {
   return {
     nombreResponsable: acta.nombreResponsable ?? '',
-    cargoResponsable: acta.cargoResponsable ?? null,
+    cargoResponsable: acta.cargoResponsable ? acta.cargoResponsable.split(',').filter(Boolean) : [],
     cargoResponsableOtro: acta.cargoResponsableOtro ?? '',
     numeroIdentificacionResponsable: acta.numeroIdentificacionResponsable ?? '',
   };
 }
 
-// Reconstruye el estado del Apartado III a partir del acta guardada.
+// Reconstruye el estado del Apartado III a partir del acta guardada. El
+// backend guarda los motivos como códigos separados por coma
+// ("DENUNCIA,EMERGENCIA"), igual que las acciones del Apartado V.
 function mapearMotivoDesdeActa(acta) {
   return {
-    motivoInspeccion: acta.motivoInspeccion ?? null,
+    motivoInspeccion: acta.motivoInspeccion ? acta.motivoInspeccion.split(',').filter(Boolean) : [],
     motivoInspeccionOtro: acta.motivoInspeccionOtro ?? '',
   };
 }
@@ -360,9 +364,9 @@ export function useActaGeneral() {
     setResponsable((actual) => {
       const siguiente = { ...actual, [campo]: valor };
 
-      // Si deja de elegir "Otro" como cargo, el texto libre que había
-      // escrito ya no aplica.
-      if (campo === 'cargoResponsable' && valor !== 'OTRO') {
+      // Si se desmarca "Otro" de los cargos, el texto libre que había
+      // escrito ya no aplica (y deja de ser obligatorio).
+      if (campo === 'cargoResponsable' && !valor.includes('OTRO')) {
         siguiente.cargoResponsableOtro = '';
       }
 
@@ -371,9 +375,14 @@ export function useActaGeneral() {
 
     setResponsableTocado(true);
     setErroresResponsable((actuales) => {
-      if (!actuales[campo]) return actuales;
+      // Al cambiar la selección también se limpia el error del texto de
+      // "Otro", porque puede haber dejado de aplicar.
+      const camposALimpiar = campo === 'cargoResponsable'
+        ? ['cargoResponsable', 'cargoResponsableOtro']
+        : [campo];
+      if (!camposALimpiar.some((nombre) => actuales[nombre])) return actuales;
       const resto = { ...actuales };
-      delete resto[campo];
+      camposALimpiar.forEach((nombre) => delete resto[nombre]);
       return resto;
     });
   };
@@ -382,9 +391,9 @@ export function useActaGeneral() {
     setMotivo((actual) => {
       const siguiente = { ...actual, [campo]: valor };
 
-      // Si deja de elegir "Otro" como motivo, el texto libre que había
-      // escrito ya no aplica.
-      if (campo === 'motivoInspeccion' && valor !== 'OTRO') {
+      // Si se desmarca "Otro" de los motivos, el texto libre que había
+      // escrito ya no aplica (y deja de ser obligatorio).
+      if (campo === 'motivoInspeccion' && !valor.includes('OTRO')) {
         siguiente.motivoInspeccionOtro = '';
       }
 
@@ -393,9 +402,14 @@ export function useActaGeneral() {
 
     setMotivoTocado(true);
     setErroresMotivo((actuales) => {
-      if (!actuales[campo]) return actuales;
+      // Al cambiar la selección también se limpia el error del texto de
+      // "Otro", porque puede haber dejado de aplicar.
+      const camposALimpiar = campo === 'motivoInspeccion'
+        ? ['motivoInspeccion', 'motivoInspeccionOtro']
+        : [campo];
+      if (!camposALimpiar.some((nombre) => actuales[nombre])) return actuales;
       const resto = { ...actuales };
-      delete resto[campo];
+      camposALimpiar.forEach((nombre) => delete resto[nombre]);
       return resto;
     });
   };

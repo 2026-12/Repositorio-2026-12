@@ -87,6 +87,10 @@ namespace SGGDIS_Api.Controllers
             {
                 return NotFound();
             }
+            catch (ResponsableInvalidoException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al guardar el apartado del responsable del acta {IdActa}.", id);
@@ -106,6 +110,10 @@ namespace SGGDIS_Api.Controllers
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (MotivoInvalidoException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {

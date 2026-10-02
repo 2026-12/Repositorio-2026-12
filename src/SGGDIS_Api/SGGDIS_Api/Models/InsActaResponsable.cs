@@ -19,8 +19,9 @@ namespace SGGDIS_Api.Models
         [Column("NOMBRE_RESPONSABLE")]
         public string? NombreResponsable { get; set; }
 
-        // Uno de los valores fijos de CARGOS_RESPONSABLE (frontend), ej. "REPRESENTANTE_LEGAL" u "OTRO".
-        [MaxLength(30)]
+        // Códigos de CARGOS_RESPONSABLE (frontend) separados por coma, en el
+        // orden del catálogo, ej. "REPRESENTANTE_LEGAL,OTRO". Selección múltiple.
+        [MaxLength(200)]
         [Column("CARGO_RESPONSABLE")]
         public string? CargoResponsable { get; set; }
 
