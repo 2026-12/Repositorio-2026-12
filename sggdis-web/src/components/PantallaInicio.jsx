@@ -282,7 +282,7 @@ export default function PantallaInicio({
                 <h3>Acta de Inspección General</h3>
 
                 <p>
-                  Acta administrativa por apartados (HU-004)
+                  Registro del acta de una inspección sanitaria
                 </p>
               </div>
 

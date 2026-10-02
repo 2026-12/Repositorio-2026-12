@@ -559,13 +559,13 @@
 }
 
 .acta-boton-modal--primario {
-  border: 1px solid #c0392b;
-  background: #c0392b;
+  border: 1px solid var(--acta-azul-acero);
+  background: var(--acta-azul-acero);
   color: #ffffff;
 }
 
 .acta-boton-modal--primario:hover:not(:disabled) {
-  background: #a5321f;
+  background: var(--acta-azul-medio);
 }
 
 .acta-boton-modal:disabled {

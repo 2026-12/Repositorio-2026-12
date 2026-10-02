@@ -12,10 +12,7 @@ function ModalConfirmacionSalida({ error, eliminando, onCancelar, onConfirmar })
       >
         <h2 id="titulo-confirmacion-salida-acta">¿Volver al menú principal?</h2>
 
-        <p>
-          Si sale de esta acta ahora, se descarta por completo: la próxima vez que entre a
-          Acta General va a empezar una acta nueva, con todos los campos en blanco.
-        </p>
+        <p>Si sale del acta sin guardar, se perderá el progreso registrado.</p>
 
         {error && (
           <div className="acta-modal__error" role="alert">
@@ -34,13 +31,23 @@ function ModalConfirmacionSalida({ error, eliminando, onCancelar, onConfirmar })
             Cancelar
           </button>
 
+          {/* Botón deshabilitado a propósito: la función "Guardar borrador" aún no está implementada. */}
+          <button
+            type="button"
+            className="acta-boton-modal acta-boton-modal--secundario"
+            disabled
+            title="Esta funcionalidad estará disponible próximamente"
+          >
+            Guardar borrador
+          </button>
+
           <button
             type="button"
             className="acta-boton-modal acta-boton-modal--primario"
             onClick={onConfirmar}
             disabled={eliminando}
           >
-            {eliminando ? 'Saliendo…' : 'Salir y descartar acta'}
+            {eliminando ? 'Saliendo…' : 'Salir'}
           </button>
         </div>
       </div>
