@@ -37,6 +37,15 @@ namespace SGGDIS_Api.Data
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
 
         // Configura relaciones que EF no puede inferir solo de los atributos en Models. 
+        // Un DbSet por apartado del Acta General (cada uno en su propia tabla, 1:1 con el acta).
+        public DbSet<InsActaInfoGeneral> ActasInfoGeneral => Set<InsActaInfoGeneral>();
+        public DbSet<InsActaResponsable> ActasResponsable => Set<InsActaResponsable>();
+        public DbSet<InsActaMotivo> ActasMotivo => Set<InsActaMotivo>();
+        public DbSet<InsActaHallazgos> ActasHallazgos => Set<InsActaHallazgos>();
+        public DbSet<InsActaAcciones> ActasAcciones => Set<InsActaAcciones>();
+        public DbSet<InsActaCierre> ActasCierre => Set<InsActaCierre>();
+
+        // Configura relaciones que EF no puede inferir solo de los atributos en Models.
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Muchos-a-muchos: qué secciones aplican a cada tipo de establecimiento (tabla INS_TIPO_SECCION). 
@@ -129,6 +138,39 @@ namespace SGGDIS_Api.Data
             modelBuilder.Entity<InsActaGeneral>()
                 .HasIndex(a => a.NumeroActa)
                 .IsUnique();
+
+            // Apartados del acta: relación 1:1 donde ID_ACTA es a la vez PK y FK de
+            // cada tabla de apartado. En una 1:1 EF no puede deducir solo cuál es la
+            // tabla principal, por eso se indica explícitamente con HasForeignKey.
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasOne(a => a.InfoGeneral)
+                .WithOne(apartado => apartado.Acta)
+                .HasForeignKey<InsActaInfoGeneral>(apartado => apartado.IdActa);
+
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasOne(a => a.Responsable)
+                .WithOne(apartado => apartado.Acta)
+                .HasForeignKey<InsActaResponsable>(apartado => apartado.IdActa);
+
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasOne(a => a.Motivo)
+                .WithOne(apartado => apartado.Acta)
+                .HasForeignKey<InsActaMotivo>(apartado => apartado.IdActa);
+
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasOne(a => a.Hallazgos)
+                .WithOne(apartado => apartado.Acta)
+                .HasForeignKey<InsActaHallazgos>(apartado => apartado.IdActa);
+
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasOne(a => a.Acciones)
+                .WithOne(apartado => apartado.Acta)
+                .HasForeignKey<InsActaAcciones>(apartado => apartado.IdActa);
+
+            modelBuilder.Entity<InsActaGeneral>()
+                .HasOne(a => a.Cierre)
+                .WithOne(apartado => apartado.Acta)
+                .HasForeignKey<InsActaCierre>(apartado => apartado.IdActa);
         }
     }
 }

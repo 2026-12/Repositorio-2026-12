@@ -21,8 +21,21 @@ namespace SGGDIS_Api.Services
         // Guarda (upsert) los datos del Apartado III - Motivo de la inspección.
         Task GuardarMotivoAsync(int idActa, InfoMotivoActaDto dto);
 
-        // Devuelve el acta completa, para restaurar el formulario si el usuario vuelve a entrar.
-        Task<Models.InsActaGeneral?> ObtenerActaAsync(int idActa);
+        // Guarda (upsert) los datos del Apartado IV - Hallazgos de la inspección.
+        // Lanza HallazgosInvalidosException si alguna guía no existe en INS_GUIA.
+        Task GuardarHallazgosAsync(int idActa, InfoHallazgosActaDto dto);
+
+        // Guarda (upsert) los datos del Apartado V - Acciones a seguir.
+        // Lanza AccionesInvalidasException si llega un código de acción desconocido.
+        Task GuardarAccionesAsync(int idActa, InfoAccionesActaDto dto);
+
+        // Guarda (upsert) los datos del Apartado VI - Cierre de la inspección
+        // (personas presentes). Lanza CierreInvalidoException si un dato es demasiado largo.
+        Task GuardarCierreAsync(int idActa, InfoCierreActaDto dto);
+
+        // Devuelve el acta completa (tabla principal + cada apartado, en un solo
+        // objeto plano), para restaurar el formulario si el usuario vuelve a entrar.
+        Task<ActaGeneralDto?> ObtenerActaAsync(int idActa);
 
         // Elimina el acta (el inspector salió sin terminarla). Devuelve false si no existía.
         Task<bool> EliminarActaAsync(int idActa);

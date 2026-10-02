@@ -8,6 +8,9 @@ namespace SGGDIS_Api.Services
     /// </summary>
     public interface ISeccionService
     {
+        /// Devuelve todas las guías de inspección registradas (INS_GUIA), ordenadas por nombre.
+        Task<List<InsGuia>> ObtenerGuiasAsync();
+
         /// Devuelve todos los tipos de establecimiento que existen para una guía dada.
         Task<List<InsTipoEstablecimiento>> ObtenerTiposPorGuiaAsync(int idGuia);
 
