@@ -93,62 +93,27 @@ describe('todasLasSeccionesCompletas / obtenerVistasIncompletas', () => {
 });
 
 describe('obtenerCamposCierrePendientes', () => {
-  it('exige nombre e identificación del inspector, e identificación del representante', () => {
+  it('exige la identificación del representante', () => {
     const pendientes = obtenerCamposCierrePendientes({
-      nombreInspector: '',
-      identificacionInspector: '',
       identificacionRepresentante: '',
     });
     expect(pendientes).toEqual([
-      'Nombre del inspector',
-      'Identificación del inspector',
       'Identificación del representante del establecimiento',
     ]);
   });
 
-  it('no reporta pendientes cuando todos los campos obligatorios están completos y son válidos', () => {
+  it('no reporta pendientes cuando la identificación del representante es válida', () => {
     const pendientes = obtenerCamposCierrePendientes({
-      nombreInspector: 'Juan Pérez Núñez',
-      identificacionInspector: '112345678',
       identificacionRepresentante: '223456789',
     });
     expect(pendientes).toEqual([]);
   });
 
-  it('rechaza el nombre del inspector si contiene números o símbolos', () => {
+  it('rechaza la identificación del representante si contiene letras o símbolos', () => {
     const pendientes = obtenerCamposCierrePendientes({
-      nombreInspector: '873$%__:',
-      identificacionInspector: '112345678',
-      identificacionRepresentante: '223456789',
+      identificacionRepresentante: '2-ABC',
     });
-    expect(pendientes).toContain('Nombre del inspector (solo se permiten letras y espacios)');
-  });
-
-  it('acepta nombres con tildes, Ñ y Ü', () => {
-    const pendientes = obtenerCamposCierrePendientes({
-      nombreInspector: 'María José Piña Güell',
-      identificacionInspector: '112345678',
-      identificacionRepresentante: '223456789',
-    });
-    expect(pendientes).toEqual([]);
-  });
-
-  it('rechaza identificaciones con letras, guiones o símbolos', () => {
-    const pendientes = obtenerCamposCierrePendientes({
-      nombreInspector: 'Juan Pérez',
-      identificacionInspector: '1-2345-6789',
-      identificacionRepresentante: '223456789',
-    });
-    expect(pendientes).toContain('Identificación del inspector (solo se permiten números)');
-  });
-
-  it('rechaza cuando inspector y representante tienen la misma identificación', () => {
-    const pendientes = obtenerCamposCierrePendientes({
-      nombreInspector: 'Juan Pérez',
-      identificacionInspector: '112345678',
-      identificacionRepresentante: '112345678',
-    });
-    expect(pendientes).toContain('Identificación del inspector y del representante (no pueden ser iguales)');
+    expect(pendientes).toContain('Identificación del representante del establecimiento (solo se permiten números)');
   });
 });
 

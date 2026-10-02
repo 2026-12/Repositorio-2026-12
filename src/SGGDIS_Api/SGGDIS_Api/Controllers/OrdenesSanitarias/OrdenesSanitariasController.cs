@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SGGDIS_Api.Models.Dtos.OrdenesSanitarias;
+using SGGDIS_Api.Security;
 using SGGDIS_Api.Services.OrdenesSanitarias;
 
 namespace SGGDIS_Api.Controllers.OrdenesSanitarias
 {
     [ApiController]
+    [Authorize(Roles = RolesSistema.OperacionActasYOrdenes)]
     [Route("api/ordenes-sanitarias")]
     public class OrdenesSanitariasController : ControllerBase
     {

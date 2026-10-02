@@ -1,5 +1,4 @@
-// Configuración general de la app: dónde vive el backend y qué guía se está usando.
-export const API_BASE_URL = 'https://localhost:7119';
+// Configuración de la guía usada por el módulo de inspecciones.
 export const ID_GUIA_ACTIVA = 1;
 
 // Rangos de clasificación según el porcentaje de cumplimiento (Art. 65 del Reglamento).

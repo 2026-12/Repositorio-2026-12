@@ -1,11 +1,26 @@
+import { limpiarSesion, renovarSesion } from '../../auth/services/authService';
+
 // Cliente HTTP compartido: hace la petición, lanza un error con el mensaje real
 // del backend si la respuesta no es 2xx, y maneja 204 (sin contenido).
 export async function solicitarJson(url, opciones) {
   try {
-    const respuesta = await fetch(url, opciones);
+    const token = leerTokenSesion();
+    const headers = new Headers(opciones?.headers ?? {});
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const opcionesPeticion = { ...opciones, headers };
+    let respuesta = await fetch(url, opcionesPeticion);
+    if (respuesta.status === 401 && token && !url.includes('/api/auth/')) {
+      const sesionRenovada = await renovarSesion();
+      if (sesionRenovada) {
+        headers.set('Authorization', `Bearer ${sesionRenovada.token}`);
+        respuesta = await fetch(url, opcionesPeticion);
+      } else {
+        limpiarSesion();
+      }
+    }
     if (!respuesta.ok) {
-      const mensaje = await respuesta.text();
-      throw new Error(mensaje || 'La API respondió con un error.');
+      const cuerpo = await respuesta.json().catch(() => null);
+      throw new Error(cuerpo?.mensaje ?? cuerpo?.title ?? 'La solicitud no pudo completarse.');
     }
     return respuesta.status === 204 ? null : await respuesta.json();
   } catch (error) {
@@ -14,5 +29,14 @@ export async function solicitarJson(url, opciones) {
       throw new Error('No se pudo conectar con el servicio de inspecciones.', { cause: error });
     }
     throw error;
+  }
+}
+
+function leerTokenSesion() {
+  try {
+    const sesion = JSON.parse(sessionStorage.getItem('sggdis:sesion'));
+    return sesion?.token ?? null;
+  } catch {
+    return null;
   }
 }
