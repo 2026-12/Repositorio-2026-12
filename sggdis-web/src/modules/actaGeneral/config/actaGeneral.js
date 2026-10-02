@@ -20,8 +20,8 @@ export const APARTADOS_ACTA = [
 export const LONGITUD_MAXIMA_HALLAZGOS = 4000;
 
 // Opciones del literal "k. Cargo de la persona que atendió la inspección" del
-// acta oficial (Apartado II). El valor es el que viaja al backend; "OTRO"
-// además habilita un campo de texto libre para especificarlo.
+// acta oficial (Apartado II). Selección múltiple; "OTRO" además habilita un
+// campo de texto libre para especificarlo.
 export const CARGOS_RESPONSABLE = [
   { valor: 'REPRESENTANTE_LEGAL', etiqueta: 'Representante legal' },
   { valor: 'DENUNCIANTE', etiqueta: 'Denunciante' },
@@ -33,7 +33,7 @@ export const CARGOS_RESPONSABLE = [
 ];
 
 // Opciones del literal 3 "Motivo de la inspección" del acta oficial
-// (Apartado III). Selección única; "OTRO" habilita el campo de texto libre.
+// (Apartado III). Selección múltiple; "OTRO" habilita el campo de texto libre.
 export const MOTIVOS_INSPECCION = [
   { valor: 'PRIMERA_VEZ_PSF', etiqueta: 'Primera vez Permiso Sanitario de Funcionamiento' },
   { valor: 'SEGUIMIENTO', etiqueta: 'Seguimiento' },

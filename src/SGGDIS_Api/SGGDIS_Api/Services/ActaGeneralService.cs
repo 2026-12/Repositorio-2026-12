@@ -20,6 +20,20 @@ namespace SGGDIS_Api.Services
         public AccionesInvalidasException(string mensaje) : base(mensaje) { }
     }
 
+    // Se lanza si los datos del Apartado II no se pueden guardar tal como
+    // vienen (un código de cargo desconocido).
+    public class ResponsableInvalidoException : Exception
+    {
+        public ResponsableInvalidoException(string mensaje) : base(mensaje) { }
+    }
+
+    // Se lanza si los datos del Apartado III no se pueden guardar tal como
+    // vienen (un código de motivo desconocido).
+    public class MotivoInvalidoException : Exception
+    {
+        public MotivoInvalidoException(string mensaje) : base(mensaje) { }
+    }
+
     // Se lanza si los datos del Apartado VI no se pueden guardar tal como
     // vienen (algún dato de una persona presente supera el tamaño permitido).
     public class CierreInvalidoException : Exception
@@ -46,6 +60,21 @@ namespace SGGDIS_Api.Services
         {
             "CIERRE_CASO", "ORDEN_SANITARIA", "RETENCION", "APOYO_TECNICO", "DECOMISO", "CLAUSURA",
             "INFORME_TECNICO", "INFORME_SANITARIO_TABACO", "RETIRO_PSF", "REPROGRAMACION", "OTRO",
+        };
+
+        // Códigos válidos del Apartado II, en el mismo orden que CARGOS_RESPONSABLE
+        // (frontend) y que el CHECK CK_ACTA_RESPONSABLE_CARGO de la base de datos.
+        private static readonly string[] CargosValidos =
+        {
+            "REPRESENTANTE_LEGAL", "DENUNCIANTE", "PRESIDENTE", "DENUNCIADO", "ENCARGADO", "APODERADO", "OTRO",
+        };
+
+        // Códigos válidos del Apartado III, en el mismo orden que MOTIVOS_INSPECCION
+        // (frontend) y que el CHECK CK_ACTA_MOTIVO_VALOR de la base de datos.
+        private static readonly string[] MotivosValidos =
+        {
+            "PRIMERA_VEZ_PSF", "SEGUIMIENTO", "RENOVACION_PSF", "DENUNCIA", "LEY_9028_10066",
+            "EVENTO_MASIVO", "EMERGENCIA", "OTRO",
         };
 
         // Mismos tamaños que las columnas MOTIVO_REPROGRAMACION y ACCION_OTRO.
@@ -125,13 +154,28 @@ namespace SGGDIS_Api.Services
         {
             await VerificarActaExisteAsync(idActa);
 
+            var cargos = (dto.CargoResponsable ?? new List<string>())
+                .Select(cargo => cargo?.Trim() ?? string.Empty)
+                .Distinct()
+                .ToList();
+
+            if (cargos.Any(cargo => !CargosValidos.Contains(cargo)))
+            {
+                throw new ResponsableInvalidoException("Alguno de los cargos seleccionados no es válido.");
+            }
+
+            // Se guardan en el orden del catálogo, para que la misma selección
+            // siempre quede igual sin importar en qué orden se marcó.
+            var cargosOrdenados = CargosValidos.Where(cargos.Contains).ToList();
+
             var responsable = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaResponsable { IdActa = idActa });
 
             responsable.NombreResponsable = LimpiarOpcional(dto.NombreResponsable);
-            responsable.CargoResponsable = LimpiarOpcional(dto.CargoResponsable);
-            // El detalle libre de "Otro" solo tiene sentido si ese fue el cargo elegido;
-            // si el cargo es otro, se descarta para no dejar basura de una elección anterior.
-            responsable.CargoResponsableOtro = responsable.CargoResponsable == "OTRO"
+            responsable.CargoResponsable = cargosOrdenados.Count > 0 ? string.Join(",", cargosOrdenados) : null;
+            // El detalle libre de "Otro" solo tiene sentido si "Otro" está entre
+            // los cargos marcados; si no, se descarta para no dejar basura de una
+            // elección anterior.
+            responsable.CargoResponsableOtro = cargosOrdenados.Contains("OTRO")
                 ? LimpiarOpcional(dto.CargoResponsableOtro)
                 : null;
             responsable.NumeroIdentificacionResponsable = LimpiarOpcional(dto.NumeroIdentificacionResponsable);
@@ -143,12 +187,26 @@ namespace SGGDIS_Api.Services
         {
             await VerificarActaExisteAsync(idActa);
 
+            var motivos = (dto.MotivoInspeccion ?? new List<string>())
+                .Select(motivo => motivo?.Trim() ?? string.Empty)
+                .Distinct()
+                .ToList();
+
+            if (motivos.Any(motivo => !MotivosValidos.Contains(motivo)))
+            {
+                throw new MotivoInvalidoException("Alguno de los motivos seleccionados no es válido.");
+            }
+
+            // Se guardan en el orden del catálogo, para que la misma selección
+            // siempre quede igual sin importar en qué orden se marcó.
+            var motivosOrdenados = MotivosValidos.Where(motivos.Contains).ToList();
+
             var motivo = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaMotivo { IdActa = idActa });
 
-            motivo.MotivoInspeccion = LimpiarOpcional(dto.MotivoInspeccion);
-            // Igual que con el cargo del responsable: el detalle de "Otro" solo
-            // se conserva si ese es el motivo elegido.
-            motivo.MotivoInspeccionOtro = motivo.MotivoInspeccion == "OTRO"
+            motivo.MotivoInspeccion = motivosOrdenados.Count > 0 ? string.Join(",", motivosOrdenados) : null;
+            // Igual que con los cargos del responsable: el detalle de "Otro" solo
+            // se conserva si "Otro" está entre los motivos marcados.
+            motivo.MotivoInspeccionOtro = motivosOrdenados.Contains("OTRO")
                 ? LimpiarOpcional(dto.MotivoInspeccionOtro)
                 : null;
 

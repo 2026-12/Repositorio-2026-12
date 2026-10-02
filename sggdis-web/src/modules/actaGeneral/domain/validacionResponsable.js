@@ -4,15 +4,16 @@
 
 export function validarResponsable(datos) {
   const errores = {};
+  const cargoResponsable = datos.cargoResponsable ?? [];
 
   if (!datos.nombreResponsable?.trim()) {
     errores.nombreResponsable = 'El nombre de la persona responsable es obligatorio.';
   }
 
-  if (!datos.cargoResponsable) {
-    errores.cargoResponsable = 'Debe indicar el cargo de la persona que atendió la inspección.';
-  } else if (datos.cargoResponsable === 'OTRO' && !datos.cargoResponsableOtro?.trim()) {
-    // Si el cargo es "Otro", el literal del acta pide especificarlo por escrito.
+  if (cargoResponsable.length === 0) {
+    errores.cargoResponsable = 'Debe indicar al menos un cargo de la persona que atendió la inspección.';
+  } else if (cargoResponsable.includes('OTRO') && !datos.cargoResponsableOtro?.trim()) {
+    // Si "Otro" está entre los cargos marcados, el literal del acta pide especificarlo por escrito.
     errores.cargoResponsableOtro = 'Especifique el cargo.';
   }
 

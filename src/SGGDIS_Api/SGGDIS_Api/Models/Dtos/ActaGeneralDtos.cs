@@ -40,12 +40,13 @@ namespace SGGDIS_Api.Models.Dtos
     /// Datos del Apartado II (Información del Responsable durante la
     /// inspección). Igual que InfoGeneralActaDto, todo es opcional acá porque
     /// el autoguardado puede llamarse con el formulario a medio llenar.
+    /// CargoResponsable es selección múltiple, igual que Acciones (Apartado V).
     /// </summary>
     public class InfoResponsableActaDto
     {
         public string? NombreResponsable { get; set; }
 
-        public string? CargoResponsable { get; set; }
+        public List<string>? CargoResponsable { get; set; }
 
         public string? CargoResponsableOtro { get; set; }
 
@@ -53,13 +54,13 @@ namespace SGGDIS_Api.Models.Dtos
     }
 
     /// <summary>
-    /// Datos del Apartado III (Motivo de la inspección). Selección única entre
-    /// las opciones fijas del literal 3 del acta oficial; "OTRO" habilita el
-    /// detalle en MotivoInspeccionOtro.
+    /// Datos del Apartado III (Motivo de la inspección). Selección múltiple
+    /// entre las opciones fijas del literal 3 del acta oficial; "OTRO"
+    /// habilita el detalle en MotivoInspeccionOtro.
     /// </summary>
     public class InfoMotivoActaDto
     {
-        public string? MotivoInspeccion { get; set; }
+        public List<string>? MotivoInspeccion { get; set; }
 
         public string? MotivoInspeccionOtro { get; set; }
     }
@@ -147,11 +148,13 @@ namespace SGGDIS_Api.Models.Dtos
 
         // ---- Apartado II ----
         public string? NombreResponsable { get; set; }
+        // Códigos separados por coma (selección múltiple), ej. "REPRESENTANTE_LEGAL,OTRO".
         public string? CargoResponsable { get; set; }
         public string? CargoResponsableOtro { get; set; }
         public string? NumeroIdentificacionResponsable { get; set; }
 
         // ---- Apartado III ----
+        // Códigos separados por coma (selección múltiple), ej. "DENUNCIA,EMERGENCIA".
         public string? MotivoInspeccion { get; set; }
         public string? MotivoInspeccionOtro { get; set; }
 
