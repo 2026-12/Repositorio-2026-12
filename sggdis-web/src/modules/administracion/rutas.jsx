@@ -14,8 +14,7 @@ function RutaPanelAdministrador() {
   return (
     <PanelAdministrador
       correoAdministrador={sesion.correo}
-      onAbrirActaGeneral={() => navigate('/acta-general')}
-      onAbrirOrdenSanitaria={() => navigate('/orden-sanitaria')}
+      onMenuPrincipal={() => navigate('/inicio')}
       onCerrarSesion={manejarCierreSesion}
     />
   );

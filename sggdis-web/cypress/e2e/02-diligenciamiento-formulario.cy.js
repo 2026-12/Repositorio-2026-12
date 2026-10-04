@@ -17,17 +17,18 @@ function responderTodosCumple() {
   })
 }
 
+import { iniciarSesionComoInspector } from '../support/loginInspector'
+
 describe('Diligenciamiento del formulario de inspección', () => {
   beforeEach(() => {
     // Consecutivo distinto en cada prueba: es único en la BD, y con uno fijo
     // la 2da prueba de este archivo fallaba con 409 (ConsecutivoDuplicadoException).
     const numeroConsecutivo = String(Math.floor(1000 + Math.random() * 9000))
 
-    cy.visit('/')
+    iniciarSesionComoInspector()
     cy.get('.inicio__navLink').contains('Nueva inspección').click()
-    // Fecha y hora se auto-completan solas (campo de solo lectura).
-    cy.get('#region').select('HN')
-    cy.get('#area').select('F')
+    // Fecha, hora, región y área se auto-completan solas (el Inspector de
+    // prueba ya tiene un área asignada).
     cy.get('#numero-consecutivo').type(numeroConsecutivo)
     cy.get('#nombre').type('Soda Cypress Formulario')
     cy.get('.tipo-card').first().click()

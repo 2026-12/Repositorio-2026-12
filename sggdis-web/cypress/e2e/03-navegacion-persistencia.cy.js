@@ -6,16 +6,17 @@
 // Ya no existe .tabs__item--bloqueado: ahora todas las pestañas son
 // clicables, pero si dejás cosas pendientes en la sección actual, el click
 // no navega y muestra un aviso.
+import { iniciarSesionComoInspector } from '../support/loginInspector'
+
 describe('Navegación y persistencia del progreso', () => {
   beforeEach(() => {
     // Número de consecutivo distinto en cada prueba/corrida (ver nota en 02-diligenciamiento-formulario.cy.js).
     const numeroConsecutivo = String(Math.floor(1000 + Math.random() * 9000))
 
-    cy.visit('/')
+    iniciarSesionComoInspector()
     cy.get('.inicio__navLink').contains('Nueva inspección').click()
-    // Fecha y hora se auto-completan solas (campo de solo lectura).
-    cy.get('#region').select('HN')
-    cy.get('#area').select('F')
+    // Fecha, hora, región y área se auto-completan solas (el Inspector de
+    // prueba ya tiene un área asignada).
     cy.get('#numero-consecutivo').type(numeroConsecutivo)
     cy.get('#nombre').type('Soda Cypress Persistencia')
     cy.get('.tipo-card').first().click()

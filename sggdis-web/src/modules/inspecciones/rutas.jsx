@@ -14,6 +14,8 @@ function RutaInicioInspector() {
   return (
     <PantallaInicio
       onNuevaInspeccion={() => navigate('/inspeccion')}
+      onOrdenSanitaria={() => navigate('/orden-sanitaria')}
+      onActaGeneral={() => navigate('/acta-general')}
       onCerrarSesion={manejarCierreSesion}
     />
   );
@@ -35,6 +37,6 @@ function RutaInspeccion() {
 }
 
 export const rutasInspecciones = [
-  { path: '/inicio', element: <RutaInicioInspector />, roles: [ROLES.INSPECTOR] },
-  { path: '/inspeccion', element: <RutaInspeccion />, roles: [ROLES.INSPECTOR] },
+  { path: '/inicio', element: <RutaInicioInspector />, roles: [ROLES.INSPECTOR, ROLES.ADMINISTRADOR] },
+  { path: '/inspeccion', element: <RutaInspeccion />, roles: [ROLES.INSPECTOR, ROLES.ADMINISTRADOR] },
 ];
