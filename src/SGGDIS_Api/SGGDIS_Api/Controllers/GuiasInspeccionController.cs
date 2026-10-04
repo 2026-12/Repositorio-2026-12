@@ -24,6 +24,29 @@ namespace SGGDIS_Api.Controllers
             _logger = logger;
         }
 
+        // GET /api/guias-inspeccion
+        // Devuelve todas las guías registradas (id y nombre), para selectores
+        // como el de guías aplicables del Apartado IV del Acta General.
+        [HttpGet]
+        public async Task<IActionResult> ObtenerGuias()
+        {
+            try
+            {
+                var guias = await _seccionService.ObtenerGuiasAsync();
+
+                return Ok(guias.Select(guia => new
+                {
+                    guia.IdGuia,
+                    guia.Nombre
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener las guias de inspeccion.");
+                return StatusCode(500, "Ocurrió un error al obtener las guías de inspección.");
+            }
+        }
+
         // GET /api/guias-inspeccion/{idGuia}/tipos-establecimiento
         // Devuelve todos los tipos de establecimiento de una guía, con sus secciones.
         [HttpGet("{idGuia}/tipos-establecimiento")]

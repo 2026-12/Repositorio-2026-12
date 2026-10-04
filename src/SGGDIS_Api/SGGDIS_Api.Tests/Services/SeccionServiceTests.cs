@@ -95,5 +95,21 @@ namespace SGGDIS_Api.Tests.Services
             Assert.Single(tipos.First(t => t.Nombre == "Soda con Express").Secciones);
             Assert.Empty(tipos.First(t => t.Nombre == "Ventana").Secciones);
         }
+
+        [Fact]
+        public async Task ObtenerGuiasAsync_DevuelveTodasLasGuiasOrdenadasPorNombre()
+        {
+            // HU-009: el selector de guías aplicables del Acta General sale de INS_GUIA, no del frontend.
+            using var contexto = TestDbContextFactory.Crear();
+            contexto.Guias.AddRange(
+                new InsGuia { IdGuia = 1, Nombre = "Guia de Servicios de Alimentacion", Categoria = "Alimentos" },
+                new InsGuia { IdGuia = 2, Nombre = "Guia de Centros Educativos", Categoria = "Educacion" });
+            contexto.SaveChanges();
+            var servicio = new SeccionService(contexto);
+
+            var guias = await servicio.ObtenerGuiasAsync();
+
+            Assert.Equal(new[] { 2, 1 }, guias.Select(g => g.IdGuia));
+        }
     }
 }

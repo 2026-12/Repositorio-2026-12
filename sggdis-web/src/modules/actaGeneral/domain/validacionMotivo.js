@@ -3,11 +3,12 @@
 
 export function validarMotivo(datos) {
   const errores = {};
+  const motivoInspeccion = datos.motivoInspeccion ?? [];
 
-  if (!datos.motivoInspeccion) {
-    errores.motivoInspeccion = 'Debe seleccionar el motivo de la inspección.';
-  } else if (datos.motivoInspeccion === 'OTRO' && !datos.motivoInspeccionOtro?.trim()) {
-    // Si el motivo es "Otro", el literal del acta pide especificarlo por escrito.
+  if (motivoInspeccion.length === 0) {
+    errores.motivoInspeccion = 'Debe seleccionar al menos un motivo de la inspección.';
+  } else if (motivoInspeccion.includes('OTRO') && !datos.motivoInspeccionOtro?.trim()) {
+    // Si "Otro" está entre los motivos marcados, el literal del acta pide especificarlo por escrito.
     errores.motivoInspeccionOtro = 'Especifique el motivo.';
   }
 

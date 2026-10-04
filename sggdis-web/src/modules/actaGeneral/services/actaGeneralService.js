@@ -62,6 +62,54 @@ export function guardarMotivo(idActa, datos) {
   });
 }
 
+// Guarda (autoguardado) el Apartado IV - Hallazgos de la inspección.
+export function guardarHallazgos(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/hallazgos`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      idsGuias: datos.idsGuias,
+      hallazgos: datos.hallazgos,
+    }),
+  });
+}
+
+// Guarda (autoguardado) el Apartado V - Acciones a seguir.
+export function guardarAcciones(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/acciones`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      acciones: datos.acciones,
+      motivoReprogramacion: datos.motivoReprogramacion,
+      accionOtro: datos.accionOtro,
+    }),
+  });
+}
+
+// Guarda (autoguardado) el Apartado VI - Cierre de la inspección. El "id" de
+// cada persona solo existe en el frontend (key de React), no se envía.
+export function guardarCierre(idActa, datos) {
+  return solicitarJson(`${API_BASE_URL}/api/actas-generales/${idActa}/cierre`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      personasPresentes: datos.personasPresentes.map((persona) => ({
+        nombreCompleto: persona.nombreCompleto,
+        cargoInstitucion: persona.cargoInstitucion,
+        numeroIdentificacion: persona.numeroIdentificacion,
+        firma: persona.firma,
+      })),
+    }),
+  });
+}
+
+// Trae el catálogo de guías de inspección (INS_GUIA) para el selector de
+// guías aplicables del Apartado IV: [{ idGuia, nombre }].
+export function obtenerGuias() {
+  return solicitarJson(`${API_BASE_URL}/api/guias-inspeccion`);
+}
+
 // Descarta el acta en curso (el inspector salió sin terminarla desde
 // "Volver al menú"), para que no quede ocupando un folio a medio llenar.
 export function eliminarActaGeneral(idActa) {
