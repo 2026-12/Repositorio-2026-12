@@ -1,0 +1,1 @@
+export { existeProgresoGuardado } from './services/progresoInspeccionService';

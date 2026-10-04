@@ -19,6 +19,10 @@ namespace SGGDIS_Api.Data
         public DbSet<InsItem> Items => Set<InsItem>();
         public DbSet<InsInspeccion> Inspecciones { get; set; }
         public DbSet<InsRespuesta> Respuestas { get; set; }
+        public DbSet<SegUsuario> Usuarios => Set<SegUsuario>();
+        public DbSet<SegRegion> Regiones => Set<SegRegion>();
+        public DbSet<SegArea> Areas => Set<SegArea>();
+        public DbSet<SegSesion> Sesiones => Set<SegSesion>();
         public DbSet<InsActaGeneral> ActasGenerales => Set<InsActaGeneral>();
 
         // Órdenes Sanitarias 
@@ -68,6 +72,41 @@ namespace SGGDIS_Api.Data
             modelBuilder.Entity<InsInspeccion>()
                 .HasIndex(i => i.Consecutivo)
                 .IsUnique();
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasIndex(u => u.Correo)
+                .IsUnique();
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasIndex(u => u.Identificacion)
+                .IsUnique();
+
+            modelBuilder.Entity<SegSesion>()
+                .HasIndex(s => s.HashToken)
+                .IsUnique();
+
+            modelBuilder.Entity<SegRegion>()
+                .HasIndex(region => region.Codigo)
+                .IsUnique();
+
+            modelBuilder.Entity<SegArea>()
+                .HasIndex(area => new { area.IdRegion, area.Codigo })
+                .IsUnique();
+
+            modelBuilder.Entity<SegArea>()
+                .HasOne(area => area.Region)
+                .WithMany(region => region.Areas)
+                .HasForeignKey(area => area.IdRegion);
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasOne(usuario => usuario.Area)
+                .WithMany(area => area.Usuarios)
+                .HasForeignKey(usuario => usuario.IdArea);
+
+            modelBuilder.Entity<SegUsuario>()
+                .HasOne(usuario => usuario.Region)
+                .WithMany()
+                .HasForeignKey(usuario => usuario.IdRegion);
 
             // Una Orden Sanitaria puede contener varias ordenanzas. 
             modelBuilder.Entity<OrdenSanitaria>()

@@ -1,0 +1,1 @@
+export { default as PanelAdministrador } from './components/PanelAdministrador';

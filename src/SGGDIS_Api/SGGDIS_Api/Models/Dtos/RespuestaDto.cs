@@ -34,6 +34,8 @@ namespace SGGDIS_Api.Models.Dtos
         // Folio de la inspección.
         public string Consecutivo { get; set; } = string.Empty;
 
+        public int IdArea { get; set; }
+
         // Fecha de la inspección.
         public DateTime Fecha { get; set; }
     }
@@ -45,12 +47,6 @@ namespace SGGDIS_Api.Models.Dtos
     /// </summary>
     public class CerrarInspeccionDto
     {
-        // Nombre de quien realizó la inspección.
-        public string NombreInspector { get; set; } = string.Empty;
-
-        // Identificación de quien realizó la inspección.
-        public string IdentificacionInspector { get; set; } = string.Empty;
-
         // Identificación de quien representó al establecimiento en la visita.
         public string IdentificacionRepresentante { get; set; } = string.Empty;
 

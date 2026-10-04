@@ -2,6 +2,7 @@
 using SGGDIS_Api.Data;
 using SGGDIS_Api.Models;
 using SGGDIS_Api.Models.Dtos;
+using SGGDIS_Api.Security;
 
 namespace SGGDIS_Api.Services
 {
@@ -24,7 +25,13 @@ namespace SGGDIS_Api.Services
     public class CamposCierreIncompletosException : Exception
     {
         public CamposCierreIncompletosException()
-            : base("Los datos del inspector y la identificación del representante son obligatorios para cerrar la inspección.") { }
+            : base("La identificación del representante es obligatoria para cerrar la inspección.") { }
+    }
+
+    public class InspectorNoDisponibleException : Exception
+    {
+        public InspectorNoDisponibleException()
+            : base("No se pudo obtener la identidad del inspector autenticado.") { }
     }
 
     /// <summary>
@@ -44,7 +51,7 @@ namespace SGGDIS_Api.Services
         }
 
         // Crea la inspección en "EN_PROCESO". Antes valida que el consecutivo no esté repetido.
-        public async Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto)
+        public async Task<InsInspeccion> CrearInspeccionAsync(CrearInspeccionDto dto, int idUsuario)
         {
             var consecutivoExiste = await _context.Inspecciones
                 .AnyAsync(inspeccion => inspeccion.Consecutivo == dto.Consecutivo);
@@ -53,14 +60,28 @@ namespace SGGDIS_Api.Services
                 throw new ConsecutivoDuplicadoException();
             }
 
+            var inspector = await _context.Usuarios.AsNoTracking().SingleOrDefaultAsync(usuario =>
+                usuario.IdUsuario == idUsuario && usuario.Activo == "S" &&
+                usuario.Rol == RolesSistema.Inspector && usuario.IdArea == dto.IdArea);
+            if (inspector is null || string.IsNullOrWhiteSpace(inspector.Nombre) ||
+                string.IsNullOrWhiteSpace(inspector.PrimerApellido) ||
+                string.IsNullOrWhiteSpace(inspector.SegundoApellido) ||
+                string.IsNullOrWhiteSpace(inspector.Identificacion))
+            {
+                throw new InspectorNoDisponibleException();
+            }
+
             var inspeccion = new InsInspeccion
             {
                 IdGuia = dto.IdGuia,
                 IdTipoEstablecimiento = dto.IdTipoEstablecimiento,
+                IdArea = dto.IdArea,
                 NombreEstablecimiento = dto.NombreEstablecimiento,
                 Consecutivo = dto.Consecutivo,
                 Fecha = dto.Fecha,
-                Estado = "EN_PROCESO"
+                Estado = "EN_PROCESO",
+                NombreInspector = string.Join(' ', inspector.Nombre.Trim(), inspector.PrimerApellido.Trim(), inspector.SegundoApellido.Trim()),
+                IdentificacionInspector = inspector.Identificacion.Trim()
             };
             _context.Inspecciones.Add(inspeccion);
             await _context.SaveChangesAsync();
@@ -132,11 +153,9 @@ namespace SGGDIS_Api.Services
         /// - valida campos obligatorios y que no queden ítems sin responder
         /// - calcula puntaje y máximo real (resta los N/A, no deberían contar)
         /// - clasifica y guarda todo, pasa la inspección a FINALIZADA
-        public async Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion, CerrarInspeccionDto dto)
+        public async Task<ResumenCierreDto> CerrarInspeccionAsync(int idInspeccion, CerrarInspeccionDto dto, int? idUsuario = null)
         {
-            if (string.IsNullOrWhiteSpace(dto.NombreInspector) ||
-                string.IsNullOrWhiteSpace(dto.IdentificacionInspector) ||
-                string.IsNullOrWhiteSpace(dto.IdentificacionRepresentante))
+            if (string.IsNullOrWhiteSpace(dto.IdentificacionRepresentante))
             {
                 throw new CamposCierreIncompletosException();
             }
@@ -148,6 +167,28 @@ namespace SGGDIS_Api.Services
             if (inspeccion is null)
             {
                 throw new KeyNotFoundException("La inspección no existe.");
+            }
+
+            if (string.IsNullOrWhiteSpace(inspeccion.NombreInspector) ||
+                string.IsNullOrWhiteSpace(inspeccion.IdentificacionInspector))
+            {
+                SegUsuario? inspector = null;
+                if (idUsuario.HasValue)
+                {
+                    inspector = await _context.Usuarios.AsNoTracking().SingleOrDefaultAsync(usuario =>
+                    usuario.IdUsuario == idUsuario.Value && usuario.Activo == "S" &&
+                    usuario.Rol == RolesSistema.Inspector);
+                }
+                if (inspector is null || string.IsNullOrWhiteSpace(inspector.Nombre) ||
+                    string.IsNullOrWhiteSpace(inspector.PrimerApellido) ||
+                    string.IsNullOrWhiteSpace(inspector.SegundoApellido) ||
+                    string.IsNullOrWhiteSpace(inspector.Identificacion))
+                {
+                    throw new InspectorNoDisponibleException();
+                }
+
+                inspeccion.NombreInspector = string.Join(' ', inspector.Nombre.Trim(), inspector.PrimerApellido.Trim(), inspector.SegundoApellido.Trim());
+                inspeccion.IdentificacionInspector = inspector.Identificacion.Trim();
             }
 
             var idsItemsObligatorios = await _context.Items
@@ -190,8 +231,6 @@ namespace SGGDIS_Api.Services
             var clasificacion = ClasificarPorcentaje(porcentaje);
 
             inspeccion.Estado = "FINALIZADA";
-            inspeccion.NombreInspector = dto.NombreInspector.Trim();
-            inspeccion.IdentificacionInspector = dto.IdentificacionInspector.Trim();
             inspeccion.IdentificacionRepresentante = dto.IdentificacionRepresentante.Trim();
             inspeccion.ObservacionesFinales = string.IsNullOrWhiteSpace(dto.ObservacionesFinales)
                 ? null

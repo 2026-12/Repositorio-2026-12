@@ -1,9 +1,11 @@
 // Sprint 1 — Flujo 1: Arranque de inspección (HU-005A).
 // Chequea que "Comenzar inspección" quede deshabilitado sin datos, y que se
 // pueda crear una inspección llenando fecha, consecutivo, nombre y tipo.
+import { iniciarSesionComoInspector } from '../support/loginInspector'
+
 describe('Arranque de inspección', () => {
   beforeEach(() => {
-    cy.visit('/')
+    iniciarSesionComoInspector()
     cy.get('.inicio__navLink').contains('Nueva inspección').click()
   })
 
@@ -20,9 +22,10 @@ describe('Arranque de inspección', () => {
     // Fecha y hora se auto-completan solas (el campo quedó de solo lectura),
     // no hace falta interactuar con #fecha ni con #hora.
 
-    // Dirección Regional y Área Rectora de Salud (selects obligatorios)
-    cy.get('#region').select('HN')
-    cy.get('#area').select('F')
+    // Región y área ya vienen precargadas y deshabilitadas: el Inspector de
+    // prueba ya tiene un área asignada por el Administrador.
+    cy.get('#region').should('be.disabled')
+    cy.get('#area').should('be.disabled')
 
     // N° consecutivo (el año ya no es editable, queda fijo)
     cy.get('#numero-consecutivo').type(numeroConsecutivo)

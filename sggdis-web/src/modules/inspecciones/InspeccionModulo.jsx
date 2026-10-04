@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import SeleccionEstablecimiento from './components/SeleccionEstablecimiento';
 import ModalConfirmacionSalida from './components/ModalConfirmacionSalida';
 import FormularioSeccionB from './inspeccionAlimentos/components/FormularioSeccionB';
@@ -33,7 +33,18 @@ const COMPONENTES_POR_CODIGO = {
 // Acá vive toda la lógica del módulo: decide qué paso mostrar (selección,
 // formulario, o cierre) y guarda el estado de la inspección en curso.
 // App.jsx solo decide cuándo montar este módulo.
-function InspeccionModulo({ onVolverInicio }) {
+function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
+  const areaAsignada = sesion.idArea ? {
+    idArea: sesion.idArea,
+    codigoRegion: sesion.codigoRegion,
+    codigoArea: sesion.codigoArea,
+    nombreRegion: sesion.nombreRegion,
+    nombreArea: sesion.nombreArea,
+  } : null;
+  const identidadInspector = {
+    nombreCompleto: [sesion.nombre, sesion.primerApellido, sesion.segundoApellido].filter(Boolean).join(' '),
+    identificacion: sesion.identificacion ?? '',
+  };
   // Al montar, intenta recuperar una inspección a medias desde localStorage.
   // Se lee una sola vez.
   const [progresoGuardado] = useState(cargarProgreso);
@@ -267,10 +278,13 @@ function InspeccionModulo({ onVolverInicio }) {
   // Todavía no se eligió un establecimiento.
   if (!datos) {
     return (
-      <SeleccionEstablecimiento
-        onComenzar={setDatos}
-        onVolverInicio={onVolverInicio}
-      />
+      <Suspense fallback={<main className="app-loading" role="status">Cargando selección...</main>}>
+        <SeleccionEstablecimiento
+          onComenzar={setDatos}
+          onVolverInicio={onVolverInicio}
+          areaAsignada={areaAsignada}
+        />
+      </Suspense>
     );
   }
 
@@ -351,12 +365,14 @@ function InspeccionModulo({ onVolverInicio }) {
       )}
 
       {salida.mostrar && (
-        <ModalConfirmacionSalida
-          error={salida.error}
-          eliminando={salida.eliminando}
-          onCancelar={salida.cancelar}
-          onConfirmar={salirSinGuardar}
-        />
+        <Suspense fallback={null}>
+          <ModalConfirmacionSalida
+            error={salida.error}
+            eliminando={salida.eliminando}
+            onCancelar={salida.cancelar}
+            onConfirmar={salirSinGuardar}
+          />
+        </Suspense>
       )}
     </>
   );
@@ -368,18 +384,29 @@ function InspeccionModulo({ onVolverInicio }) {
       <>
         {mensajesGlobales}
 
-        <FormularioCierreInspeccion
-          datos={datos}
-          vistas={wizard.vistas}
-          seccionesCache={seccionesCache}
-          respuestas={respuestas}
-          datosCierre={datosCierre}
-          onDatosCierreChange={actualizarDatosCierre}
-          onAnterior={volverDeCierre}
-          onFinalizado={manejarInspeccionFinalizada}
-          paso={TOTAL_PASOS_ALIMENTOS}
-          totalPasos={TOTAL_PASOS_ALIMENTOS}
-        />
+        <Suspense fallback={<div role="status">Cargando cierre...</div>}>
+          <FormularioCierreInspeccion
+            identidadInspector={identidadInspector}
+            datos={datos}
+            vistas={wizard.vistas}
+            seccionesCache={seccionesCache}
+            respuestas={respuestas}
+            datosCierre={datosCierre}
+            onDatosCierreChange={actualizarDatosCierre}
+            onAnterior={volverDeCierre}
+            onFinalizado={manejarInspeccionFinalizada}
+            onCrearOrdenSanitaria={() => onCrearOrdenSanitaria?.({
+              idInspeccion: datos.idInspeccion,
+              consecutivo: datos.consecutivo,
+              nombreEstablecimiento: datos.nombre,
+              nombrePersonaNotificar: '',
+              identificacionPersonaNotificar: datosCierre.identificacionRepresentante,
+              tipoEstablecimiento: datos.tipoLabel,
+            })}
+            paso={TOTAL_PASOS_ALIMENTOS}
+            totalPasos={TOTAL_PASOS_ALIMENTOS}
+          />
+        </Suspense>
       </>
     );
   }
@@ -405,37 +432,39 @@ function InspeccionModulo({ onVolverInicio }) {
       <>
         {mensajesGlobales}
 
-        <Formulario
-          datos={datos}
-          codigo={wizard.vistaActual?.codigo}
-          titulo={
-            wizard.vistaActual?.secciones[0]
-              ?.nombre ??
-            'Sección de inspección'
-          }
-          paso={wizard.indice + 1}
-          totalPasos={wizard.vistas.length}
-          tabActivo={wizard.indice}
-          onAnterior={manejarAnterior}
-          onSiguiente={avanzarYGuardar}
-          onVolverInicio={salida.abrir}
-          puedeRetroceder
-          respuestas={respuestas}
-          onRespuestasChange={actualizarRespuestas}
-          seccionInicial={
-            seccionesCache[
-              wizard.vistaActual?.codigo
-            ]
-          }
-          seccionesCache={seccionesCache}
-          onSeccionCargada={registrarSeccion}
-          onIrAVista={wizard.irAVista}
-          maxAlcanzado={wizard.maxAlcanzado}
-          indiceActual={wizard.indice}
-          vistas={wizard.vistas}
-          marcarVistaCompleta={wizard.marcarVistaCompleta}
-          guardando={sincronizacion.guardando}
-        />
+        <Suspense fallback={<div role="status">Cargando sección...</div>}>
+          <Formulario
+            datos={datos}
+            codigo={wizard.vistaActual?.codigo}
+            titulo={
+              wizard.vistaActual?.secciones[0]
+                ?.nombre ??
+              'Sección de inspección'
+            }
+            paso={wizard.indice + 1}
+            totalPasos={wizard.vistas.length}
+            tabActivo={wizard.indice}
+            onAnterior={manejarAnterior}
+            onSiguiente={avanzarYGuardar}
+            onVolverInicio={salida.abrir}
+            puedeRetroceder
+            respuestas={respuestas}
+            onRespuestasChange={actualizarRespuestas}
+            seccionInicial={
+              seccionesCache[
+                wizard.vistaActual?.codigo
+              ]
+            }
+            seccionesCache={seccionesCache}
+            onSeccionCargada={registrarSeccion}
+            onIrAVista={wizard.irAVista}
+            maxAlcanzado={wizard.maxAlcanzado}
+            indiceActual={wizard.indice}
+            vistas={wizard.vistas}
+            marcarVistaCompleta={wizard.marcarVistaCompleta}
+            guardando={sincronizacion.guardando}
+          />
+        </Suspense>
       </>
     );
   }
@@ -445,26 +474,28 @@ function InspeccionModulo({ onVolverInicio }) {
     <>
       {mensajesGlobales}
 
-      <Formulario
-        datos={datos}
-        onAnterior={manejarAnterior}
-        onSiguiente={avanzarYGuardar}
-        onVolverInicio={salida.abrir}
-        puedeRetroceder
-        puedeAvanzar={wizard.puedeAvanzar}
-        respuestas={respuestas}
-        onRespuestasChange={actualizarRespuestas}
-        paso={wizard.indice + 1}
-        totalPasos={wizard.vistas.length}
-        seccionesCache={seccionesCache}
-        onSeccionCargada={registrarSeccion}
-        onIrAVista={wizard.irAVista}
-        maxAlcanzado={wizard.maxAlcanzado}
-        indiceActual={wizard.indice}
-        vistas={wizard.vistas}
-        marcarVistaCompleta={wizard.marcarVistaCompleta}
-        guardando={sincronizacion.guardando}
-      />
+      <Suspense fallback={<div role="status">Cargando sección...</div>}>
+        <Formulario
+          datos={datos}
+          onAnterior={manejarAnterior}
+          onSiguiente={avanzarYGuardar}
+          onVolverInicio={salida.abrir}
+          puedeRetroceder
+          puedeAvanzar={wizard.puedeAvanzar}
+          respuestas={respuestas}
+          onRespuestasChange={actualizarRespuestas}
+          paso={wizard.indice + 1}
+          totalPasos={wizard.vistas.length}
+          seccionesCache={seccionesCache}
+          onSeccionCargada={registrarSeccion}
+          onIrAVista={wizard.irAVista}
+          maxAlcanzado={wizard.maxAlcanzado}
+          indiceActual={wizard.indice}
+          vistas={wizard.vistas}
+          marcarVistaCompleta={wizard.marcarVistaCompleta}
+          guardando={sincronizacion.guardando}
+        />
+      </Suspense>
     </>
   );
 }

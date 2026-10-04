@@ -52,8 +52,6 @@ export function obtenerVistasIncompletas(vistas = [], seccionesCache = {}, respu
 // Valor inicial del formulario de cierre. Sin "nombreRepresentante": ya no
 // se le pide al usuario, se usa datos.nombre (capturado en SeleccionEstablecimiento).
 export const DATOS_CIERRE_INICIALES = {
-  nombreInspector: '',
-  identificacionInspector: '',
   identificacionRepresentante: '',
   observacionesFinales: '',
   ordenSanitaria: false,
@@ -75,43 +73,15 @@ export function limpiarSoloNumeros(valor = '') {
   return valor.replace(/\D/g, '');
 }
 
-// Valida los campos obligatorios del cierre: presencia, formato (nombre
-// solo letras, identificaciones solo números) y que inspector y
-// representante no compartan la misma identificación.
-export function obtenerCamposCierrePendientes({
-  nombreInspector,
-  identificacionInspector,
-  identificacionRepresentante,
-}) {
+// La identidad del inspector viene de su cuenta; en el cierre solo valida la contraparte.
+export function obtenerCamposCierrePendientes({ identificacionRepresentante }) {
   const pendientes = [];
-
-  const nombre = nombreInspector?.trim() ?? '';
-  if (!nombre) {
-    pendientes.push('Nombre del inspector');
-  } else if (!NOMBRE_INSPECTOR_REGEX.test(nombre)) {
-    pendientes.push('Nombre del inspector (solo se permiten letras y espacios)');
-  }
-
-  const idInspector = identificacionInspector?.trim() ?? '';
-  if (!idInspector) {
-    pendientes.push('Identificación del inspector');
-  } else if (!IDENTIFICACION_REGEX.test(idInspector)) {
-    pendientes.push('Identificación del inspector (solo se permiten números)');
-  }
 
   const idRepresentante = identificacionRepresentante?.trim() ?? '';
   if (!idRepresentante) {
     pendientes.push('Identificación del representante del establecimiento');
   } else if (!IDENTIFICACION_REGEX.test(idRepresentante)) {
     pendientes.push('Identificación del representante del establecimiento (solo se permiten números)');
-  }
-
-  const ambasValidasYPresentes =
-    idInspector && idRepresentante &&
-    IDENTIFICACION_REGEX.test(idInspector) && IDENTIFICACION_REGEX.test(idRepresentante);
-
-  if (ambasValidasYPresentes && idInspector === idRepresentante) {
-    pendientes.push('Identificación del inspector y del representante (no pueden ser iguales)');
   }
 
   return pendientes;

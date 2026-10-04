@@ -26,7 +26,7 @@ function obtenerFechaHoraActual() {
 // Primera pantalla de una inspección nueva: fecha/hora, consecutivo, nombre
 // y tipo de establecimiento. Al confirmar crea la inspección en el backend
 // y arranca el wizard de secciones.
-function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
+function SeleccionEstablecimiento({ onComenzar, onVolverInicio, areaAsignada }) {
   const [fechaHoraInicial] = useState(() => obtenerFechaHoraActual());
 
   const fecha = fechaHoraInicial.fecha;
@@ -35,8 +35,8 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
 
-  const [regionCodigo, setRegionCodigo] = useState('');
-  const [areaCodigo, setAreaCodigo] = useState('');
+  const [regionCodigo, setRegionCodigo] = useState(areaAsignada?.codigoRegion ?? '');
+  const [areaCodigo, setAreaCodigo] = useState(areaAsignada?.codigoArea ?? '');
 
   // El consecutivo se compone de la región, el área rectora,
   // un número de 4 dígitos y el año actual.
@@ -74,6 +74,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
   // El botón "Comenzar inspección" solo se habilita si todos los campos
   // obligatorios están completos.
   const puedeComenzar =
+    Boolean(areaAsignada?.idArea) &&
     fecha !== null &&
     regionSeleccionada &&
     areaSeleccionada &&
@@ -105,6 +106,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
         nombreEstablecimiento: nombre,
         consecutivo,
         fecha: fechaHoraInspeccion,
+        idArea: areaAsignada?.idArea,
       });
 
       onComenzar({
@@ -176,6 +178,17 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
           Nueva inspección: Servicios de Alimentación
         </h2>
 
+        {areaAsignada && (
+          <p className="seleccion-area-asignada">
+            Área asignada: {areaAsignada.nombreRegion} / {areaAsignada.nombreArea}
+          </p>
+        )}
+        {!areaAsignada && (
+          <div className="alerta-error" role="alert">
+            Su usuario aún no tiene un área asignada. Contacte al Administrador.
+          </div>
+        )}
+
         {(errorCreacion || error) && (
           <div
             className="alerta-error"
@@ -232,6 +245,7 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
             <select
               id="region"
               value={regionCodigo}
+              disabled={Boolean(areaAsignada)}
               onChange={(e) => {
                 setRegionCodigo(e.target.value);
                 setAreaCodigo('');
@@ -260,10 +274,10 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio }) {
             <select
               id="area"
               value={areaCodigo}
+              disabled={!regionSeleccionada || Boolean(areaAsignada)}
               onChange={(e) =>
                 setAreaCodigo(e.target.value)
               }
-              disabled={!regionSeleccionada}
             >
               <option value="">
                 Seleccione un área rectora

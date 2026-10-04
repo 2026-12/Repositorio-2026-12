@@ -5,7 +5,7 @@ import { useCierreInspeccion } from '../../hooks/useCierreInspeccion';
 import { cerrarInspeccion } from '../../services/inspeccionesService';
 import AlertaError from '../../components/AlertaError';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
-import { limpiarSoloLetras, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
+import { limpiarSoloNumeros } from '../../domain/cierreInspeccion';
 import './formulario.css';
 
 // Convierte fecha localizada a formato ISO
@@ -28,6 +28,7 @@ function convertirFechaAISO(fechaLocalizada) {
 // puntaje con clasificación automática y la opción de orden sanitaria.
 // El porcentaje se calcula sobre el máximo real no sobre el máximo fijo del catálogo.
 export default function FormularioCierreInspeccion({
+  identidadInspector,
   datos,
   vistas = [],
   seccionesCache = {},
@@ -36,6 +37,7 @@ export default function FormularioCierreInspeccion({
   onDatosCierreChange,
   onAnterior,
   onFinalizado,
+  onCrearOrdenSanitaria,
   paso,
   totalPasos,
 }) {
@@ -61,30 +63,35 @@ export default function FormularioCierreInspeccion({
   });
 
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
+  const [mostrarVistaPrevia, setMostrarVistaPrevia] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState(null);
   const [cierreConfirmado, setCierreConfirmado] = useState(null);
 
   // Si falta algo (sección incompleta o campo obligatorio), muestra la
-  // alerta en vez de enviar. Si todo está bien, envía el cierre y guarda
-  // la confirmación (activa la pantalla de éxito de abajo).
-  const manejarFinalizar = async () => {
+  // alerta en vez de enviar. Si todo está bien, no envía todavía: abre la
+  // vista previa para que el inspector confirme antes del envío real.
+  const abrirVistaPrevia = () => {
     if (!puedeEnviar) {
       setMostrarAlerta(true);
       return;
     }
     setMostrarAlerta(false);
+    setMostrarVistaPrevia(true);
+  };
+
+  // Envío real del cierre, se dispara solo desde la vista previa.
+  const manejarFinalizar = async () => {
     setErrorEnvio(null);
     setEnviando(true);
     try {
       const confirmacion = await cerrarInspeccion(datos.idInspeccion, {
-        nombreInspector: datosCierre.nombreInspector.trim(),
-        identificacionInspector: datosCierre.identificacionInspector.trim(),
         identificacionRepresentante: datosCierre.identificacionRepresentante.trim(),
         observacionesFinales: datosCierre.observacionesFinales.trim() || null,
         registrarOrdenSanitaria: datosCierre.ordenSanitaria,
       });
       setCierreConfirmado(confirmacion);
+      setMostrarVistaPrevia(false);
     } catch (error) {
       setErrorEnvio(error.message);
     } finally {
@@ -127,9 +134,18 @@ export default function FormularioCierreInspeccion({
             </div>
 
             {datosCierre.ordenSanitaria && (
-              <p className="cierre__confirmacion-orden">
-                ⚠ Se registró la notificación por Orden Sanitaria (Art. 65).
-              </p>
+              <>
+                <p className="cierre__confirmacion-orden">
+                  Se indicó que se requiere emitir una Orden Sanitaria (Art. 65).
+                </p>
+                <button
+                  type="button"
+                  className="boton boton--secundario boton--ancho"
+                  onClick={onCrearOrdenSanitaria}
+                >
+                  Continuar con la Orden Sanitaria
+                </button>
+              </>
             )}
 
             <button type="button" className="boton boton--primario boton--ancho" onClick={onFinalizado}>
@@ -137,6 +153,92 @@ export default function FormularioCierreInspeccion({
             </button>
           </section>
         </div>
+      </div>
+    );
+  }
+
+  // Pantalla de vista previa: resume lo que se va a enviar y pide
+  // confirmación explícita antes de disparar el envío real al backend.
+  if (mostrarVistaPrevia) {
+    return (
+      <div className="pagina">
+        <header className="cabecera">
+          <div className="cabecera__marca">
+            <div className="cabecera__logo cabecera__logo--imagen">
+              <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
+            </div>
+            <div>
+              <h1>{MARCA_ALIMENTOS.tituloGuia}</h1>
+              <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
+            </div>
+          </div>
+          <div className="cabecera__estado">
+            <span className="chip chip--info">{datos.tipoLabel}</span>
+          </div>
+        </header>
+
+        <main className="tarjeta">
+          <div className="tarjeta__encabezado">
+            <span className="tarjeta__etiqueta">VISTA PREVIA</span>
+            <div className="tarjeta__titulo-fila">
+              <h2>Confirme los datos antes de enviar</h2>
+            </div>
+          </div>
+
+          {errorEnvio && <AlertaError titulo="No se pudo registrar el cierre" mensaje={errorEnvio} />}
+
+          <div className="cierre__campos-grid">
+            <div className="campo">
+              <span className="cierre__info-label">Inspector responsable</span>
+              <p>{identidadInspector?.nombreCompleto ?? '—'}</p>
+            </div>
+            <div className="campo">
+              <span className="cierre__info-label">Identificación del inspector</span>
+              <p>{identidadInspector?.identificacion ?? '—'}</p>
+            </div>
+          </div>
+
+          <div className="cierre__campos-grid">
+            <div className="campo">
+              <span className="cierre__info-label">Fecha</span>
+              <p>{datos.fecha || '—'}</p>
+            </div>
+            <div className="campo">
+              <span className="cierre__info-label">Hora</span>
+              <p>{datos.hora || '—'}</p>
+            </div>
+          </div>
+
+          <div className="campo">
+            <span className="cierre__info-label">Identificación del representante</span>
+            <p>{datosCierre.identificacionRepresentante || '—'}</p>
+          </div>
+
+          <div className="campo">
+            <span className="cierre__info-label">Observaciones finales</span>
+            <p>{datosCierre.observacionesFinales || 'Sin observaciones'}</p>
+          </div>
+
+          <div className="campo">
+            <span className="cierre__info-label">Orden sanitaria</span>
+            <p>{datosCierre.ordenSanitaria ? 'Sí, se requiere emitir' : 'No se requiere'}</p>
+          </div>
+
+          <div className="cierre__puntaje-box">
+            <span className="cierre__puntaje-label">Resultado obtenido</span>
+            <strong className="cierre__puntaje-valor">{porcentaje}%</strong>
+            <span className="cierre__puntaje-clasificacion">{clasificacion.etiqueta}</span>
+          </div>
+        </main>
+
+        <footer className="pie">
+          <button type="button" className="boton boton--secundario" onClick={() => setMostrarVistaPrevia(false)} disabled={enviando}>
+            ← Volver a editar
+          </button>
+          <button type="button" className="boton boton--primario" onClick={manejarFinalizar} disabled={enviando}>
+            {enviando ? 'Registrando…' : 'Confirmar y enviar ✓'}
+          </button>
+        </footer>
       </div>
     );
   }
@@ -248,22 +350,21 @@ export default function FormularioCierreInspeccion({
             {/* CAMPOS DEL FORMULARIO EN GRID 2 COLUMNAS */}
             <div className="cierre__campos-grid">
               <div className="campo">
-                <label htmlFor="nombre-inspector">Inspector responsable *</label>
+                <label htmlFor="nombre-inspector">Inspector responsable</label>
                 <input
                   id="nombre-inspector"
                   type="text"
-                  value={datosCierre.nombreInspector}
-                  onChange={(e) => actualizarCampo('nombreInspector', limpiarSoloLetras(e.target.value))}
+                  value={identidadInspector?.nombreCompleto ?? ''}
+                  readOnly
                 />
               </div>
               <div className="campo">
-                <label htmlFor="id-inspector">Identificación del inspector *</label>
+                <label htmlFor="id-inspector">Identificación del inspector</label>
                 <input
                   id="id-inspector"
                   type="text"
-                  inputMode="numeric"
-                  value={datosCierre.identificacionInspector}
-                  onChange={(e) => actualizarCampo('identificacionInspector', limpiarSoloNumeros(e.target.value))}
+                  value={identidadInspector?.identificacion ?? ''}
+                  readOnly
                 />
               </div>
             </div>
@@ -332,8 +433,8 @@ export default function FormularioCierreInspeccion({
           ← Anterior
         </button>
         <span>Paso {paso}{totalPasos ? ` de ${totalPasos}` : ''}</span>
-        <button type="button" className="boton boton--secundario" onClick={manejarFinalizar} disabled={enviando}>
-          {enviando ? 'Registrando…' : 'Finalizar inspección ✓'}
+        <button type="button" className="boton boton--secundario" onClick={abrirVistaPrevia} disabled={enviando}>
+          Vista previa →
         </button>
       </footer>
     </div>
