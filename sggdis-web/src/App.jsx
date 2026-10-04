@@ -9,7 +9,7 @@ import { existeProgresoOrdenSanitaria } from './modules/ordenSanitaria/services/
 
 // DATOS DE PRUEBA TEMPORALES PARA PROBAR LA ORDEN SANITARIA
 const inspeccionPruebaOrdenSanitaria = {
-  idInspeccion: 7,// se coloca lo que genera el select 
+  idInspeccion: 1,// se coloca lo que genera el select 
   consecutivo: 'MS-DRRSCS-ARS-SJ-AI-0002-2026',
   nombreEstablecimiento: 'Restaurante El Buen Sabor',
   nombrePersonaNotificar: 'Juan Carlos Rodríguez Mora',
