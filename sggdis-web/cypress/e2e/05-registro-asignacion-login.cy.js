@@ -50,6 +50,12 @@ describe('Registro, asignación de rol, login e inspección del inspector', { te
   }
 
   it('1) un usuario nuevo se registra desde la pantalla pública de login', () => {
+    // Por tener testIsolation: false en esta suite, la limpieza automática
+    // de Cypress no corre aquí: si quedó una cookie de refresh de una sesión
+    // manual previa, el primer visit nos metería ya logueados.
+    cy.clearCookies()
+    cy.clearAllSessionStorage()
+
     cy.visit('/login')
     cy.contains('button', 'Crear una cuenta').click()
 
