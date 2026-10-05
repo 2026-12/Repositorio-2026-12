@@ -115,6 +115,27 @@ namespace SGGDIS_Api.Models.Dtos
     }
 
     /// <summary>
+    /// Acta completa que manda el frontend al enviarla (PUT
+    /// /api/actas-generales/{id}/envio): los seis apartados juntos, con la
+    /// misma forma que cada DTO de autoguardado. La obligatoriedad de los
+    /// campos ya la validó el frontend; acá solo se guardan y se finaliza el acta.
+    /// </summary>
+    public class EnvioActaGeneralDto
+    {
+        public InfoGeneralActaDto InfoGeneral { get; set; } = new();
+
+        public InfoResponsableActaDto Responsable { get; set; } = new();
+
+        public InfoMotivoActaDto Motivo { get; set; } = new();
+
+        public InfoHallazgosActaDto Hallazgos { get; set; } = new();
+
+        public InfoAccionesActaDto Acciones { get; set; } = new();
+
+        public InfoCierreActaDto Cierre { get; set; } = new();
+    }
+
+    /// <summary>
     /// Acta completa que devuelve GET /api/actas-generales/{id} para restaurar
     /// el formulario. Junta en un solo objeto plano los campos de la tabla
     /// principal y de las tablas de cada apartado, con los mismos nombres que

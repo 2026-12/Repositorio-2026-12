@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using SGGDIS_Api.Data;
 using SGGDIS_Api.Models;
@@ -123,6 +124,99 @@ namespace SGGDIS_Api.Tests.Services
             Assert.Equal("Soda Doña Ana", contexto.ActasInfoGeneral.Find(1)!.NombreComercial);
             Assert.Equal("Ana Pérez", contexto.ActasResponsable.Find(1)!.NombreResponsable);
             Assert.Equal("DENUNCIA", contexto.ActasMotivo.Find(1)!.MotivoInspeccion);
+        }
+
+        // Acta completa como la manda el frontend al presionar "Guardar y enviar acta".
+        private static EnvioActaGeneralDto CrearEnvioCompleto(int idGuia = 1) => new()
+        {
+            InfoGeneral = new InfoGeneralActaDto
+            {
+                FechaInspeccion = new DateTime(2026, 10, 5),
+                HoraInicio = "08:30",
+                NombreComercial = "Soda La Esquina",
+                Provincia = "San José",
+                Canton = "Escazú",
+                Distrito = "San Rafael",
+                DireccionExacta = "100 m norte de la iglesia",
+                CorreoNotificaciones = "soda@correo.com",
+                AutorizaIngreso = true,
+                AutorizaFotos = false,
+            },
+            Responsable = new InfoResponsableActaDto
+            {
+                NombreResponsable = "Luis Mora",
+                CargoResponsable = new List<string> { "ENCARGADO" },
+                NumeroIdentificacionResponsable = "1-1111-1111",
+            },
+            Motivo = new InfoMotivoActaDto { MotivoInspeccion = new List<string> { "SEGUIMIENTO" } },
+            Hallazgos = new InfoHallazgosActaDto { IdsGuias = new List<int> { idGuia }, Hallazgos = "Sin hallazgos relevantes." },
+            Acciones = new InfoAccionesActaDto { Acciones = new List<string> { "CIERRE_CASO" } },
+            Cierre = new InfoCierreActaDto
+            {
+                PersonasPresentes = new List<PersonaPresenteDto>
+                {
+                    new() { NombreCompleto = "Luis Mora", CargoInstitucion = "Encargado", NumeroIdentificacion = "1-1111-1111", Firma = "L. Mora" },
+                },
+            },
+        };
+
+        [Fact]
+        public async Task EnviarActaAsync_GuardaLosSeisApartadosYFinalizaElActa()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActaConCatalogo(contexto);
+            var servicio = CrearServicio(contexto);
+
+            await servicio.EnviarActaAsync(1, CrearEnvioCompleto());
+
+            Assert.Equal("FINALIZADA", contexto.ActasGenerales.AsNoTracking().Single(a => a.IdActa == 1).Estado);
+            Assert.Equal("Soda La Esquina", contexto.ActasInfoGeneral.AsNoTracking().Single().NombreComercial);
+            Assert.Equal("S", contexto.ActasInfoGeneral.AsNoTracking().Single().AutorizaIngreso);
+            Assert.Equal("ENCARGADO", contexto.ActasResponsable.AsNoTracking().Single().CargoResponsable);
+            Assert.Equal("SEGUIMIENTO", contexto.ActasMotivo.AsNoTracking().Single().MotivoInspeccion);
+            Assert.Equal("1", contexto.ActasHallazgos.AsNoTracking().Single().GuiasAplicables);
+            Assert.Equal("CIERRE_CASO", contexto.ActasAcciones.AsNoTracking().Single().AccionesSeguir);
+            Assert.Contains("L. Mora", contexto.ActasCierre.AsNoTracking().Single().PersonasPresentes);
+        }
+
+        [Fact]
+        public async Task EnviarActaAsync_NoGuardaNadaSiUnApartadoEsInvalido()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActaConCatalogo(contexto);
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<HallazgosInvalidosException>(() =>
+                servicio.EnviarActaAsync(1, CrearEnvioCompleto(idGuia: 99)));
+
+            // Se consulta el almacén (AsNoTracking) y no lo que quedó pendiente en el contexto.
+            Assert.Equal("EN_PROCESO", contexto.ActasGenerales.AsNoTracking().Single(a => a.IdActa == 1).Estado);
+            Assert.Equal("Soda Doña Ana", contexto.ActasInfoGeneral.AsNoTracking().Single().NombreComercial);
+            Assert.False(contexto.ActasCierre.AsNoTracking().Any());
+        }
+
+        [Fact]
+        public async Task EnviarActaAsync_RechazaUnActaYaFinalizada()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActaConCatalogo(contexto);
+            contexto.ActasGenerales.Find(1)!.Estado = "FINALIZADA";
+            contexto.SaveChanges();
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<ActaYaFinalizadaException>(() =>
+                servicio.EnviarActaAsync(1, CrearEnvioCompleto()));
+        }
+
+        [Fact]
+        public async Task EnviarActaAsync_LanzaKeyNotFoundSiElActaNoExiste()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActaConCatalogo(contexto);
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                servicio.EnviarActaAsync(999, CrearEnvioCompleto()));
         }
     }
 }

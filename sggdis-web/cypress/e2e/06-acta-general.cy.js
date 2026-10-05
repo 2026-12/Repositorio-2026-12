@@ -39,8 +39,10 @@ function marcarOpciones(dataCampo, etiquetas) {
   cy.get('.acta-multiselect__lista').should('not.exist')
 }
 
+// Botón de avance del pie: "Siguiente →" en los apartados I a V y "Finalizar"
+// en el último (lleva a la vista previa).
 function irSiguiente() {
-  cy.contains('button', 'Siguiente').click()
+  cy.contains('.acta-pie button', /Siguiente|Finalizar/).click()
 }
 
 describe('Acta General: recorrido completo hasta la vista previa', () => {

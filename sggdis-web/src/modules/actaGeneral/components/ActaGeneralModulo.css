@@ -99,40 +99,61 @@
   background: #f3f6fb;
 }
 
-/* ========== TABS (indicador de progreso) ========== */
+/* ========== TABS (indicador de progreso) ==========
+   Mismo diseño que las pestañas de la Guía de Inspección (formulario.css:
+   .tabs / .tabs__item): píldoras con texto gris; la activa en azul oscuro
+   relleno; la completa con contorno y texto verde; y completa + activa en
+   verde relleno. Los colores se copian tal cual de la Guía. */
 
 .acta-tabs {
   display: flex;
-  gap: 6px;
-  padding: 10px 24px;
+  gap: 8px;
+  padding: 8px 24px;
   background: #ffffff;
-  border-bottom: 1px solid #e6e8ec;
+  border-bottom: 1px solid var(--acta-gris);
   overflow-x: auto;
   position: sticky;
   top: 65px;
   z-index: 999;
-  box-shadow: 0 2px 6px rgba(0, 20, 60, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 20, 60, 0.06);
 }
 
 /* Mismo estilo de "píldora" que los tabs del módulo de Guía de Inspección. */
 .acta-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  background: transparent;
-  color: #5b6470;
+  font-size: 0.8rem;
   padding: 6px 14px;
   border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 600;
+  color: #5b6470;
   cursor: pointer;
+  border: none;
+  background: transparent;
   white-space: nowrap;
+  font-family: inherit;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
   flex-shrink: 0;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.acta-tab:not(.acta-tab--activa):not(.acta-tab--completa):hover:not(:disabled) {
+.acta-tab--activa {
+  background: #021a53;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.acta-tab--completa {
+  box-shadow: inset 0 0 0 2px #1e7b34;
+  color: #1e7b34;
+}
+
+.acta-tab--completa.acta-tab--activa {
+  background: #1e7b34;
+  color: #ffffff;
+}
+
+.acta-tab:not(.acta-tab--activa):not(:disabled):hover {
   background: #eef1f4;
 }
 
@@ -141,64 +162,9 @@
   opacity: 0.55;
 }
 
-.acta-tab__numero {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: #eef0f3;
-  color: #8a94a6;
-  font-size: 0.68rem;
-  font-style: normal;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0;
-}
-
-/* Apartado con todos sus campos obligatorios llenos y válidos en este
-   momento (independiente de si ya se guardó en el backend): contorno verde
-   y relleno verde claro, igual que en el módulo de Guía de Inspección. */
-.acta-tab--completa {
-  background: #e6f4ea;
-  box-shadow: inset 0 0 0 2px var(--acta-verde);
-  color: var(--acta-verde);
-}
-
-/* Sin círculo de otro tono: el número queda sobre el mismo verde del fondo. */
-.acta-tab--completa .acta-tab__numero {
-  background: transparent;
-  color: var(--acta-verde);
-}
-
-/* Apartado activo (donde está parado el inspector): azul. */
-.acta-tab--activa {
-  background: var(--acta-azul-oscuro);
-  color: #ffffff;
-}
-
-.acta-tab--activa .acta-tab__numero {
-  background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-}
-
-/* Activo y además completo: verde sólido, igual que en Guía de Inspección. */
-.acta-tab--completa.acta-tab--activa {
-  background: var(--acta-verde);
-  box-shadow: none;
-  color: #ffffff;
-}
-
-.acta-tab--completa.acta-tab--activa .acta-tab__numero {
-  background: transparent;
-  color: #ffffff;
-}
-
-/* Texto alternativo para lectores de pantalla: el check ya lo muestra
-   visualmente, pero el ícono del círculo tiene aria-hidden, así que acá
-   queda el equivalente en texto sin ocupar espacio en pantalla. */
+/* Texto alternativo para lectores de pantalla: el verde ya indica que el
+   apartado está completo, acá queda el equivalente en texto sin ocupar
+   espacio en pantalla. */
 .acta-tab__srSolo {
   position: absolute;
   width: 1px;
@@ -785,6 +751,36 @@
   border-color: var(--acta-azul-medio);
   background: #eef4ff;
   color: var(--acta-azul-medio);
+}
+
+/* Confirmación después de enviar el acta (mismo tono verde de "completo"). */
+.acta-envio-exitoso {
+  text-align: center;
+  padding: 24px 12px;
+}
+
+.acta-envio-exitoso__etiqueta {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #1e7b34;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.acta-envio-exitoso h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  color: var(--acta-azul-oscuro);
+}
+
+.acta-envio-exitoso p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #667085;
 }
 
 /* ========== PIE / ACCIONES ==========
