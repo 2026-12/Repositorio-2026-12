@@ -389,6 +389,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
             }}
             onGuardarDelta={sincronizacion.guardarDelta}
             onFinalizado={manejarInspeccionFinalizada}
+            onVolverInicio={salida.abrir}
             onCrearOrdenSanitaria={() => onCrearOrdenSanitaria?.({
               idInspeccion: datos.idInspeccion,
               consecutivo: datos.consecutivo,

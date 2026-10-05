@@ -47,6 +47,7 @@ export default function FormularioCierreInspeccion({
   onIrASeccion,
   onGuardarDelta,
   onFinalizado,
+  onVolverInicio,
   onCrearOrdenSanitaria,
   paso,
   totalPasos,
@@ -225,6 +226,7 @@ export default function FormularioCierreInspeccion({
           onAnterior();
         }}
         onConfirmar={manejarFinalizar}
+        onVolverMenu={onVolverInicio}
         confirmando={enviando}
         pendienteSincronizacion={sincronizacionCierre.pendienteSincronizacion}
         error={errorEnvio || sincronizacionCierre.errorSincronizacion}
