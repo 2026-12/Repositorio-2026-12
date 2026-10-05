@@ -2,6 +2,8 @@
 import { lazy } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROLES, useAuth } from '../auth';
+import { existeProgresoOrdenSanitaria } from './progreso';
+import { inspeccionPruebaOrdenSanitaria } from './datosPruebaDev';
 
 const OrdenSanitariaModulo = lazy(() => import('./OrdenSanitariaModulo'));
 
@@ -11,8 +13,24 @@ function RutaOrdenSanitaria() {
   const navigate = useNavigate();
   const rutaInicio = sesion.rol === ROLES.ADMINISTRADOR ? '/admin' : '/inicio';
   const inspeccionRelacionada = location.state?.inspeccionRelacionada;
+  const hayProgresoGuardado = existeProgresoOrdenSanitaria();
 
-  if (!inspeccionRelacionada?.idInspeccion) {
+  // En desarrollo, si se entra a /orden-sanitaria directamente (sin venir del
+  // cierre de una inspección) y no hay progreso guardado, se usan datos de
+  // prueba para poder probar el módulo sin depender del flujo completo. En
+  // producción import.meta.env.DEV es falso, así que esto nunca aplica.
+  const datosPrueba =
+    import.meta.env.DEV && !inspeccionRelacionada?.idInspeccion && !hayProgresoGuardado
+      ? inspeccionPruebaOrdenSanitaria
+      : undefined;
+
+  const infoInspeccion = inspeccionRelacionada ?? datosPrueba;
+
+  // El estado de navegación (location.state) se pierde al recargar la
+  // página. Si no llega por ahí pero sí hay una Orden Sanitaria guardada en
+  // localStorage, se deja continuar: OrdenSanitariaModulo recupera esa
+  // inspección relacionada por su cuenta a partir del progreso guardado.
+  if (!infoInspeccion?.idInspeccion && !hayProgresoGuardado) {
     return (
       <main role="alert">
         <h1>Se requiere una inspección relacionada</h1>
@@ -24,8 +42,8 @@ function RutaOrdenSanitaria() {
 
   return (
     <OrdenSanitariaModulo
-      idInspeccion={inspeccionRelacionada.idInspeccion}
-      inspeccionRelacionada={inspeccionRelacionada}
+      idInspeccion={infoInspeccion?.idInspeccion}
+      inspeccionRelacionada={infoInspeccion}
       onVolverInicio={() => navigate(rutaInicio)}
     />
   );

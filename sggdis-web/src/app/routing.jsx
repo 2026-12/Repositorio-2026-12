@@ -1,12 +1,18 @@
 import { Navigate } from 'react-router-dom';
 import { ROLES, useAuth } from '../modules/auth';
 import { existeProgresoGuardado } from '../modules/inspecciones/progreso';
+import { existeProgresoOrdenSanitaria } from '../modules/ordenSanitaria/progreso';
 
 function obtenerRutaSesion(sesion) {
   if (!sesion) return '/login';
   if (sesion.rol === ROLES.ADMINISTRADOR) return '/admin';
   if (sesion.rol === ROLES.INSPECTOR) {
-    return existeProgresoGuardado() ? '/inspeccion' : '/inicio';
+    // Igual que antes de la migración a rutas: si hay una inspección a
+    // medias se retoma primero; si no, pero hay una Orden Sanitaria
+    // pendiente, se retoma esa.
+    if (existeProgresoGuardado()) return '/inspeccion';
+    if (existeProgresoOrdenSanitaria()) return '/orden-sanitaria';
+    return '/inicio';
   }
   return '/perfil-pendiente';
 }

@@ -1,9 +1,8 @@
-function entrarOrdenSanitaria() {
-  cy.visit('/')
+import { iniciarSesionComoInspector } from '../support/loginInspector'
 
-  cy.get('.inicio__navLink')
-    .contains('Orden Sanitaria')
-    .click()
+function entrarOrdenSanitaria() {
+  iniciarSesionComoInspector()
+  cy.visit('/orden-sanitaria')
 
   cy.contains('Información General de la Orden Sanitaria')
     .should('be.visible')

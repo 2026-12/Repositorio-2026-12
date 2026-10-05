@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../../inspecciones/config/inspeccion';
+import { API_BASE_URL } from '../../../config/api';
 import { solicitarJson } from '../../inspecciones/services/httpClient';
 
 export function crearOrdenSanitaria(datos) {
