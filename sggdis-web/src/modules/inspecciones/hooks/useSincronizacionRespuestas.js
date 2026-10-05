@@ -56,7 +56,7 @@ export function useSincronizacionRespuestas({ idInspeccion, respuestas, respuest
       console.error('No se pudieron guardar las respuestas en el servidor:', error);
       setGuardadoExitoso(false);
       setGuardadoSinSincronizar(true);
-      return false;
+      return error;
     } finally {
       setGuardando(false);
     }

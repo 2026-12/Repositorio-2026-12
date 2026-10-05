@@ -3,7 +3,16 @@ import { guardarProgreso, limpiarProgreso } from '../services/progresoInspeccion
 
 // Persiste el progreso completo de la inspección en curso en localStorage,
 // y lo limpia cuando ya no hay una inspección activa (datos === null).
-export function usePersistenciaProgreso({ datos, respuestas, respuestasGuardadas, seccionesCache, wizard, cierreActivo, datosCierre }) {
+export function usePersistenciaProgreso({
+  datos,
+  respuestas,
+  respuestasGuardadas,
+  seccionesCache,
+  wizard,
+  cierreActivo,
+  mostrarVistaPreviaCierre,
+  datosCierre,
+}) {
   useEffect(() => {
     if (!datos) {
       limpiarProgreso();
@@ -18,7 +27,18 @@ export function usePersistenciaProgreso({ datos, respuestas, respuestasGuardadas
       indiceWizard: wizard.indice,
       maxAlcanzado: wizard.maxAlcanzado,
       cierreActivo,
+      mostrarVistaPreviaCierre,
       datosCierre,
     });
-  }, [datos, respuestas, respuestasGuardadas, seccionesCache, wizard.indice, wizard.maxAlcanzado, cierreActivo, datosCierre]);
+  }, [
+    datos,
+    respuestas,
+    respuestasGuardadas,
+    seccionesCache,
+    wizard.indice,
+    wizard.maxAlcanzado,
+    cierreActivo,
+    mostrarVistaPreviaCierre,
+    datosCierre,
+  ]);
 }
