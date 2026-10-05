@@ -9,6 +9,13 @@ lerna-debug.log*
 
 node_modules
 dist
+
+# Evidencia generada por Cypress (capturas y videos de cada corrida)
+cypress/screenshots
+cypress/videos
+
+# Credenciales locales de las pruebas (cada quien crea la suya)
+cypress.env.json
 dist-ssr
 *.local
 

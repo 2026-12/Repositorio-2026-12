@@ -42,7 +42,7 @@ function ApartadoHallazgos({ datos, errores, onCambiarCampo }) {
         )}
 
         {!cargando && !error && (
-          <div className="acta-opciones acta-opciones--envolver">
+          <div className="acta-opciones acta-opciones--envolver" data-campo="idsGuias">
             {guias.map((guia) => {
               const seleccionada = datos.idsGuias.includes(guia.idGuia);
 

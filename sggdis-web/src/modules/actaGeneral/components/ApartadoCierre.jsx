@@ -120,7 +120,12 @@ function ApartadoCierre({
           </div>
         ))}
 
-        <button type="button" className="acta-boton-lista" onClick={onAgregarPersona}>
+        <button
+          type="button"
+          className="acta-boton-lista"
+          data-campo="personasPresentes"
+          onClick={onAgregarPersona}
+        >
           ＋ Agregar persona
         </button>
 
