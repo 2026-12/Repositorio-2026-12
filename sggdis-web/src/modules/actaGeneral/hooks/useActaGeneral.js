@@ -16,7 +16,7 @@ import { validarMotivo } from '../domain/validacionMotivo';
 import { validarHallazgos } from '../domain/validacionHallazgos';
 import { validarAcciones } from '../domain/validacionAcciones';
 import { validarCierre, clavePersona } from '../domain/validacionCierre';
-import { APARTADOS_ACTA } from '../config/actaGeneral';
+import { APARTADOS_ACTA, APARTADO_VISTA_PREVIA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
 // formato que esperan los inputs nativos <input type="date"/"time">.
@@ -227,6 +227,11 @@ export function useActaGeneral() {
   const [guardando, setGuardando] = useState(false);
   const [errorGuardado, setErrorGuardado] = useState(null);
 
+  // Aviso flotante cuando el inspector intenta continuar con campos
+  // obligatorios sin llenar. Guarda la clave del primer campo faltante para
+  // llevarlo ahí. null = no hay aviso.
+  const [avisoValidacion, setAvisoValidacion] = useState(null);
+
   const [infoGeneral, setInfoGeneral] = useState(crearInfoGeneralInicial);
   const [infoGeneralTocado, setInfoGeneralTocado] = useState(false);
   const [erroresInfoGeneral, setErroresInfoGeneral] = useState({});
@@ -286,7 +291,10 @@ export function useActaGeneral() {
 
               // Vuelve a dejar al inspector en el mismo apartado en el que
               // estaba, si sigue siendo uno válido.
-              if (APARTADOS_ACTA.some((apartado) => apartado.id === activaGuardada.apartadoActivo)) {
+              if (
+                activaGuardada.apartadoActivo === APARTADO_VISTA_PREVIA ||
+                APARTADOS_ACTA.some((apartado) => apartado.id === activaGuardada.apartadoActivo)
+              ) {
                 apartadoRestaurado = activaGuardada.apartadoActivo;
               }
             }
@@ -589,7 +597,15 @@ export function useActaGeneral() {
     const errores = configuracion.validar(configuracion.datos);
     configuracion.setErrores(errores);
 
-    if (Object.keys(errores).length > 0 || !idActa) {
+    const clavesConError = Object.keys(errores);
+    if (clavesConError.length > 0) {
+      // Las claves salen en el orden del formulario, así que la primera es
+      // el primer campo que quedó sin llenar.
+      setAvisoValidacion({ primerCampo: clavesConError[0] });
+      return false;
+    }
+
+    if (!idActa) {
       return false;
     }
 
@@ -625,17 +641,56 @@ export function useActaGeneral() {
   // con la misma validación y el mismo manejo de errores que al avanzar.
   const guardarApartadoActivo = () => validarYGuardarApartadoActivo({ forzar: true });
 
-  // Botón "Siguiente →": avanza al que sigue en el orden del wizard.
+  // Paso final: la vista previa solo se abre cuando toda el acta está llena.
+  // Primero se valida y guarda el apartado en el que está parado (aunque no lo
+  // haya tocado, porque pidió continuar). Después, si algún otro apartado
+  // quedó incompleto, se lo lleva a ese apartado, se marcan sus campos
+  // faltantes y se avisa, en vez de mostrar una vista previa con huecos.
+  const irAVistaPrevia = async () => {
+    const puedeSalir = await validarYGuardarApartadoActivo({ forzar: true });
+    if (!puedeSalir) return false;
+
+    const incompleto = APARTADOS_ACTA.find((apartado) => {
+      const configuracion = configuracionApartados[apartado.id];
+      return Object.keys(configuracion.validar(configuracion.datos)).length > 0;
+    });
+
+    if (incompleto) {
+      const configuracion = configuracionApartados[incompleto.id];
+      const errores = configuracion.validar(configuracion.datos);
+
+      configuracion.setErrores(errores);
+      setApartadoActivo(incompleto.id);
+      setAvisoValidacion({ primerCampo: Object.keys(errores)[0] });
+      return false;
+    }
+
+    setApartadoActivo(APARTADO_VISTA_PREVIA);
+    return true;
+  };
+
+  // Botón "Siguiente →": avanza al que sigue en el orden del wizard. Desde el
+  // último apartado (Cierre y Firmas) lleva a la vista previa.
   const avanzarAlSiguienteApartado = () => {
+    if (apartadoActivo === APARTADO_VISTA_PREVIA) return Promise.resolve(false);
+
     const indiceActual = APARTADOS_ACTA.findIndex((apartado) => apartado.id === apartadoActivo);
     const siguiente = APARTADOS_ACTA[indiceActual + 1];
-    return siguiente ? irAApartado(siguiente.id) : Promise.resolve(false);
+
+    if (siguiente) return irAApartado(siguiente.id);
+    return irAVistaPrevia();
   };
 
   // Botón "← Anterior": retrocede al apartado previo. Igual que avanzar, pasa
   // por irAApartado, así que si el apartado activo ya se empezó a llenar,
-  // primero se valida/guarda antes de dejarlo.
+  // primero se valida/guarda antes de dejarlo. Desde la vista previa vuelve
+  // al último apartado (Cierre y Firmas).
   const retrocederAlApartadoAnterior = () => {
+    if (apartadoActivo === APARTADO_VISTA_PREVIA) {
+      setApartadoActivo(APARTADOS_ACTA[APARTADOS_ACTA.length - 1].id);
+      return Promise.resolve(true);
+    }
+
     const indiceActual = APARTADOS_ACTA.findIndex((apartado) => apartado.id === apartadoActivo);
     const anterior = APARTADOS_ACTA[indiceActual - 1];
     return anterior ? irAApartado(anterior.id) : Promise.resolve(false);
@@ -680,6 +735,8 @@ export function useActaGeneral() {
 
     guardando,
     errorGuardado,
+    avisoValidacion,
+    cerrarAvisoValidacion: () => setAvisoValidacion(null),
     avanzarAlSiguienteApartado,
     retrocederAlApartadoAnterior,
     guardarApartadoActivo,

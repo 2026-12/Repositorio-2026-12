@@ -198,9 +198,9 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
       <div className="acta-campo-fila">
         <div className="acta-campo">
           <span className="acta-campo__etiquetaGrupo">
-            Se autoriza ingresar al establecimiento / sitio / inmueble a inspeccionar:
+            Se autoriza ingresar al establecimiento / sitio / inmueble a inspeccionar: *
           </span>
-          <div className="acta-opciones">
+          <div className="acta-opciones" data-campo="autorizaIngreso">
             <button
               type="button"
               className={`acta-opcion ${datos.autorizaIngreso === true ? 'acta-opcion--activa' : ''}`}
@@ -216,13 +216,16 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
               No
             </button>
           </div>
+          {errores.autorizaIngreso && (
+            <span className="acta-campo__error">{errores.autorizaIngreso}</span>
+          )}
         </div>
 
         <div className="acta-campo">
           <span className="acta-campo__etiquetaGrupo">
-            Se autoriza al funcionario de salud tomar fotografías y/o videos del establecimiento / sitio / inmueble a inspeccionar:
+            Se autoriza al funcionario de salud tomar fotografías y/o videos del establecimiento / sitio / inmueble a inspeccionar: *
           </span>
-          <div className="acta-opciones">
+          <div className="acta-opciones" data-campo="autorizaFotos">
             <button
               type="button"
               className={`acta-opcion ${datos.autorizaFotos === true ? 'acta-opcion--activa' : ''}`}
@@ -238,6 +241,9 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
               No
             </button>
           </div>
+          {errores.autorizaFotos && (
+            <span className="acta-campo__error">{errores.autorizaFotos}</span>
+          )}
         </div>
       </div>
     </section>
