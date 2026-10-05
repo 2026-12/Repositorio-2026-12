@@ -13,6 +13,12 @@ export const APARTADOS_ACTA = [
   { id: 'cierre', numero: 'VI', etiqueta: 'Cierre y Firmas' },
 ];
 
+// Paso final del wizard, después del Apartado VI: resumen de solo lectura de
+// toda el acta para revisarla (igual que la vista previa de Orden Sanitaria).
+// No es un apartado con formulario, por eso no está en APARTADOS_ACTA (los
+// tabs y el "Paso X de 6" solo cuentan los seis apartados).
+export const APARTADO_VISTA_PREVIA = 'vista-previa';
+
 // Máximo de caracteres de la descripción de hallazgos (Apartado IV). Es el
 // mismo tamaño de la columna HALLAZGOS VARCHAR2(4000) de INS_ACTA_GENERAL.
 export const LONGITUD_MAXIMA_HALLAZGOS = 4000;
