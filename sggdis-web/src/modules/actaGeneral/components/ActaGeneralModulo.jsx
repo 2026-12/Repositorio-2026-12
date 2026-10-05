@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useActaGeneral } from '../hooks/useActaGeneral';
 import { useConfirmacionSalida } from '../hooks/useConfirmacionSalida';
-import { APARTADOS_ACTA } from '../config/actaGeneral';
+import { APARTADOS_ACTA, APARTADO_VISTA_PREVIA } from '../config/actaGeneral';
 import { eliminarActaGeneral } from '../services/actaGeneralService';
 import { limpiarActaActiva } from '../services/progresoActaGeneralService';
 import ApartadoInfoGeneral from './ApartadoInfoGeneral';
@@ -10,7 +10,9 @@ import ApartadoMotivo from './ApartadoMotivo';
 import ApartadoHallazgos from './ApartadoHallazgos';
 import ApartadoAcciones from './ApartadoAcciones';
 import ApartadoCierre from './ApartadoCierre';
+import VistaPreviaActaGeneral from './VistaPreviaActaGeneral';
 import ModalConfirmacionSalida from './ModalConfirmacionSalida';
+import AvisoCamposObligatorios from './AvisoCamposObligatorios';
 import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
 
@@ -20,12 +22,31 @@ function indiceApartado(id) {
   return APARTADOS_ACTA.findIndex((apartado) => apartado.id === id);
 }
 
+// Lleva al inspector al campo que quedó sin llenar: lo centra en pantalla y
+// le da el foco. La clave del error coincide con el id del campo; los
+// selectores múltiples y la lista de guías/personas no tienen un id propio
+// por clave, así que se marcan con data-campo y se enfoca su primer control.
+function enfocarCampo(clave) {
+  const elemento =
+    document.getElementById(clave) ?? document.querySelector(`[data-campo="${clave}"]`);
+
+  if (!elemento) return;
+
+  const controlEnfocable = elemento.matches('input, select, textarea, button')
+    ? elemento
+    : elemento.querySelector('input, select, textarea, button');
+
+  (controlEnfocable ?? elemento).scrollIntoView({ behavior: 'smooth', block: 'center' });
+  controlEnfocable?.focus({ preventScroll: true });
+}
+
 // Shell del wizard del Acta de Inspección General (HU-004): header con el
 // folio del acta, tabs de apartados (indicador de progreso) y el apartado
 // activo. Los seis apartados (HU-006 a HU-011) tienen formulario real.
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
     idActa,
+    numeroActa,
     creando,
     errorCreacion,
     apartadoActivo,
@@ -54,31 +75,33 @@ function ActaGeneralModulo({ onVolverInicio }) {
     actualizarPersonaPresente,
     guardando,
     errorGuardado,
+    avisoValidacion,
+    cerrarAvisoValidacion,
     avanzarAlSiguienteApartado,
     retrocederAlApartadoAnterior,
-    guardarApartadoActivo,
   } = useActaGeneral();
 
   const salida = useConfirmacionSalida();
 
-  const indiceActivo = indiceApartado(apartadoActivo);
-
-  // Confirmación breve en el botón "Guardar" del último apartado, ya que ahí
-  // no se cambia de apartado al guardar y el inspector necesita saber que
-  // se guardó.
-  const [guardadoReciente, setGuardadoReciente] = useState(false);
-
+  // Al intentar continuar con campos sin llenar: se lleva al inspector al
+  // primer campo que falta (se centra y se enfoca) y el aviso flotante se
+  // cierra solo a los pocos segundos, igual que en Guía de Inspección.
   useEffect(() => {
-    if (!guardadoReciente) return undefined;
-    const temporizador = setTimeout(() => setGuardadoReciente(false), 2500);
-    return () => clearTimeout(temporizador);
-  }, [guardadoReciente]);
+    if (!avisoValidacion) return undefined;
 
-  const guardarUltimoApartado = async () => {
-    setGuardadoReciente(false);
-    const guardado = await guardarApartadoActivo();
-    if (guardado) setGuardadoReciente(true);
-  };
+    const cuadro = requestAnimationFrame(() => enfocarCampo(avisoValidacion.primerCampo));
+    const temporizador = setTimeout(cerrarAvisoValidacion, 3500);
+
+    return () => {
+      cancelAnimationFrame(cuadro);
+      clearTimeout(temporizador);
+    };
+    // cerrarAvisoValidacion cambia en cada render; solo importa el aviso.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avisoValidacion]);
+
+  const indiceActivo = indiceApartado(apartadoActivo);
+  const enVistaPrevia = apartadoActivo === APARTADO_VISTA_PREVIA;
 
   // Confirmó que quiere salir: se descarta el acta de verdad (backend +
   // localStorage), para que la próxima vez que entre a Acta General
@@ -160,7 +183,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
               onClick={() => irAApartado(apartado.id)}
             >
               <span className="acta-tab__numero" aria-hidden="true">
-                {completo ? '✓' : apartado.numero}
+                {apartado.numero}
               </span>
               {apartado.etiqueta}
               {completo && <span className="acta-tab__srSolo"> (completo)</span>}
@@ -221,6 +244,18 @@ function ActaGeneralModulo({ onVolverInicio }) {
               onCambiarPersona={actualizarPersonaPresente}
             />
           )}
+
+          {enVistaPrevia && (
+            <VistaPreviaActaGeneral
+              numeroActa={numeroActa}
+              infoGeneral={infoGeneral}
+              responsable={responsable}
+              motivo={motivo}
+              hallazgos={hallazgos}
+              acciones={acciones}
+              cierre={cierre}
+            />
+          )}
         </div>
 
         {errorGuardado && (
@@ -236,7 +271,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
           footer del módulo de Guía de Inspección (fondo degradado azul,
           ambos botones en contorno blanco sobre el mismo fondo del footer). */}
       <footer className="acta-pie acta-pie--fija">
-        {indiceActivo > 0 ? (
+        {enVistaPrevia || indiceActivo > 0 ? (
           <button
             type="button"
             className="acta-boton acta-boton--secundario"
@@ -250,10 +285,13 @@ function ActaGeneralModulo({ onVolverInicio }) {
         )}
 
         <span className="acta-pie__paso">
-          Paso {indiceActivo + 1} de {APARTADOS_ACTA.length}
+          {enVistaPrevia ? 'Vista previa' : `Paso ${indiceActivo + 1} de ${APARTADOS_ACTA.length}`}
         </span>
 
-        {indiceActivo < APARTADOS_ACTA.length - 1 ? (
+        {enVistaPrevia ? (
+          <span className="acta-pie__espaciador" aria-hidden="true" />
+        ) : (
+          // En el último apartado "Siguiente" lleva a la vista previa.
           <button
             type="button"
             className="acta-boton acta-boton--secundario"
@@ -262,19 +300,10 @@ function ActaGeneralModulo({ onVolverInicio }) {
           >
             {guardando ? 'Guardando…' : 'Siguiente →'}
           </button>
-        ) : (
-          // Último apartado: no hay "Siguiente", así que el guardado se pide
-          // con este botón (misma validación y errores que al avanzar).
-          <button
-            type="button"
-            className="acta-boton acta-boton--secundario"
-            disabled={guardando}
-            onClick={guardarUltimoApartado}
-          >
-            {guardando ? 'Guardando…' : guardadoReciente ? '✓ Guardado' : 'Guardar'}
-          </button>
         )}
       </footer>
+
+      {avisoValidacion && <AvisoCamposObligatorios />}
 
       {salida.mostrar && (
         <ModalConfirmacionSalida
