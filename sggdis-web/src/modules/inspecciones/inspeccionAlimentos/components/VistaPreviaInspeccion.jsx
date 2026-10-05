@@ -10,6 +10,7 @@ export default function VistaPreviaInspeccion({
   identidadInspector,
   onRegresarEditar,
   onConfirmar,
+  onVolverMenu,
   confirmando,
   pendienteSincronizacion,
   error,
@@ -31,6 +32,11 @@ export default function VistaPreviaInspeccion({
 
   return (
     <div className="pagina vista-previa">
+      <div className="vista-previa__barra-superior">
+        <button type="button" className="boton-volver-menu-inspeccion" onClick={onVolverMenu} disabled={confirmando || pendienteSincronizacion}>
+          ← Volver al menú
+        </button>
+      </div>
       <header className="vista-previa__cabecera">
         <div>
           <span>{documento.tipoEstablecimiento || 'Tipo no especificado'}</span>
