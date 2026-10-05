@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useActaGeneral } from '../hooks/useActaGeneral';
 import { useConfirmacionSalida } from '../hooks/useConfirmacionSalida';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
@@ -10,22 +10,26 @@ import ApartadoMotivo from './ApartadoMotivo';
 import ApartadoHallazgos from './ApartadoHallazgos';
 import ApartadoAcciones from './ApartadoAcciones';
 import ApartadoCierre from './ApartadoCierre';
+import ResumenActa from './ResumenActa';
 import ModalConfirmacionSalida from './ModalConfirmacionSalida';
 import mapaDorado from '../../../assets/mapa-dorado.png';
 import './ActaGeneralModulo.css';
 
-// Índice del apartado activo dentro de APARTADOS_ACTA (para pintar el
-// indicador de progreso de los tabs).
+// Índice del apartado activo dentro de APARTADOS_ACTA (para pintar la
+// pestaña activa y el "Paso X de Y").
 function indiceApartado(id) {
   return APARTADOS_ACTA.findIndex((apartado) => apartado.id === id);
 }
 
 // Shell del wizard del Acta de Inspección General (HU-004): header con el
 // folio del acta, tabs de apartados (indicador de progreso) y el apartado
-// activo. Los seis apartados (HU-006 a HU-011) tienen formulario real.
+// activo. Los seis apartados (HU-006 a HU-011) tienen formulario real. Al
+// "Finalizar" el último apartado se pasa a la vista general (ResumenActa),
+// desde donde se guarda y envía el acta completa a la base de datos.
 function ActaGeneralModulo({ onVolverInicio }) {
   const {
     idActa,
+    numeroActa,
     creando,
     errorCreacion,
     apartadoActivo,
@@ -56,28 +60,34 @@ function ActaGeneralModulo({ onVolverInicio }) {
     errorGuardado,
     avanzarAlSiguienteApartado,
     retrocederAlApartadoAnterior,
-    guardarApartadoActivo,
+    avisoFinalizacion,
+    finalizarActa,
+    mostrandoResumen,
+    volverAEditar,
+    enviando,
+    errorEnvio,
+    enviada,
+    enviarActa,
   } = useActaGeneral();
 
   const salida = useConfirmacionSalida();
 
   const indiceActivo = indiceApartado(apartadoActivo);
 
-  // Confirmación breve en el botón "Guardar" del último apartado, ya que ahí
-  // no se cambia de apartado al guardar y el inspector necesita saber que
-  // se guardó.
-  const [guardadoReciente, setGuardadoReciente] = useState(false);
+  // Mientras se guarda o se envía no se puede cambiar de apartado; una vez
+  // enviada, el acta ya no se edita.
+  const navegacionBloqueada = guardando || enviando || enviada;
 
-  useEffect(() => {
-    if (!guardadoReciente) return undefined;
-    const temporizador = setTimeout(() => setGuardadoReciente(false), 2500);
-    return () => clearTimeout(temporizador);
-  }, [guardadoReciente]);
+  // Una vez enviada, "Volver al menú" sale directo: el acta ya quedó guardada
+  // en la BD y no hay nada que descartar (el modal la eliminaría).
+  const volverAlMenu = enviada ? onVolverInicio : salida.abrir;
 
-  const guardarUltimoApartado = async () => {
-    setGuardadoReciente(false);
-    const guardado = await guardarApartadoActivo();
-    if (guardado) setGuardadoReciente(true);
+  const seleccionarApartado = (idApartado) => {
+    if (mostrandoResumen) {
+      volverAEditar(idApartado);
+    } else {
+      irAApartado(idApartado);
+    }
   };
 
   // Confirmó que quiere salir: se descarta el acta de verdad (backend +
@@ -141,7 +151,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
         </div>
 
         <div className="acta-cabecera__derecha">
-          <button type="button" className="acta-boton-volver" onClick={salida.abrir}>
+          <button type="button" className="acta-boton-volver" onClick={volverAlMenu} disabled={enviando}>
             ← Volver al menú
           </button>
         </div>
@@ -150,18 +160,17 @@ function ActaGeneralModulo({ onVolverInicio }) {
       <nav className="acta-tabs" aria-label="Apartados del acta">
         {APARTADOS_ACTA.map((apartado, indice) => {
           const completo = estadoApartados[apartado.id] === 'completo';
+          const activo = !mostrandoResumen && !enviada && indice === indiceActivo;
 
           return (
             <button
               key={apartado.id}
               type="button"
-              className={`acta-tab ${indice === indiceActivo ? 'acta-tab--activa' : ''} ${completo ? 'acta-tab--completa' : ''}`}
-              disabled={guardando}
-              onClick={() => irAApartado(apartado.id)}
+              className={`acta-tab ${activo ? 'acta-tab--activa' : ''} ${completo ? 'acta-tab--completa' : ''}`}
+              aria-current={activo ? 'step' : undefined}
+              disabled={navegacionBloqueada}
+              onClick={() => seleccionarApartado(apartado.id)}
             >
-              <span className="acta-tab__numero" aria-hidden="true">
-                {completo ? '✓' : apartado.numero}
-              </span>
               {apartado.etiqueta}
               {completo && <span className="acta-tab__srSolo"> (completo)</span>}
             </button>
@@ -171,7 +180,28 @@ function ActaGeneralModulo({ onVolverInicio }) {
 
       <main className="acta-contenido">
         <div className="acta-tarjeta">
-          {apartadoActivo === 'info-general' && (
+          {enviada && (
+            <div className="acta-envio-exitoso" role="status">
+              <span className="acta-envio-exitoso__etiqueta">ACTA ENVIADA</span>
+              <h2>El acta {numeroActa} se guardó correctamente</h2>
+              <p>Toda la información del acta quedó registrada en el sistema y el acta quedó finalizada.</p>
+            </div>
+          )}
+
+          {mostrandoResumen && !enviada && (
+            <ResumenActa
+              infoGeneral={infoGeneral}
+              responsable={responsable}
+              motivo={motivo}
+              hallazgos={hallazgos}
+              acciones={acciones}
+              cierre={cierre}
+              bloqueado={enviando}
+              onEditarApartado={volverAEditar}
+            />
+          )}
+
+          {!mostrandoResumen && apartadoActivo === 'info-general' && (
             <ApartadoInfoGeneral
               datos={infoGeneral}
               errores={erroresInfoGeneral}
@@ -179,7 +209,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo === 'responsable' && (
+          {!mostrandoResumen && apartadoActivo === 'responsable' && (
             <ApartadoResponsable
               datos={responsable}
               errores={erroresResponsable}
@@ -187,7 +217,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo === 'motivo' && (
+          {!mostrandoResumen && apartadoActivo === 'motivo' && (
             <ApartadoMotivo
               datos={motivo}
               errores={erroresMotivo}
@@ -195,7 +225,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo === 'hallazgos' && (
+          {!mostrandoResumen && apartadoActivo === 'hallazgos' && (
             <ApartadoHallazgos
               datos={hallazgos}
               errores={erroresHallazgos}
@@ -203,7 +233,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo === 'acciones' && (
+          {!mostrandoResumen && apartadoActivo === 'acciones' && (
             <ApartadoAcciones
               datos={acciones}
               errores={erroresAcciones}
@@ -211,7 +241,7 @@ function ActaGeneralModulo({ onVolverInicio }) {
             />
           )}
 
-          {apartadoActivo === 'cierre' && (
+          {!mostrandoResumen && apartadoActivo === 'cierre' && (
             <ApartadoCierre
               horaInicio={horaInicio}
               datos={cierre}
@@ -223,10 +253,24 @@ function ActaGeneralModulo({ onVolverInicio }) {
           )}
         </div>
 
-        {errorGuardado && (
+        {avisoFinalizacion && !mostrandoResumen && (
+          <div className="acta-alerta" role="alert">
+            <strong>Faltan datos por completar</strong>
+            <span>{avisoFinalizacion}</span>
+          </div>
+        )}
+
+        {errorGuardado && !mostrandoResumen && (
           <div className="acta-alerta" role="alert">
             <strong>No se pudo guardar</strong>
             <span>{errorGuardado}</span>
+          </div>
+        )}
+
+        {errorEnvio && (
+          <div className="acta-alerta" role="alert">
+            <strong>No se pudo enviar el acta</strong>
+            <span>{errorEnvio}</span>
           </div>
         )}
 
@@ -236,43 +280,77 @@ function ActaGeneralModulo({ onVolverInicio }) {
           footer del módulo de Guía de Inspección (fondo degradado azul,
           ambos botones en contorno blanco sobre el mismo fondo del footer). */}
       <footer className="acta-pie acta-pie--fija">
-        {indiceActivo > 0 ? (
-          <button
-            type="button"
-            className="acta-boton acta-boton--secundario"
-            disabled={guardando}
-            onClick={retrocederAlApartadoAnterior}
-          >
-            ← Anterior
-          </button>
-        ) : (
-          <span className="acta-pie__espaciador" aria-hidden="true" />
-        )}
+        {enviada ? (
+          <>
+            <span className="acta-pie__espaciador" aria-hidden="true" />
+            <span className="acta-pie__paso">Acta enviada</span>
+            <button type="button" className="acta-boton acta-boton--secundario" onClick={onVolverInicio}>
+              Volver al menú
+            </button>
+          </>
+        ) : mostrandoResumen ? (
+          <>
+            <button
+              type="button"
+              className="acta-boton acta-boton--secundario"
+              disabled={enviando}
+              onClick={() => volverAEditar()}
+            >
+              ← Volver a editar
+            </button>
 
-        <span className="acta-pie__paso">
-          Paso {indiceActivo + 1} de {APARTADOS_ACTA.length}
-        </span>
+            <span className="acta-pie__paso">Vista general</span>
 
-        {indiceActivo < APARTADOS_ACTA.length - 1 ? (
-          <button
-            type="button"
-            className="acta-boton acta-boton--secundario"
-            disabled={guardando}
-            onClick={avanzarAlSiguienteApartado}
-          >
-            {guardando ? 'Guardando…' : 'Siguiente →'}
-          </button>
+            <button
+              type="button"
+              className="acta-boton acta-boton--secundario"
+              disabled={enviando}
+              onClick={enviarActa}
+            >
+              {enviando ? 'Enviando…' : 'Guardar y enviar acta'}
+            </button>
+          </>
         ) : (
-          // Último apartado: no hay "Siguiente", así que el guardado se pide
-          // con este botón (misma validación y errores que al avanzar).
-          <button
-            type="button"
-            className="acta-boton acta-boton--secundario"
-            disabled={guardando}
-            onClick={guardarUltimoApartado}
-          >
-            {guardando ? 'Guardando…' : guardadoReciente ? '✓ Guardado' : 'Guardar'}
-          </button>
+          <>
+            {indiceActivo > 0 ? (
+              <button
+                type="button"
+                className="acta-boton acta-boton--secundario"
+                disabled={guardando}
+                onClick={retrocederAlApartadoAnterior}
+              >
+                ← Anterior
+              </button>
+            ) : (
+              <span className="acta-pie__espaciador" aria-hidden="true" />
+            )}
+
+            <span className="acta-pie__paso">
+              Paso {indiceActivo + 1} de {APARTADOS_ACTA.length}
+            </span>
+
+            {indiceActivo < APARTADOS_ACTA.length - 1 ? (
+              <button
+                type="button"
+                className="acta-boton acta-boton--secundario"
+                disabled={guardando}
+                onClick={avanzarAlSiguienteApartado}
+              >
+                {guardando ? 'Guardando…' : 'Siguiente →'}
+              </button>
+            ) : (
+              // Último apartado: "Finalizar" valida todo el acta y, si está
+              // completa, pasa a la vista general para guardarla y enviarla.
+              <button
+                type="button"
+                className="acta-boton acta-boton--secundario"
+                disabled={guardando}
+                onClick={finalizarActa}
+              >
+                {guardando ? 'Guardando…' : 'Finalizar'}
+              </button>
+            )}
+          </>
         )}
       </footer>
 

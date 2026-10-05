@@ -41,6 +41,12 @@ namespace SGGDIS_Api.Services
         public CierreInvalidoException(string mensaje) : base(mensaje) { }
     }
 
+    // Se lanza si se intenta enviar un acta que ya estaba FINALIZADA.
+    public class ActaYaFinalizadaException : Exception
+    {
+        public ActaYaFinalizadaException(string mensaje) : base(mensaje) { }
+    }
+
     /// <summary>
     /// Implementación de IActaGeneralService. INS_ACTA_GENERAL solo guarda el
     /// folio y el estado; cada apartado se guarda en su propia tabla (1:1 por
@@ -130,7 +136,79 @@ namespace SGGDIS_Api.Services
         public async Task GuardarInfoGeneralAsync(int idActa, InfoGeneralActaDto dto)
         {
             await VerificarActaExisteAsync(idActa);
+            await AplicarInfoGeneralAsync(idActa, dto);
+            await _context.SaveChangesAsync();
+        }
 
+        public async Task GuardarResponsableAsync(int idActa, InfoResponsableActaDto dto)
+        {
+            await VerificarActaExisteAsync(idActa);
+            await AplicarResponsableAsync(idActa, dto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task GuardarMotivoAsync(int idActa, InfoMotivoActaDto dto)
+        {
+            await VerificarActaExisteAsync(idActa);
+            await AplicarMotivoAsync(idActa, dto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task GuardarHallazgosAsync(int idActa, InfoHallazgosActaDto dto)
+        {
+            await VerificarActaExisteAsync(idActa);
+            await AplicarHallazgosAsync(idActa, dto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task GuardarAccionesAsync(int idActa, InfoAccionesActaDto dto)
+        {
+            await VerificarActaExisteAsync(idActa);
+            await AplicarAccionesAsync(idActa, dto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task GuardarCierreAsync(int idActa, InfoCierreActaDto dto)
+        {
+            await VerificarActaExisteAsync(idActa);
+            await AplicarCierreAsync(idActa, dto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task EnviarActaAsync(int idActa, EnvioActaGeneralDto dto)
+        {
+            var acta = await _context.ActasGenerales.FindAsync(idActa)
+                ?? throw new KeyNotFoundException("El acta no existe.");
+
+            if (acta.Estado == "FINALIZADA")
+            {
+                throw new ActaYaFinalizadaException("El acta ya fue enviada.");
+            }
+
+            // Se aplican los seis apartados sobre el mismo contexto y se guarda
+            // una sola vez: SaveChangesAsync es atómico, así que si algún
+            // apartado no se puede guardar (lanza antes de llegar acá) no queda
+            // el acta a medio enviar.
+            await AplicarInfoGeneralAsync(idActa, dto.InfoGeneral ?? new InfoGeneralActaDto());
+            await AplicarResponsableAsync(idActa, dto.Responsable ?? new InfoResponsableActaDto());
+            await AplicarMotivoAsync(idActa, dto.Motivo ?? new InfoMotivoActaDto());
+            await AplicarHallazgosAsync(idActa, dto.Hallazgos ?? new InfoHallazgosActaDto());
+            await AplicarAccionesAsync(idActa, dto.Acciones ?? new InfoAccionesActaDto());
+            await AplicarCierreAsync(idActa, dto.Cierre ?? new InfoCierreActaDto());
+
+            acta.Estado = "FINALIZADA";
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Acta general {NumeroActa} enviada (id={IdActa}).", acta.NumeroActa, acta.IdActa);
+        }
+
+        // Los Aplicar* validan y asignan los datos de un apartado en el contexto
+        // sin guardar: el autoguardado (Guardar*) guarda un apartado a la vez, y
+        // el envío (EnviarActaAsync) guarda los seis juntos.
+
+        private async Task AplicarInfoGeneralAsync(int idActa, InfoGeneralActaDto dto)
+        {
             var infoGeneral = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaInfoGeneral { IdActa = idActa });
 
             infoGeneral.FechaInspeccion = dto.FechaInspeccion;
@@ -146,14 +224,10 @@ namespace SGGDIS_Api.Services
             infoGeneral.CorreoNotificaciones = LimpiarOpcional(dto.CorreoNotificaciones);
             infoGeneral.AutorizaIngreso = ConvertirBooleanoSN(dto.AutorizaIngreso);
             infoGeneral.AutorizaFotos = ConvertirBooleanoSN(dto.AutorizaFotos);
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task GuardarResponsableAsync(int idActa, InfoResponsableActaDto dto)
+        private async Task AplicarResponsableAsync(int idActa, InfoResponsableActaDto dto)
         {
-            await VerificarActaExisteAsync(idActa);
-
             var cargos = (dto.CargoResponsable ?? new List<string>())
                 .Select(cargo => cargo?.Trim() ?? string.Empty)
                 .Distinct()
@@ -179,14 +253,10 @@ namespace SGGDIS_Api.Services
                 ? LimpiarOpcional(dto.CargoResponsableOtro)
                 : null;
             responsable.NumeroIdentificacionResponsable = LimpiarOpcional(dto.NumeroIdentificacionResponsable);
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task GuardarMotivoAsync(int idActa, InfoMotivoActaDto dto)
+        private async Task AplicarMotivoAsync(int idActa, InfoMotivoActaDto dto)
         {
-            await VerificarActaExisteAsync(idActa);
-
             var motivos = (dto.MotivoInspeccion ?? new List<string>())
                 .Select(motivo => motivo?.Trim() ?? string.Empty)
                 .Distinct()
@@ -209,14 +279,10 @@ namespace SGGDIS_Api.Services
             motivo.MotivoInspeccionOtro = motivosOrdenados.Contains("OTRO")
                 ? LimpiarOpcional(dto.MotivoInspeccionOtro)
                 : null;
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task GuardarHallazgosAsync(int idActa, InfoHallazgosActaDto dto)
+        private async Task AplicarHallazgosAsync(int idActa, InfoHallazgosActaDto dto)
         {
-            await VerificarActaExisteAsync(idActa);
-
             // Sin repetidos y ordenados, para que la misma selección siempre
             // quede guardada igual ("1,3" y no "3,1,3").
             var idsGuias = (dto.IdsGuias ?? new List<int>())
@@ -251,14 +317,10 @@ namespace SGGDIS_Api.Services
 
             apartadoHallazgos.GuiasAplicables = idsGuias.Count > 0 ? string.Join(",", idsGuias) : null;
             apartadoHallazgos.Hallazgos = hallazgos;
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task GuardarAccionesAsync(int idActa, InfoAccionesActaDto dto)
+        private async Task AplicarAccionesAsync(int idActa, InfoAccionesActaDto dto)
         {
-            await VerificarActaExisteAsync(idActa);
-
             var acciones = (dto.Acciones ?? new List<string>())
                 .Select(accion => accion?.Trim() ?? string.Empty)
                 .Distinct()
@@ -300,14 +362,10 @@ namespace SGGDIS_Api.Services
             apartadoAcciones.AccionesSeguir = accionesOrdenadas.Count > 0 ? string.Join(",", accionesOrdenadas) : null;
             apartadoAcciones.MotivoReprogramacion = motivoReprogramacion;
             apartadoAcciones.AccionOtro = accionOtro;
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task GuardarCierreAsync(int idActa, InfoCierreActaDto dto)
+        private async Task AplicarCierreAsync(int idActa, InfoCierreActaDto dto)
         {
-            await VerificarActaExisteAsync(idActa);
-
             var personas = (dto.PersonasPresentes ?? new List<PersonaPresenteDto>())
                 .Where(persona => persona is not null)
                 .Select(persona => new PersonaPresenteDto
@@ -332,8 +390,6 @@ namespace SGGDIS_Api.Services
             cierre.PersonasPresentes = personas.Count > 0
                 ? JsonSerializer.Serialize(personas, OpcionesJsonPersonas)
                 : null;
-
-            await _context.SaveChangesAsync();
         }
 
         private static void ValidarLongitudPersona(string? valor, int longitudMaxima, string nombreCampo)

@@ -33,6 +33,11 @@ namespace SGGDIS_Api.Services
         // (personas presentes). Lanza CierreInvalidoException si un dato es demasiado largo.
         Task GuardarCierreAsync(int idActa, InfoCierreActaDto dto);
 
+        // Envía el acta: guarda los seis apartados y la marca como FINALIZADA, todo
+        // en un solo guardado (si un apartado no se puede guardar, no se guarda
+        // nada). Lanza ActaYaFinalizadaException si el acta ya se había enviado.
+        Task EnviarActaAsync(int idActa, EnvioActaGeneralDto dto);
+
         // Devuelve el acta completa (tabla principal + cada apartado, en un solo
         // objeto plano), para restaurar el formulario si el usuario vuelve a entrar.
         Task<ActaGeneralDto?> ObtenerActaAsync(int idActa);

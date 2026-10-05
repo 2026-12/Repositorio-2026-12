@@ -8,14 +8,16 @@ import {
   guardarHallazgos,
   guardarAcciones,
   guardarCierre,
+  enviarActaGeneral,
 } from '../services/actaGeneralService';
-import { obtenerActaActiva, guardarActaActiva } from '../services/progresoActaGeneralService';
+import { obtenerActaActiva, guardarActaActiva, limpiarActaActiva } from '../services/progresoActaGeneralService';
 import { validarInfoGeneral } from '../domain/validacionInfoGeneral';
 import { validarResponsable } from '../domain/validacionResponsable';
 import { validarMotivo } from '../domain/validacionMotivo';
 import { validarHallazgos } from '../domain/validacionHallazgos';
 import { validarAcciones } from '../domain/validacionAcciones';
 import { validarCierre, clavePersona } from '../domain/validacionCierre';
+import { esApartadoVacio } from '../domain/apartadoVacio';
 import { APARTADOS_ACTA } from '../config/actaGeneral';
 
 // Fecha/hora del dispositivo en el momento en que se abre el acta, en el
@@ -227,6 +229,16 @@ export function useActaGeneral() {
   const [guardando, setGuardando] = useState(false);
   const [errorGuardado, setErrorGuardado] = useState(null);
 
+  // Aviso del botón "Finalizar" cuando quedan apartados sin completar.
+  const [avisoFinalizacion, setAvisoFinalizacion] = useState(null);
+
+  // Vista general (resumen de solo lectura) que se muestra después de
+  // "Finalizar", y estado del envío del acta desde esa vista.
+  const [mostrandoResumen, setMostrandoResumen] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState(null);
+  const [enviada, setEnviada] = useState(false);
+
   const [infoGeneral, setInfoGeneral] = useState(crearInfoGeneralInicial);
   const [infoGeneralTocado, setInfoGeneralTocado] = useState(false);
   const [erroresInfoGeneral, setErroresInfoGeneral] = useState({});
@@ -328,11 +340,12 @@ export function useActaGeneral() {
 
   // Mantiene en localStorage cuál es el acta activa y en qué apartado quedó
   // el inspector, para poder retomarla si recarga la página en medio del
-  // llenado. Se sincroniza cada vez que cambia el apartado activo.
+  // llenado. Se sincroniza cada vez que cambia el apartado activo. Una vez
+  // enviada, el acta ya no está en curso y no se vuelve a recordar.
   useEffect(() => {
-    if (!idActa) return;
+    if (!idActa || enviada) return;
     guardarActaActiva({ idActa, apartadoActivo });
-  }, [idActa, apartadoActivo]);
+  }, [idActa, apartadoActivo, enviada]);
 
   const actualizarCampoInfoGeneral = (campo, valor) => {
     setInfoGeneral((actual) => {
@@ -509,8 +522,8 @@ export function useActaGeneral() {
   };
 
   // Un solo lugar donde vive, por cada apartado con formulario real, qué
-  // datos tiene, si el inspector ya lo empezó a llenar, cómo se valida y
-  // cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
+  // datos tiene, si el inspector lo modificó en esta sesión (tocado), cómo
+  // se valida y cómo se guarda. Agregar un apartado nuevo (HU-008 en adelante) es sumar
   // una entrada acá, no repetir el try/catch de guardado otra vez.
   const configuracionApartados = {
     'info-general': {
@@ -554,6 +567,8 @@ export function useActaGeneral() {
       validar: validarCierre,
       setErrores: setErroresCierre,
       guardar: (datos) => guardarCierre(idActa, datos),
+      // Las personas agregadas pero sin ningún dato no se guardan.
+      datosVacios: crearCierreInicial(),
     },
   };
 
@@ -569,21 +584,38 @@ export function useActaGeneral() {
     ])
   );
 
+  // Guarda en el backend los datos de un apartado. Devuelve true si se guardó.
+  const guardarEnBackend = async (configuracion, datos) => {
+    setGuardando(true);
+    setErrorGuardado(null);
+
+    try {
+      await configuracion.guardar(datos);
+      return true;
+    } catch (error) {
+      setErrorGuardado(error.message);
+      return false;
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   // Valida y guarda el apartado que se está abandonando. Devuelve true si se
-  // puede salir de él. Al entrar al acta no se asume que el inspector va a
-  // llenar el apartado activo por defecto: mientras no toque ningún campo,
-  // puede saltar libremente a cualquier otro. La obligatoriedad solo se
-  // exige una vez que efectivamente empezó a llenarlo.
-  // Con { forzar: true } (botón "Guardar" del último apartado) se valida y
-  // guarda aunque el inspector no haya tocado nada, porque es un pedido
-  // explícito de guardar y debe mostrar lo que falte.
+  // puede salir de él. La regla depende de los datos que tiene el apartado
+  // AHORA MISMO, no de si alguna vez tuvo datos:
+  //   - Vacío: se puede salir sin validar. Si el inspector lo había llenado y
+  //     después borró todo, se guarda vacío para que la BD no conserve lo anterior.
+  //   - Con algún dato: debe estar completo para poder salir.
+  // Con { forzar: true } (botón "Finalizar" del último apartado) se valida
+  // aunque esté vacío, porque es un pedido explícito y debe mostrar lo que falte.
   const validarYGuardarApartadoActivo = async ({ forzar = false } = {}) => {
     const configuracion = configuracionApartados[apartadoActivo];
+    if (!configuracion) return true;
 
-    if (!configuracion || (!configuracion.tocado && !forzar)) {
-      // Un apartado sin cambios se puede abandonar sin validar (la
-      // obligatoriedad se exige solo una vez que el inspector lo empezó a llenar).
-      return true;
+    if (!forzar && esApartadoVacio(apartadoActivo, configuracion.datos)) {
+      configuracion.setErrores({});
+      if (!configuracion.tocado) return true;
+      return guardarEnBackend(configuracion, configuracion.datosVacios ?? configuracion.datos);
     }
 
     const errores = configuracion.validar(configuracion.datos);
@@ -593,18 +625,11 @@ export function useActaGeneral() {
       return false;
     }
 
-    setGuardando(true);
-    setErrorGuardado(null);
+    // Completo pero sin cambios en esta sesión: son los mismos datos que se
+    // recuperaron del backend, no hace falta volver a guardarlos.
+    if (!configuracion.tocado && !forzar) return true;
 
-    try {
-      await configuracion.guardar(configuracion.datos);
-      return true;
-    } catch (error) {
-      setErrorGuardado(error.message);
-      return false;
-    } finally {
-      setGuardando(false);
-    }
+    return guardarEnBackend(configuracion, configuracion.datos);
   };
 
   // El inspector puede moverse libremente entre apartados (no solo al
@@ -616,14 +641,76 @@ export function useActaGeneral() {
     const puedeSalir = await validarYGuardarApartadoActivo();
     if (!puedeSalir) return false;
 
+    setAvisoFinalizacion(null);
     setApartadoActivo(idDestino);
     return true;
   };
 
-  // Botón "Guardar" del último apartado (Cierre y Firmas): como no hay un
-  // apartado siguiente al cual salir, el guardado se pide explícitamente,
-  // con la misma validación y el mismo manejo de errores que al avanzar.
-  const guardarApartadoActivo = () => validarYGuardarApartadoActivo({ forzar: true });
+  // Botón "Finalizar" del último apartado (Cierre y Firmas): valida los seis
+  // apartados (pintando los errores de cada uno), guarda el Cierre y, si todo
+  // está completo, pasa a la vista general para revisar y enviar el acta. Si
+  // falta algo en otro apartado, lleva al inspector al primero incompleto.
+  const finalizarActa = async () => {
+    setAvisoFinalizacion(null);
+
+    const erroresPorApartado = Object.fromEntries(
+      Object.entries(configuracionApartados).map(([id, configuracion]) => {
+        const errores = configuracion.validar(configuracion.datos);
+        configuracion.setErrores(errores);
+        return [id, errores];
+      })
+    );
+
+    if (Object.keys(erroresPorApartado[apartadoActivo] ?? {}).length > 0) return false;
+
+    const guardado = await validarYGuardarApartadoActivo({ forzar: true });
+    if (!guardado) return false;
+
+    const pendiente = APARTADOS_ACTA.find(
+      (apartado) => Object.keys(erroresPorApartado[apartado.id] ?? {}).length > 0
+    );
+
+    if (pendiente) {
+      setApartadoActivo(pendiente.id);
+      setAvisoFinalizacion(`Complete el apartado "${pendiente.etiqueta}" antes de finalizar el acta.`);
+      return false;
+    }
+
+    setErrorEnvio(null);
+    setMostrandoResumen(true);
+    return true;
+  };
+
+  // Sale de la vista general para seguir editando, opcionalmente en un
+  // apartado puntual (al tocar su pestaña o su botón "Editar").
+  const volverAEditar = (idApartado) => {
+    if (enviando || enviada) return;
+    setMostrandoResumen(false);
+    setErrorEnvio(null);
+    if (idApartado) setApartadoActivo(idApartado);
+  };
+
+  // Botón "Guardar y enviar acta" de la vista general: manda los seis
+  // apartados al backend, que los guarda en la BD y marca el acta como
+  // FINALIZADA. Después ya no queda acta en curso en este navegador.
+  const enviarActa = async () => {
+    if (!idActa || enviando || enviada) return false;
+
+    setEnviando(true);
+    setErrorEnvio(null);
+
+    try {
+      await enviarActaGeneral(idActa, { infoGeneral, responsable, motivo, hallazgos, acciones, cierre });
+      limpiarActaActiva();
+      setEnviada(true);
+      return true;
+    } catch (error) {
+      setErrorEnvio(error.message);
+      return false;
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   // Botón "Siguiente →": avanza al que sigue en el orden del wizard.
   const avanzarAlSiguienteApartado = () => {
@@ -682,6 +769,14 @@ export function useActaGeneral() {
     errorGuardado,
     avanzarAlSiguienteApartado,
     retrocederAlApartadoAnterior,
-    guardarApartadoActivo,
+
+    avisoFinalizacion,
+    finalizarActa,
+    mostrandoResumen,
+    volverAEditar,
+    enviando,
+    errorEnvio,
+    enviada,
+    enviarActa,
   };
 }
