@@ -56,7 +56,7 @@ function crearInfoGeneralInicial() {
 function crearResponsableInicial() {
   return {
     nombreResponsable: '',
-    // Selección múltiple: ningún cargo sale preseleccionado.
+    // Selección única (arreglo de 0 o 1 elemento): ningún cargo sale preseleccionado.
     cargoResponsable: [],
     cargoResponsableOtro: '',
     numeroIdentificacionResponsable: '',
@@ -65,7 +65,7 @@ function crearResponsableInicial() {
 
 function crearMotivoInicial() {
   return {
-    // Selección múltiple: ningún motivo sale preseleccionado.
+    // Selección única (arreglo de 0 o 1 elemento): ningún motivo sale preseleccionado.
     motivoInspeccion: [],
     motivoInspeccionOtro: '',
   };

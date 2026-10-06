@@ -83,7 +83,8 @@ describe('Acta General: recorrido completo hasta la vista previa', () => {
     // ---------- Apartado II: Responsable ----------
     verApartado('II')
     cy.get('#nombreResponsable').type('María Fernández Solano')
-    marcarOpciones('cargoResponsable', ['Representante legal', 'Encargado(a)', 'Otro'])
+    // Cargo y motivo son de selección única: se elige una sola opción.
+    marcarOpciones('cargoResponsable', ['Otro'])
     cy.get('#cargoResponsableOtro').type('Administradora del local')
     cy.get('#numeroIdentificacionResponsable').type('1-2345-6789')
     evidencia('02-apartado-II')
@@ -92,7 +93,7 @@ describe('Acta General: recorrido completo hasta la vista previa', () => {
 
     // ---------- Apartado III: Motivo ----------
     verApartado('III')
-    marcarOpciones('motivoInspeccion', ['Seguimiento', 'Denuncia', 'Otro'])
+    marcarOpciones('motivoInspeccion', ['Otro'])
     cy.get('#motivoInspeccionOtro').type('Verificación de condiciones sanitarias')
     evidencia('03-apartado-III')
     irSiguiente()
@@ -147,7 +148,7 @@ describe('Acta General: recorrido completo hasta la vista previa', () => {
       cy.contains('cypress@correo.com').should('be.visible')
       cy.contains('María Fernández Solano').should('be.visible')
       cy.contains('Otro: Administradora del local').should('be.visible')
-      cy.contains('Seguimiento').should('be.visible')
+      cy.contains('Otro: Verificación de condiciones sanitarias').should('be.visible')
       cy.contains('Se observan condiciones sanitarias aceptables en el local.').should('be.visible')
       cy.contains('Falta documentación pendiente del establecimiento.').should('be.visible')
       cy.contains('Juan Pérez Mora').should('be.visible')
