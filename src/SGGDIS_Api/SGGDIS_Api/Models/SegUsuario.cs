@@ -50,6 +50,9 @@ public class SegUsuario
     [ForeignKey(nameof(IdRegion))]
     public SegRegion? Region { get; set; }
 
+    public ICollection<SegUsuarioArea> AreasInspector { get; set; } = new List<SegUsuarioArea>();
+    public ICollection<SegUsuarioRegion> RegionesInspector { get; set; } = new List<SegUsuarioRegion>();
+
     [Column("ACTIVO")]
     [MaxLength(1)]
     public string Activo { get; set; } = "S";

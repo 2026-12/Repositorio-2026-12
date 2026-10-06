@@ -64,8 +64,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 
                 var areaIdToken = context.Principal?.FindFirst("area_id")?.Value ?? string.Empty;
                 var areaIdUser = user?.IdArea?.ToString() ?? string.Empty;
-                
-                if (session is null || user is null || user.Rol != context.Principal?.FindFirst("role")?.Value || areaIdUser != areaIdToken)
+                var areaAsignadaValida = user is not null && user.Rol == RolesSistema.Inspector
+                    ? int.TryParse(areaIdToken, out var parsedAreaId) &&
+                      await db.UsuariosRegiones.AnyAsync(asignacion => asignacion.IdUsuario == parsedUserId &&
+                          db.Areas.Any(area => area.IdArea == parsedAreaId && area.IdRegion == asignacion.IdRegion))
+                    : areaIdUser == areaIdToken;
+
+                if (session is null || user is null || user.Rol != context.Principal?.FindFirst("role")?.Value || !areaAsignadaValida)
                 {
                     context.Fail("La sesión no es válida o ha finalizado.");
                 }

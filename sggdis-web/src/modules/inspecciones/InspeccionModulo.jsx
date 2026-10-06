@@ -34,13 +34,14 @@ const COMPONENTES_POR_CODIGO = {
 // formulario, o cierre) y guarda el estado de la inspección en curso.
 // App.jsx solo decide cuándo montar este módulo.
 function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
-  const areaAsignada = sesion.idArea ? {
+  const areasAsignadas = sesion.areasAsignadas?.length ? sesion.areasAsignadas : sesion.idArea ? [{
     idArea: sesion.idArea,
     codigoRegion: sesion.codigoRegion,
     codigoArea: sesion.codigoArea,
     nombreRegion: sesion.nombreRegion,
     nombreArea: sesion.nombreArea,
-  } : null;
+  }] : [];
+  const areaAsignada = areasAsignadas[0] ?? null;
   const identidadInspector = {
     nombreCompleto: [sesion.nombre, sesion.primerApellido, sesion.segundoApellido].filter(Boolean).join(' '),
     identificacion: sesion.identificacion ?? '',
@@ -283,6 +284,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
           onComenzar={setDatos}
           onVolverInicio={onVolverInicio}
           areaAsignada={areaAsignada}
+          areasAsignadas={areasAsignadas}
         />
       </Suspense>
     );

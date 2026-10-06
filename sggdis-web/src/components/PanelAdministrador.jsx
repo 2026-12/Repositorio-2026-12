@@ -137,14 +137,6 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
       {error && <p className="panel-admin__notice panel-admin__notice--error" role="alert">{error}</p>}
       {mensaje && <p className="panel-admin__notice" role="status">{mensaje}</p>}
 
-      <section className="panel-admin__section" aria-labelledby="crear-usuario-titulo">
-        <div className="panel-admin__section-heading">
-          <div>
-            <h2 id="crear-usuario-titulo">Cuentas y asignaciones</h2>
-            <p>Las cuentas nuevas esperan aquí hasta que se les asigne un rol y una ubicación.</p>
-          </div>
-        </div>
-      </section>
       <section className="panel-admin__section" aria-labelledby="usuarios-titulo">
         <div className="panel-admin__section-heading">
           <div>
@@ -193,7 +185,7 @@ export default function PanelAdministrador({ correoAdministrador, onCerrarSesion
                     </tr>
                   );
                 })}
-                  {usuarios.length === 0 && <tr><td className="panel-admin__empty" colSpan="8">No hay usuarios pendientes de asignación.</td></tr>}
+                  {usuarios.length === 0 && <tr><td className="panel-admin__empty" colSpan="8">No hay usuarios para mostrar.</td></tr>}
               </tbody>
             </table>
           </div>

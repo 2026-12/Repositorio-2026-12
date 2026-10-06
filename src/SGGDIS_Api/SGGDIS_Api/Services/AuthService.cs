@@ -35,6 +35,12 @@ public class AuthService : IAuthService
         var usuario = await _db.Usuarios
             .Include(u => u.Area)
             .ThenInclude(area => area!.Region)
+            .Include(u => u.AreasInspector)
+                .ThenInclude(asignacion => asignacion.Area)
+                    .ThenInclude(area => area.Region)
+            .Include(u => u.RegionesInspector)
+                .ThenInclude(asignacion => asignacion.Region)
+                    .ThenInclude(region => region.Areas)
             .SingleOrDefaultAsync(u => u.Correo == correo && u.Activo == "S");
         if (usuario is null || _hasher.VerifyHashedPassword(usuario, usuario.HashContrasena, solicitud.Contrasena) == PasswordVerificationResult.Failed)
         {
@@ -43,7 +49,9 @@ public class AuthService : IAuthService
 
         if (string.IsNullOrWhiteSpace(usuario.Rol) ||
             (usuario.Rol == RolesSistema.DirectorRegional && !usuario.IdRegion.HasValue) ||
-            (usuario.Rol != RolesSistema.Administrador && usuario.Rol != RolesSistema.DirectorRegional && !usuario.IdArea.HasValue))
+            (usuario.Rol == RolesSistema.Inspector && !TieneAsignacionInspector(usuario)) ||
+            (usuario.Rol != RolesSistema.Administrador && usuario.Rol != RolesSistema.DirectorRegional &&
+             usuario.Rol != RolesSistema.Inspector && !usuario.IdArea.HasValue))
         {
             return new ResultadoInicioSesion(EstadoInicioSesion.AsignacionPendiente);
         }
@@ -128,16 +136,38 @@ public class AuthService : IAuthService
         return ResultadoRegistroUsuario.Creado;
     }
 
-    public async Task<ResultadoRegistroUsuario> ActualizarAsignacionAsync(int idUsuario, string rol, int? idArea, int? idRegion)
+    public async Task<ResultadoRegistroUsuario> ActualizarAsignacionAsync(int idUsuario, string rol, int? idArea, int? idRegion, List<int>? idAreas = null, List<int>? idRegiones = null)
     {
         rol = rol.Trim();
+        idAreas ??= [];
+        idRegiones ??= [];
         if (!RolPermitido(rol))
         {
             return ResultadoRegistroUsuario.DatosInvalidos;
         }
 
+        if (rol == RolesSistema.Inspector)
+        {
+            idAreas = idAreas.Distinct().ToList();
+            idRegiones = idRegiones.Distinct().ToList();
+            if (idRegiones.Count == 0 ||
+                await _db.Areas.CountAsync(area => idAreas.Contains(area.IdArea)) != idAreas.Count ||
+                await _db.Regiones.CountAsync(region => idRegiones.Contains(region.IdRegion)) != idRegiones.Count)
+            {
+                return ResultadoRegistroUsuario.DatosInvalidos;
+            }
+
+            var regionesDeAreas = await _db.Areas
+                .Where(area => idAreas.Contains(area.IdArea))
+                .Select(area => area.IdRegion)
+                .ToListAsync();
+            if (regionesDeAreas.Any(idRegionArea => !idRegiones.Contains(idRegionArea)))
+            {
+                return ResultadoRegistroUsuario.DatosInvalidos;
+            }
+        }
         // Director Regional solo requiere región (sin área). Los demás roles operativos requieren área.
-        if (rol == RolesSistema.DirectorRegional)
+        else if (rol == RolesSistema.DirectorRegional)
         {
             if (!idRegion.HasValue || idArea.HasValue)
             {
@@ -156,22 +186,43 @@ public class AuthService : IAuthService
             return ResultadoRegistroUsuario.DatosInvalidos;
         }
 
-        if (idArea.HasValue && !await _db.Areas.AnyAsync(area => area.IdArea == idArea.Value))
+        if (rol != RolesSistema.Inspector && idArea.HasValue && !await _db.Areas.AnyAsync(area => area.IdArea == idArea.Value))
         {
             return ResultadoRegistroUsuario.DatosInvalidos;
         }
 
-        if (idRegion.HasValue && !await _db.Regiones.AnyAsync(region => region.IdRegion == idRegion.Value))
+        if (rol != RolesSistema.Inspector && idRegion.HasValue && !await _db.Regiones.AnyAsync(region => region.IdRegion == idRegion.Value))
         {
             return ResultadoRegistroUsuario.DatosInvalidos;
         }
 
-        var usuario = await _db.Usuarios.SingleOrDefaultAsync(item => item.IdUsuario == idUsuario);
+        var usuario = await _db.Usuarios
+            .Include(item => item.AreasInspector)
+            .Include(item => item.RegionesInspector)
+            .SingleOrDefaultAsync(item => item.IdUsuario == idUsuario);
         if (usuario is null) return ResultadoRegistroUsuario.NoEncontrado;
 
         usuario.Rol = rol;
-        usuario.IdArea = idArea;
-        usuario.IdRegion = idRegion;
+        _db.UsuariosAreas.RemoveRange(usuario.AreasInspector);
+        _db.UsuariosRegiones.RemoveRange(usuario.RegionesInspector);
+        if (rol == RolesSistema.Inspector)
+        {
+            var nuevasAreas = idAreas.Select(areaId => new SegUsuarioArea { IdUsuario = idUsuario, IdArea = areaId }).ToList();
+            var nuevasRegiones = idRegiones.Select(regionId => new SegUsuarioRegion { IdUsuario = idUsuario, IdRegion = regionId }).ToList();
+            usuario.AreasInspector = nuevasAreas;
+            usuario.RegionesInspector = nuevasRegiones;
+            _db.UsuariosAreas.AddRange(nuevasAreas);
+            _db.UsuariosRegiones.AddRange(nuevasRegiones);
+            usuario.IdArea = null;
+            usuario.IdRegion = null;
+        }
+        else
+        {
+            usuario.AreasInspector.Clear();
+            usuario.RegionesInspector.Clear();
+            usuario.IdArea = idArea;
+            usuario.IdRegion = idRegion;
+        }
         await _db.SaveChangesAsync();
         return ResultadoRegistroUsuario.Creado;
     }
@@ -202,6 +253,12 @@ public class AuthService : IAuthService
         var usuario = await _db.Usuarios
             .Include(item => item.Area)
             .ThenInclude(area => area!.Region)
+            .Include(item => item.AreasInspector)
+                .ThenInclude(asignacion => asignacion.Area)
+                    .ThenInclude(area => area.Region)
+            .Include(item => item.RegionesInspector)
+                .ThenInclude(asignacion => asignacion.Region)
+                    .ThenInclude(region => region.Areas)
             .SingleOrDefaultAsync(item => item.IdUsuario == sesion.IdUsuario && item.Activo == "S");
         if (usuario is null) return null;
 
@@ -222,15 +279,24 @@ public class AuthService : IAuthService
     {
         var ahora = DateTime.UtcNow;
         var expira = ahora.Add(VigenciaAccessToken);
+        var areasAsignadas = usuario.RegionesInspector
+            .SelectMany(asignacion => asignacion.Region.Areas)
+            .Concat(usuario.Rol == RolesSistema.Inspector || usuario.Area is null
+                ? Enumerable.Empty<SegArea>()
+                : new[] { usuario.Area })
+            .DistinctBy(area => area.IdArea)
+            .Select(area => new AreaAsignadaInspector(area.IdArea, area.Region.Codigo, area.Codigo, area.Region.Nombre, area.Nombre))
+            .ToList();
+        var areaPrincipal = areasAsignadas.FirstOrDefault();
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, usuario.IdUsuario.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, usuario.Correo),
             new Claim("role", usuario.Rol),
             new Claim("session_id", sesion.IdSesion.ToString()),
-            new Claim("area_id", usuario.IdArea?.ToString() ?? string.Empty),
-            new Claim("region_code", usuario.Area?.Region.Codigo ?? string.Empty),
-            new Claim("area_code", usuario.Area?.Codigo ?? string.Empty),
+            new Claim("area_id", areaPrincipal?.IdArea.ToString() ?? usuario.IdArea?.ToString() ?? string.Empty),
+            new Claim("region_code", areaPrincipal?.CodigoRegion ?? usuario.Area?.Region.Codigo ?? string.Empty),
+            new Claim("area_code", areaPrincipal?.CodigoArea ?? usuario.Area?.Codigo ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
         };
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SigningKey));
@@ -239,10 +305,14 @@ public class AuthService : IAuthService
         var token = new JwtSecurityTokenHandler().WriteToken(jwt);
 
         return new SesionAutenticada(token, refreshToken, sesion.IdSesion, usuario.Correo, usuario.Rol, expira, sesion.FechaExpiracion,
-            usuario.IdArea, usuario.Area?.Region.Codigo, usuario.Area?.Codigo,
-            usuario.Area?.Region.Nombre, usuario.Area?.Nombre, usuario.Nombre, usuario.PrimerApellido,
-            usuario.SegundoApellido, usuario.Identificacion);
+            areaPrincipal?.IdArea ?? usuario.IdArea, areaPrincipal?.CodigoRegion ?? usuario.Area?.Region.Codigo,
+            areaPrincipal?.CodigoArea ?? usuario.Area?.Codigo, areaPrincipal?.NombreRegion ?? usuario.Area?.Region.Nombre,
+            areaPrincipal?.NombreArea ?? usuario.Area?.Nombre, usuario.Nombre, usuario.PrimerApellido,
+            usuario.SegundoApellido, usuario.Identificacion, areasAsignadas);
     }
+
+    private static bool TieneAsignacionInspector(SegUsuario usuario) =>
+        usuario.RegionesInspector.Count > 0;
 
     public async Task CerrarSesionAsync(int idSesion)
     {

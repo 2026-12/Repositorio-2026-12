@@ -108,6 +108,7 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
         correo = sesion.Correo,
         rol = sesion.Rol,
         expira = sesion.Expira,
+        areasAsignadas = sesion.AreasAsignadas,
         idArea = sesion.IdArea,
         codigoRegion = sesion.CodigoRegion,
         codigoArea = sesion.CodigoArea,

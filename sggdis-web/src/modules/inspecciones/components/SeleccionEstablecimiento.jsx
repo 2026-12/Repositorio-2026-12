@@ -26,7 +26,8 @@ function obtenerFechaHoraActual() {
 // Primera pantalla de una inspección nueva: fecha/hora, consecutivo, nombre
 // y tipo de establecimiento. Al confirmar crea la inspección en el backend
 // y arranca el wizard de secciones.
-function SeleccionEstablecimiento({ onComenzar, onVolverInicio, areaAsignada }) {
+function SeleccionEstablecimiento({ onComenzar, onVolverInicio, areaAsignada: areaInicial, areasAsignadas = [] }) {
+  const opcionesArea = areasAsignadas.length ? areasAsignadas : areaInicial ? [areaInicial] : [];
   const [fechaHoraInicial] = useState(() => obtenerFechaHoraActual());
 
   const fecha = fechaHoraInicial.fecha;
@@ -34,9 +35,11 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio, areaAsignada }) 
 
   const [nombre, setNombre] = useState('');
   const [tipoId, setTipoId] = useState(null);
+  const [idAreaSeleccionada, setIdAreaSeleccionada] = useState(String(areaInicial?.idArea ?? ''));
+  const areaAsignada = opcionesArea.find((area) => String(area.idArea) === idAreaSeleccionada) ?? null;
 
-  const [regionCodigo, setRegionCodigo] = useState(areaAsignada?.codigoRegion ?? '');
-  const [areaCodigo, setAreaCodigo] = useState(areaAsignada?.codigoArea ?? '');
+  const [regionCodigo, setRegionCodigo] = useState(areaInicial?.codigoRegion ?? '');
+  const [areaCodigo, setAreaCodigo] = useState(areaInicial?.codigoArea ?? '');
 
   // El consecutivo se compone de la región, el área rectora,
   // un número de 4 dígitos y el año actual.
@@ -182,6 +185,27 @@ function SeleccionEstablecimiento({ onComenzar, onVolverInicio, areaAsignada }) 
           <p className="seleccion-area-asignada">
             Área asignada: {areaAsignada.nombreRegion} / {areaAsignada.nombreArea}
           </p>
+        )}
+        {opcionesArea.length > 1 && (
+          <div className="campo">
+            <label htmlFor="area-asignada">Área para esta inspección *</label>
+            <select
+              id="area-asignada"
+              value={idAreaSeleccionada}
+              onChange={(event) => {
+                const siguienteArea = opcionesArea.find((area) => String(area.idArea) === event.target.value);
+                setIdAreaSeleccionada(event.target.value);
+                setRegionCodigo(siguienteArea?.codigoRegion ?? '');
+                setAreaCodigo(siguienteArea?.codigoArea ?? '');
+              }}
+            >
+              {opcionesArea.map((area) => (
+                <option key={area.idArea} value={area.idArea}>
+                  {area.nombreRegion} / {area.nombreArea}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
         {!areaAsignada && (
           <div className="alerta-error" role="alert">

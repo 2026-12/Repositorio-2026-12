@@ -18,12 +18,14 @@ public class AdministracionUsuariosController(SggdisDbContext db, IAuthService a
     public async Task<IActionResult> ObtenerUsuarios()
     {
         var usuarios = await db.Usuarios
-            .Where(u => u.Rol == RolesSistema.Pendiente)  // Solo mostrar cuentas pendientes de asignación
             .Include(u => u.Area)
                 .ThenInclude(a => a.Region)
             .Include(u => u.Region)
+            .Include(u => u.AreasInspector)
+            .Include(u => u.RegionesInspector)
             .OrderBy(usuario => usuario.Correo)
-            .Select(usuario => new
+            .ToListAsync();
+        return Ok(usuarios.Select(usuario => new
             {
                 usuario.IdUsuario,
                 usuario.Correo,
@@ -34,14 +36,22 @@ public class AdministracionUsuariosController(SggdisDbContext db, IAuthService a
                 usuario.Rol,
                 usuario.Activo,
                 usuario.IdArea,
+                IdAreas = usuario.AreasInspector.Select(asignacion => asignacion.IdArea)
+                    .Concat(usuario.Rol == RolesSistema.Inspector && usuario.IdArea.HasValue
+                        ? new[] { usuario.IdArea.Value }
+                        : Array.Empty<int>())
+                    .Distinct(),
+                IdRegiones = usuario.RegionesInspector.Select(asignacion => asignacion.IdRegion)
+                    .Concat(usuario.Rol == RolesSistema.Inspector && !usuario.IdArea.HasValue && usuario.IdRegion.HasValue
+                        ? new[] { usuario.IdRegion.Value }
+                        : Array.Empty<int>())
+                    .Distinct(),
                 IdRegion = usuario.Area == null ? usuario.IdRegion : usuario.Area.IdRegion,
                 CodigoArea = usuario.Area == null ? null : usuario.Area.Codigo,
                 NombreArea = usuario.Area == null ? null : usuario.Area.Nombre,
                 CodigoRegion = usuario.Area == null ? (usuario.Region == null ? null : usuario.Region.Codigo) : usuario.Area.Region.Codigo,
                 NombreRegion = usuario.Area == null ? (usuario.Region == null ? null : usuario.Region.Nombre) : usuario.Area.Region.Nombre
-            })
-            .ToListAsync();
-        return Ok(usuarios);
+            }));
     }
 
     [HttpGet("areas")]
@@ -80,7 +90,7 @@ public class AdministracionUsuariosController(SggdisDbContext db, IAuthService a
     [HttpPut("{idUsuario:int}/asignacion")]
     public async Task<IActionResult> ActualizarAsignacion(int idUsuario, ActualizarUsuarioAdminDto solicitud)
     {
-        var resultado = await authService.ActualizarAsignacionAsync(idUsuario, solicitud.Rol, solicitud.IdArea, solicitud.IdRegion);
+        var resultado = await authService.ActualizarAsignacionAsync(idUsuario, solicitud.Rol, solicitud.IdArea, solicitud.IdRegion, solicitud.IdAreas, solicitud.IdRegiones);
         return resultado switch
         {
             ResultadoRegistroUsuario.Creado => NoContent(),

@@ -31,8 +31,26 @@ namespace SGGDIS_Api.Controllers
 
         private async Task<bool> PerteneceAlAreaActualAsync(int idInspeccion)
         {
-            var areaId = User.FindFirstValue("area_id");
-            return int.TryParse(areaId, out var idArea) && await _db.Inspecciones
+            if (!int.TryParse(User.FindFirstValue("sub"), out var idUsuario)) return false;
+            if (User.IsInRole(RolesSistema.Inspector))
+            {
+                var areaId = await _db.Inspecciones
+                    .Where(inspeccion => inspeccion.IdInspeccion == idInspeccion)
+                    .Select(inspeccion => (int?)inspeccion.IdArea)
+                    .SingleOrDefaultAsync();
+                if (!areaId.HasValue) return false;
+                var regionId = await _db.Areas
+                    .Where(area => area.IdArea == areaId.Value)
+                    .Select(area => (int?)area.IdRegion)
+                    .SingleOrDefaultAsync();
+                return await _db.Usuarios.AnyAsync(usuario => usuario.IdUsuario == idUsuario && usuario.Activo == "S" &&
+                    (usuario.IdArea == areaId.Value ||
+                     usuario.AreasInspector.Any(asignacion => asignacion.IdArea == areaId.Value) ||
+                     (regionId.HasValue && usuario.RegionesInspector.Any(asignacion => asignacion.IdRegion == regionId.Value))));
+            }
+
+            var claimAreaId = User.FindFirstValue("area_id");
+            return int.TryParse(claimAreaId, out var idArea) && await _db.Inspecciones
                 .AnyAsync(inspeccion => inspeccion.IdInspeccion == idInspeccion && inspeccion.IdArea == idArea);
         }
 
@@ -41,15 +59,6 @@ namespace SGGDIS_Api.Controllers
         public async Task<IActionResult> CrearInspeccion([FromBody] CrearInspeccionDto dto)
         {
             if (!int.TryParse(User.FindFirstValue("sub"), out var idUsuario)) return Unauthorized();
-            var areaIdAsignada = HttpContext?.User?.FindFirstValue("area_id");
-            if (!int.TryParse(areaIdAsignada, out var idAreaAsignada))
-            {
-                return Forbid();
-            }
-            if (dto.IdArea != idAreaAsignada)
-            {
-                return Forbid();
-            }
 
             if (dto.Fecha.Date < DateTime.Today)
             {

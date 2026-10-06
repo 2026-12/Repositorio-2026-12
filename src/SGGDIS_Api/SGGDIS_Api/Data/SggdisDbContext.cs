@@ -20,6 +20,8 @@ namespace SGGDIS_Api.Data
         public DbSet<InsInspeccion> Inspecciones { get; set; }
         public DbSet<InsRespuesta> Respuestas { get; set; }
         public DbSet<SegUsuario> Usuarios => Set<SegUsuario>();
+        public DbSet<SegUsuarioArea> UsuariosAreas => Set<SegUsuarioArea>();
+        public DbSet<SegUsuarioRegion> UsuariosRegiones => Set<SegUsuarioRegion>();
         public DbSet<SegRegion> Regiones => Set<SegRegion>();
         public DbSet<SegArea> Areas => Set<SegArea>();
         public DbSet<SegSesion> Sesiones => Set<SegSesion>();
@@ -107,6 +109,28 @@ namespace SGGDIS_Api.Data
                 .HasOne(usuario => usuario.Region)
                 .WithMany()
                 .HasForeignKey(usuario => usuario.IdRegion);
+
+            modelBuilder.Entity<SegUsuarioArea>()
+                .HasKey(asignacion => new { asignacion.IdUsuario, asignacion.IdArea });
+            modelBuilder.Entity<SegUsuarioArea>()
+                .HasOne(asignacion => asignacion.Usuario)
+                .WithMany(usuario => usuario.AreasInspector)
+                .HasForeignKey(asignacion => asignacion.IdUsuario);
+            modelBuilder.Entity<SegUsuarioArea>()
+                .HasOne(asignacion => asignacion.Area)
+                .WithMany()
+                .HasForeignKey(asignacion => asignacion.IdArea);
+
+            modelBuilder.Entity<SegUsuarioRegion>()
+                .HasKey(asignacion => new { asignacion.IdUsuario, asignacion.IdRegion });
+            modelBuilder.Entity<SegUsuarioRegion>()
+                .HasOne(asignacion => asignacion.Usuario)
+                .WithMany(usuario => usuario.RegionesInspector)
+                .HasForeignKey(asignacion => asignacion.IdUsuario);
+            modelBuilder.Entity<SegUsuarioRegion>()
+                .HasOne(asignacion => asignacion.Region)
+                .WithMany()
+                .HasForeignKey(asignacion => asignacion.IdRegion);
 
             // Una Orden Sanitaria puede contener varias ordenanzas. 
             modelBuilder.Entity<OrdenSanitaria>()

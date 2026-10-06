@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using SGGDIS_Api.Models;
@@ -140,10 +141,17 @@ public class AuthServiceTests
     public async Task IniciarSesionAsync_CreaSesionDirectamenteConCredencialesValidas()
     {
         using var contexto = TestDbContextFactory.Crear();
+        await AgregarAreaPrueba(contexto);
+        contexto.Regiones.Add(new SegRegion { IdRegion = 2, Codigo = "CN", Nombre = "Central Norte" });
+        contexto.Areas.Add(new SegArea { IdArea = 2, IdRegion = 2, Codigo = "A1", Nombre = "Alajuela 1" });
+        await contexto.SaveChangesAsync();
         var hasher = new PasswordHasher<SegUsuario>();
-        var usuario = new SegUsuario { Correo = "persona@misalud.go.cr", Rol = "Inspector", IdArea = 1, Activo = "S" };
+        var usuario = new SegUsuario { Correo = "persona@misalud.go.cr", Rol = "Inspector", Activo = "S" };
         usuario.HashContrasena = hasher.HashPassword(usuario, "clave-valida");
         contexto.Usuarios.Add(usuario);
+        await contexto.SaveChangesAsync();
+        contexto.UsuariosAreas.Add(new SegUsuarioArea { IdUsuario = usuario.IdUsuario, IdArea = 2 });
+        contexto.UsuariosRegiones.Add(new SegUsuarioRegion { IdUsuario = usuario.IdUsuario, IdRegion = 1 });
         await contexto.SaveChangesAsync();
         var servicio = CrearServicio(contexto, hasher);
 
@@ -161,6 +169,7 @@ public class AuthServiceTests
         Assert.Equal("Inspector", jwt.Claims.Single(claim => claim.Type == "role").Value);
         Assert.Equal("sggdis-tests", jwt.Issuer);
         Assert.Equal(usuario.Correo, sesion.Sesion.Correo);
+        Assert.Equal(new[] { 1 }, sesion.Sesion.AreasAsignadas.Select(area => area.IdArea));
         Assert.Single(contexto.Sesiones);
     }
 
@@ -168,10 +177,13 @@ public class AuthServiceTests
     public async Task RenovarSesionAsync_RotaRefreshYRechazaElAnterior()
     {
         using var contexto = TestDbContextFactory.Crear();
+        await AgregarAreaPrueba(contexto);
         var hasher = new PasswordHasher<SegUsuario>();
-        var usuario = new SegUsuario { Correo = "persona@misalud.go.cr", Rol = "Inspector", IdArea = 1, Activo = "S" };
+        var usuario = new SegUsuario { Correo = "persona@misalud.go.cr", Rol = "Inspector", Activo = "S" };
         usuario.HashContrasena = hasher.HashPassword(usuario, "clave-valida");
         contexto.Usuarios.Add(usuario);
+        await contexto.SaveChangesAsync();
+        contexto.UsuariosRegiones.Add(new SegUsuarioRegion { IdUsuario = usuario.IdUsuario, IdRegion = 1 });
         await contexto.SaveChangesAsync();
         var servicio = CrearServicio(contexto, hasher);
         var login = await servicio.IniciarSesionAsync(new LoginRequestDto
@@ -252,6 +264,55 @@ public class AuthServiceTests
         Assert.Equal(EstadoInicioSesion.Correcto, resultado.Estado);
         Assert.Equal("Administrador", resultado.Sesion?.Rol);
         Assert.Null(resultado.Sesion?.IdArea);
+    }
+
+    [Fact]
+    public async Task ActualizarAsignacionAsync_ReemplazaAreasYRegionesDeInspector()
+    {
+        using var contexto = TestDbContextFactory.Crear();
+        contexto.Regiones.AddRange(
+            new SegRegion { IdRegion = 1, Codigo = "HN", Nombre = "Huetar Norte" },
+            new SegRegion { IdRegion = 2, Codigo = "CN", Nombre = "Central Norte" });
+        contexto.Areas.AddRange(
+            new SegArea { IdArea = 4, IdRegion = 1, Codigo = "F", Nombre = "Florencia" },
+            new SegArea { IdArea = 5, IdRegion = 2, Codigo = "A1", Nombre = "Alajuela 1" });
+        var usuario = new SegUsuario { Correo = "inspector@misalud.go.cr", HashContrasena = "hash", Rol = RolesSistema.Inspector };
+        contexto.Usuarios.Add(usuario);
+        await contexto.SaveChangesAsync();
+        contexto.UsuariosAreas.Add(new SegUsuarioArea { IdUsuario = usuario.IdUsuario, IdArea = 4 });
+        contexto.UsuariosRegiones.Add(new SegUsuarioRegion { IdUsuario = usuario.IdUsuario, IdRegion = 1 });
+        await contexto.SaveChangesAsync();
+        var servicio = CrearServicio(contexto);
+
+        var resultado = await servicio.ActualizarAsignacionAsync(usuario.IdUsuario, RolesSistema.Inspector, null, null, [5], [2]);
+
+        Assert.Equal(ResultadoRegistroUsuario.Creado, resultado);
+        Assert.Equal(new[] { 5 }, await contexto.UsuariosAreas.Select(asignacion => asignacion.IdArea).ToArrayAsync());
+        Assert.Equal(new[] { 2 }, await contexto.UsuariosRegiones.Select(asignacion => asignacion.IdRegion).ToArrayAsync());
+        Assert.Null(usuario.IdArea);
+        Assert.Null(usuario.IdRegion);
+    }
+
+    [Fact]
+    public async Task ActualizarAsignacionAsync_RechazaAreaFueraDeLasRegionesAsignadas()
+    {
+        using var contexto = TestDbContextFactory.Crear();
+        contexto.Regiones.AddRange(
+            new SegRegion { IdRegion = 1, Codigo = "HN", Nombre = "Huetar Norte" },
+            new SegRegion { IdRegion = 2, Codigo = "CN", Nombre = "Central Norte" });
+        contexto.Areas.AddRange(
+            new SegArea { IdArea = 4, IdRegion = 1, Codigo = "F", Nombre = "Florencia" },
+            new SegArea { IdArea = 5, IdRegion = 2, Codigo = "A1", Nombre = "Alajuela 1" });
+        var usuario = new SegUsuario { Correo = "inspector@misalud.go.cr", HashContrasena = "hash" };
+        contexto.Usuarios.Add(usuario);
+        await contexto.SaveChangesAsync();
+        var servicio = CrearServicio(contexto);
+
+        var resultado = await servicio.ActualizarAsignacionAsync(usuario.IdUsuario, RolesSistema.Inspector, null, null, [4], [2]);
+
+        Assert.Equal(ResultadoRegistroUsuario.DatosInvalidos, resultado);
+        Assert.Empty(contexto.UsuariosAreas);
+        Assert.Empty(contexto.UsuariosRegiones);
     }
 
     private static AuthService CrearServicio(SGGDIS_Api.Data.SggdisDbContext contexto, IPasswordHasher<SegUsuario>? hasher = null)

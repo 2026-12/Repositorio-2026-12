@@ -60,10 +60,22 @@ namespace SGGDIS_Api.Services
                 throw new ConsecutivoDuplicadoException();
             }
 
-            var inspector = await _context.Usuarios.AsNoTracking().SingleOrDefaultAsync(usuario =>
-                usuario.IdUsuario == idUsuario && usuario.Activo == "S" &&
-                usuario.Rol == RolesSistema.Inspector && usuario.IdArea == dto.IdArea);
-            if (inspector is null || string.IsNullOrWhiteSpace(inspector.Nombre) ||
+            var inspector = await _context.Usuarios.AsNoTracking()
+                .Include(usuario => usuario.Area)
+                    .ThenInclude(area => area!.Region)
+                .Include(usuario => usuario.AreasInspector)
+                    .ThenInclude(asignacion => asignacion.Area)
+                        .ThenInclude(area => area.Region)
+                .Include(usuario => usuario.RegionesInspector)
+                    .ThenInclude(asignacion => asignacion.Region)
+                        .ThenInclude(region => region.Areas)
+                .SingleOrDefaultAsync(usuario => usuario.IdUsuario == idUsuario && usuario.Activo == "S" &&
+                    usuario.Rol == RolesSistema.Inspector);
+            var areaAutorizada = inspector is not null &&
+                (inspector.IdArea == dto.IdArea ||
+                 inspector.AreasInspector.Any(asignacion => asignacion.IdArea == dto.IdArea) ||
+                 inspector.RegionesInspector.Any(asignacion => asignacion.Region.Areas.Any(area => area.IdArea == dto.IdArea)));
+            if (inspector is null || !areaAutorizada || string.IsNullOrWhiteSpace(inspector.Nombre) ||
                 string.IsNullOrWhiteSpace(inspector.PrimerApellido) ||
                 string.IsNullOrWhiteSpace(inspector.SegundoApellido) ||
                 string.IsNullOrWhiteSpace(inspector.Identificacion))

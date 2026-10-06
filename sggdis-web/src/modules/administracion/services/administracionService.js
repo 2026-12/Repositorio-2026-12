@@ -15,10 +15,13 @@ export function obtenerRegiones() {
   return solicitarJson(`${URL_USUARIOS}/regiones`);
 }
 
-export function actualizarAsignacionUsuario(idUsuario, rol, idArea, idRegion) {
+export function actualizarAsignacionUsuario(idUsuario, asignacion, idArea, idRegion) {
+  const solicitud = typeof asignacion === 'string'
+    ? { rol: asignacion, idArea: idArea || null, idRegion: idRegion || null }
+    : asignacion;
   return solicitarJson(`${URL_USUARIOS}/${idUsuario}/asignacion`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rol, idArea: idArea || null, idRegion: idRegion || null }),
+    body: JSON.stringify(solicitud),
   });
 }
