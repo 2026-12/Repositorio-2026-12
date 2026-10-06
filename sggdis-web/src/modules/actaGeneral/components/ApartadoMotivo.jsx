@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { MOTIVOS_INSPECCION } from '../config/actaGeneral';
 
 // Apartado III del wizard del Acta General (HU-008): motivo de la
-// inspección. Igual que ApartadoAcciones, es una lista desplegable de
-// selección múltiple (combobox): el estado y el guardado viven en
-// useActaGeneral, acá solo vive si la lista está abierta o cerrada.
+// inspección. Es una lista desplegable de selección ÚNICA (combobox): solo se
+// puede elegir un motivo. El estado y el guardado viven en useActaGeneral,
+// acá solo vive si la lista está abierta o cerrada.
 function ApartadoMotivo({ datos, errores, onCambiarCampo }) {
   const [listaAbierta, setListaAbierta] = useState(false);
   const contenedorListaRef = useRef(null);
@@ -36,17 +36,15 @@ function ApartadoMotivo({ datos, errores, onCambiarCampo }) {
     };
   }, [listaAbierta]);
 
-  // Selección múltiple: marcar o desmarcar un motivo. Se mantiene el orden
-  // del catálogo para que el resumen siempre se lea igual.
-  const alternarMotivo = (valor) => {
-    const actuales = datos.motivoInspeccion ?? [];
-    const seleccionados = actuales.includes(valor)
-      ? actuales.filter((motivo) => motivo !== valor)
-      : MOTIVOS_INSPECCION.map((motivo) => motivo.valor).filter(
-        (codigo) => codigo === valor || actuales.includes(codigo),
-      );
+  // Selección única: marcar un motivo reemplaza al que estuviera marcado, y
+  // volver a marcar el mismo lo deja sin selección. La lista se cierra al
+  // elegir, como un <select> nativo. El dato sigue siendo un arreglo (de 0 o
+  // 1 elemento) para no cambiar la validación ni el guardado.
+  const elegirMotivo = (valor) => {
+    const yaElegido = (datos.motivoInspeccion ?? []).includes(valor);
 
-    onCambiarCampo('motivoInspeccion', seleccionados);
+    onCambiarCampo('motivoInspeccion', yaElegido ? [] : [valor]);
+    setListaAbierta(false);
   };
 
   const resumenSeleccion = MOTIVOS_INSPECCION
@@ -61,7 +59,7 @@ function ApartadoMotivo({ datos, errores, onCambiarCampo }) {
       <h2 className="acta-apartado__titulo">Motivo de la Inspección</h2>
 
       <p className="acta-apartado__descripcion">
-        Marque la opción o las opciones que correspondan al motivo de esta inspección.
+        Seleccione el motivo de esta inspección.
       </p>
 
       <div className="acta-campo">
@@ -80,7 +78,7 @@ function ApartadoMotivo({ datos, errores, onCambiarCampo }) {
             title={resumenSeleccion || undefined}
             onClick={() => setListaAbierta((abierta) => !abierta)}
           >
-            {resumenSeleccion || 'Seleccione uno o varios motivos'}
+            {resumenSeleccion || 'Seleccione un motivo'}
           </button>
 
           {listaAbierta && (
@@ -90,7 +88,7 @@ function ApartadoMotivo({ datos, errores, onCambiarCampo }) {
                   <input
                     type="checkbox"
                     checked={(datos.motivoInspeccion ?? []).includes(motivo.valor)}
-                    onChange={() => alternarMotivo(motivo.valor)}
+                    onChange={() => elegirMotivo(motivo.valor)}
                   />
                   <span>{motivo.etiqueta}</span>
                 </label>

@@ -285,25 +285,32 @@ describe('Acta General', () => {
     })
   })
 
-  describe('Selección múltiple (cargo y motivo)', () => {
+  describe('Selección única (cargo y motivo)', () => {
     beforeEach(() => {
       llenarInfoGeneral()
       irSiguiente()
       cy.contains('Apartado II').should('be.visible')
     })
 
-    it('permite elegir más de un cargo y muestra el resumen', () => {
-      marcarOpciones('cargoResponsable', ['Representante legal', 'Encargado(a)'])
+    it('solo permite un cargo: elegir otro reemplaza al anterior y la lista se cierra', () => {
+      marcarOpciones('cargoResponsable', ['Representante legal'])
+      cy.get('[data-campo="cargoResponsable"]').should('contain', 'Representante legal')
 
+      marcarOpciones('cargoResponsable', ['Encargado(a)'])
       cy.get('[data-campo="cargoResponsable"]')
-        .should('contain', 'Representante legal')
-        .and('contain', 'Encargado(a)')
+        .should('contain', 'Encargado(a)')
+        .and('not.contain', 'Representante legal')
+
+      cy.get('[data-campo="cargoResponsable"]').click()
+      cy.get('.acta-multiselect__lista input:checked').should('have.length', 1)
     })
 
-    it('permite desmarcar un cargo ya elegido', () => {
+    it('permite quitar el cargo elegido volviendo a marcarlo', () => {
       cy.get('[data-campo="cargoResponsable"]').click()
       cy.get('.acta-multiselect__lista').contains('label', 'Denunciante').click()
+      cy.get('[data-campo="cargoResponsable"]').click()
       cy.get('.acta-multiselect__lista').contains('label', 'Denunciante').click()
+      cy.get('[data-campo="cargoResponsable"]').click()
       cy.get('.acta-multiselect__lista input:checked').should('have.length', 0)
     })
 
@@ -319,15 +326,16 @@ describe('Acta General', () => {
       cy.get('.acta-multiselect__lista').should('not.exist')
     })
 
-    it('el motivo de la inspección también admite varias opciones', () => {
+    it('el motivo de la inspección también es de selección única', () => {
       llenarResponsable()
       irSiguiente()
       cy.contains('Apartado III').should('be.visible')
 
-      marcarOpciones('motivoInspeccion', ['Seguimiento', 'Denuncia'])
+      marcarOpciones('motivoInspeccion', ['Seguimiento'])
+      marcarOpciones('motivoInspeccion', ['Denuncia'])
       cy.get('[data-campo="motivoInspeccion"]')
-        .should('contain', 'Seguimiento')
-        .and('contain', 'Denuncia')
+        .should('contain', 'Denuncia')
+        .and('not.contain', 'Seguimiento')
     })
 
     it('al faltar el cargo, el pop-up lleva el foco al selector del cargo', () => {
