@@ -150,7 +150,7 @@ public class AuthService : IAuthService
         {
             idAreas = idAreas.Distinct().ToList();
             idRegiones = idRegiones.Distinct().ToList();
-            if (idRegiones.Count == 0 ||
+            if (idRegiones.Count == 0 || idAreas.Count == 0 ||
                 await _db.Areas.CountAsync(area => idAreas.Contains(area.IdArea)) != idAreas.Count ||
                 await _db.Regiones.CountAsync(region => idRegiones.Contains(region.IdRegion)) != idRegiones.Count)
             {
@@ -279,11 +279,19 @@ public class AuthService : IAuthService
     {
         var ahora = DateTime.UtcNow;
         var expira = ahora.Add(VigenciaAccessToken);
-        var areasAsignadas = usuario.RegionesInspector
-            .SelectMany(asignacion => asignacion.Region.Areas)
-            .Concat(usuario.Rol == RolesSistema.Inspector || usuario.Area is null
-                ? Enumerable.Empty<SegArea>()
-                : new[] { usuario.Area })
+        IEnumerable<SegArea> areasDisponibles;
+        if (usuario.Rol == RolesSistema.Inspector)
+        {
+            areasDisponibles = usuario.AreasInspector
+                .Where(asignacion => usuario.RegionesInspector.Any(region => region.IdRegion == asignacion.Area.IdRegion))
+                .Select(asignacion => asignacion.Area);
+        }
+        else
+        {
+            areasDisponibles = usuario.Area is null ? Enumerable.Empty<SegArea>() : [usuario.Area];
+        }
+
+        var areasAsignadas = areasDisponibles
             .DistinctBy(area => area.IdArea)
             .Select(area => new AreaAsignadaInspector(area.IdArea, area.Region.Codigo, area.Codigo, area.Region.Nombre, area.Nombre))
             .ToList();
@@ -312,7 +320,8 @@ public class AuthService : IAuthService
     }
 
     private static bool TieneAsignacionInspector(SegUsuario usuario) =>
-        usuario.RegionesInspector.Count > 0;
+        usuario.RegionesInspector.Count > 0 && usuario.AreasInspector.Any(asignacion =>
+            usuario.RegionesInspector.Any(region => region.IdRegion == asignacion.Area.IdRegion));
 
     public async Task CerrarSesionAsync(int idSesion)
     {

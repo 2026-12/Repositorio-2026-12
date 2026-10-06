@@ -66,8 +66,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var areaIdUser = user?.IdArea?.ToString() ?? string.Empty;
                 var areaAsignadaValida = user is not null && user.Rol == RolesSistema.Inspector
                     ? int.TryParse(areaIdToken, out var parsedAreaId) &&
-                      await db.UsuariosRegiones.AnyAsync(asignacion => asignacion.IdUsuario == parsedUserId &&
-                          db.Areas.Any(area => area.IdArea == parsedAreaId && area.IdRegion == asignacion.IdRegion))
+                      await db.UsuariosAreas.AnyAsync(areaAsignada => areaAsignada.IdUsuario == parsedUserId &&
+                          areaAsignada.IdArea == parsedAreaId &&
+                          db.Areas.Any(area => area.IdArea == areaAsignada.IdArea &&
+                              db.UsuariosRegiones.Any(regionAsignada => regionAsignada.IdUsuario == parsedUserId &&
+                                  regionAsignada.IdRegion == area.IdRegion)))
                     : areaIdUser == areaIdToken;
 
                 if (session is null || user is null || user.Rol != context.Principal?.FindFirst("role")?.Value || !areaAsignadaValida)

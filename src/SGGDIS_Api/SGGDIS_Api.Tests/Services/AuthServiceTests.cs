@@ -142,15 +142,16 @@ public class AuthServiceTests
     {
         using var contexto = TestDbContextFactory.Crear();
         await AgregarAreaPrueba(contexto);
+        contexto.Areas.Add(new SegArea { IdArea = 2, IdRegion = 1, Codigo = "F2", Nombre = "Florencia 2" });
         contexto.Regiones.Add(new SegRegion { IdRegion = 2, Codigo = "CN", Nombre = "Central Norte" });
-        contexto.Areas.Add(new SegArea { IdArea = 2, IdRegion = 2, Codigo = "A1", Nombre = "Alajuela 1" });
+        contexto.Areas.Add(new SegArea { IdArea = 3, IdRegion = 2, Codigo = "A1", Nombre = "Alajuela 1" });
         await contexto.SaveChangesAsync();
         var hasher = new PasswordHasher<SegUsuario>();
         var usuario = new SegUsuario { Correo = "persona@misalud.go.cr", Rol = "Inspector", Activo = "S" };
         usuario.HashContrasena = hasher.HashPassword(usuario, "clave-valida");
         contexto.Usuarios.Add(usuario);
         await contexto.SaveChangesAsync();
-        contexto.UsuariosAreas.Add(new SegUsuarioArea { IdUsuario = usuario.IdUsuario, IdArea = 2 });
+        contexto.UsuariosAreas.Add(new SegUsuarioArea { IdUsuario = usuario.IdUsuario, IdArea = 1 });
         contexto.UsuariosRegiones.Add(new SegUsuarioRegion { IdUsuario = usuario.IdUsuario, IdRegion = 1 });
         await contexto.SaveChangesAsync();
         var servicio = CrearServicio(contexto, hasher);
@@ -183,6 +184,7 @@ public class AuthServiceTests
         usuario.HashContrasena = hasher.HashPassword(usuario, "clave-valida");
         contexto.Usuarios.Add(usuario);
         await contexto.SaveChangesAsync();
+        contexto.UsuariosAreas.Add(new SegUsuarioArea { IdUsuario = usuario.IdUsuario, IdArea = 1 });
         contexto.UsuariosRegiones.Add(new SegUsuarioRegion { IdUsuario = usuario.IdUsuario, IdRegion = 1 });
         await contexto.SaveChangesAsync();
         var servicio = CrearServicio(contexto, hasher);

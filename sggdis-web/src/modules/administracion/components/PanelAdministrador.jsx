@@ -258,7 +258,7 @@ export default function PanelAdministrador({ correoAdministrador, onMenuPrincipa
                           )}
                         </td>
                       <td>{usuario.activo === 'S' ? 'Activo' : 'Inactivo'}</td>
-                      <td><button className="panel-admin__save" type="button" disabled={guardando || !ROLES.includes(valores.rol) || (esInspector && valores.idRegiones.length === 0) || (!esInspector && requiereArea(valores.rol) && (!valores.idRegion || !valores.idArea)) || (!esInspector && requiereRegion(valores.rol) && !requiereArea(valores.rol) && !valores.idRegion)} onClick={() => guardarAsignacion(usuario)}>Guardar</button></td>
+                      <td><button className="panel-admin__save" type="button" disabled={guardando || !ROLES.includes(valores.rol) || (esInspector && (valores.idRegiones.length === 0 || areasInspectorSeleccionadas.length === 0)) || (!esInspector && requiereArea(valores.rol) && (!valores.idRegion || !valores.idArea)) || (!esInspector && requiereRegion(valores.rol) && !requiereArea(valores.rol) && !valores.idRegion)} onClick={() => guardarAsignacion(usuario)}>Guardar</button></td>
                     </tr>
                   );
                 })}
