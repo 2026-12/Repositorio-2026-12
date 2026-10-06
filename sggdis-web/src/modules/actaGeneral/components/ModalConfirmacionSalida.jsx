@@ -34,13 +34,23 @@ function ModalConfirmacionSalida({ error, eliminando, onCancelar, onConfirmar })
             Cancelar
           </button>
 
+          {/* Botón deshabilitado a propósito: la función "Guardar borrador" aún no está implementada. */}
+          <button
+            type="button"
+            className="acta-boton-modal acta-boton-modal--secundario"
+            disabled
+            title="Esta funcionalidad estará disponible próximamente"
+          >
+            Guardar borrador
+          </button>
+
           <button
             type="button"
             className="acta-boton-modal acta-boton-modal--primario"
             onClick={onConfirmar}
             disabled={eliminando}
           >
-            {eliminando ? 'Saliendo…' : 'Salir y descartar acta'}
+            {eliminando ? 'Saliendo…' : 'Salir'}
           </button>
         </div>
       </div>

@@ -52,5 +52,56 @@ namespace SGGDIS_Api.Tests.Controllers
 
             Assert.IsType<BadRequestObjectResult>(resultado);
         }
+
+        [Fact]
+        public async Task EnviarActa_DevuelveNoContentSiSeEnvia()
+        {
+            var servicioMock = new Mock<IActaGeneralService>();
+            var controlador = CrearControlador(servicioMock);
+
+            var resultado = await controlador.EnviarActa(1, new EnvioActaGeneralDto());
+
+            Assert.IsType<NoContentResult>(resultado);
+            servicioMock.Verify(s => s.EnviarActaAsync(1, It.IsAny<EnvioActaGeneralDto>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnviarActa_DevuelveConflictSiYaEstabaFinalizada()
+        {
+            var servicioMock = new Mock<IActaGeneralService>();
+            servicioMock.Setup(s => s.EnviarActaAsync(It.IsAny<int>(), It.IsAny<EnvioActaGeneralDto>()))
+                .ThrowsAsync(new ActaYaFinalizadaException("El acta ya fue enviada."));
+            var controlador = CrearControlador(servicioMock);
+
+            var resultado = await controlador.EnviarActa(1, new EnvioActaGeneralDto());
+
+            Assert.IsType<ConflictObjectResult>(resultado);
+        }
+
+        [Fact]
+        public async Task EnviarActa_DevuelveBadRequestSiUnApartadoEsInvalido()
+        {
+            var servicioMock = new Mock<IActaGeneralService>();
+            servicioMock.Setup(s => s.EnviarActaAsync(It.IsAny<int>(), It.IsAny<EnvioActaGeneralDto>()))
+                .ThrowsAsync(new AccionesInvalidasException("Alguna de las acciones seleccionadas no es válida."));
+            var controlador = CrearControlador(servicioMock);
+
+            var resultado = await controlador.EnviarActa(1, new EnvioActaGeneralDto());
+
+            Assert.IsType<BadRequestObjectResult>(resultado);
+        }
+
+        [Fact]
+        public async Task EnviarActa_DevuelveNotFoundSiElActaNoExiste()
+        {
+            var servicioMock = new Mock<IActaGeneralService>();
+            servicioMock.Setup(s => s.EnviarActaAsync(It.IsAny<int>(), It.IsAny<EnvioActaGeneralDto>()))
+                .ThrowsAsync(new KeyNotFoundException());
+            var controlador = CrearControlador(servicioMock);
+
+            var resultado = await controlador.EnviarActa(999, new EnvioActaGeneralDto());
+
+            Assert.IsType<NotFoundResult>(resultado);
+        }
     }
 }

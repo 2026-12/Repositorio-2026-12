@@ -6,8 +6,8 @@ import { iniciarSesionYEntrarAlMenu } from '../support/loginInspector'
 const CLAVE_ACTA_ACTIVA = 'sggdis:acta-general-activa'
 
 // Colores esperados (los lee el navegador ya calculados en rgb).
-const VERDE = 'rgb(28, 138, 74)' // #1c8a4a
-const VERDE_CLARO = 'rgb(230, 244, 234)' // #e6f4ea
+// Verde de las pestañas: el mismo de la Guía de Inspección (formulario.css).
+const VERDE = 'rgb(30, 123, 52)' // #1e7b34
 const AZUL_ACERO = 'rgb(22, 70, 135)' // #164687
 const ROJO = 'rgb(179, 38, 30)' // #b3261e
 
@@ -26,8 +26,10 @@ function entrarActaGeneral() {
   cy.contains('Apartado I').should('be.visible')
 }
 
+// Botón de avance del pie: "Siguiente →" en los apartados I a V y "Finalizar"
+// en el último (lleva a la vista previa).
 function irSiguiente() {
-  cy.contains('button', 'Siguiente').click()
+  cy.contains('.acta-pie button', /Siguiente|Finalizar/).click()
 }
 
 // Confirma en qué apartado está la pantalla (compara el texto exacto: "Apartado
@@ -240,28 +242,24 @@ describe('Acta General', () => {
   })
 
   describe('Indicador de progreso', () => {
-    it('pinta en verde (contorno verde y relleno verde claro) el apartado completo', () => {
+    it('pinta en verde (contorno y texto verde, igual que la Guía) el apartado completo', () => {
       llenarInfoGeneral()
       irSiguiente()
       cy.contains('Apartado II').should('be.visible')
 
       cy.contains('.acta-tab', 'Info General')
         .should('have.class', 'acta-tab--completa')
-        .and('have.css', 'background-color', VERDE_CLARO)
+        .and('have.css', 'color', VERDE)
         .and('have.css', 'box-shadow')
         .and('contain', VERDE)
     })
 
-    it('no muestra el check en el indicador: sigue mostrando el número del apartado', () => {
+    it('las pestañas muestran solo el nombre del apartado, sin número romano ni check', () => {
       llenarInfoGeneral()
       irSiguiente()
 
-      cy.contains('.acta-tab', 'Info General')
-        .find('.acta-tab__numero')
-        .should('have.text', 'I')
-      cy.get('.acta-tab__numero').each(($numero) => {
-        expect($numero.text()).not.to.contain('✓')
-      })
+      cy.get('.acta-tab__numero').should('not.exist')
+      cy.contains('.acta-tab', 'Info General').invoke('text').should('not.match', /^I\b|✓/)
     })
 
     it('mantiene en azul el apartado activo incompleto', () => {
@@ -346,9 +344,10 @@ describe('Acta General', () => {
       cy.contains('button', 'Volver al menú').click()
 
       cy.contains('¿Volver al menú principal?').should('be.visible')
-      cy.contains('button', 'Salir y descartar acta')
+      cy.contains('.acta-modal button', /^Salir$/)
         .should('be.visible')
         .and('have.css', 'background-color', AZUL_ACERO)
+      cy.contains('.acta-modal button', 'Guardar borrador').should('be.disabled')
     })
 
     it('"Cancelar" cierra el modal y permanece en el acta', () => {
@@ -361,7 +360,7 @@ describe('Acta General', () => {
 
     it('confirmar descarta el acta y regresa al menú (inicio, o el panel si es Administrador)', () => {
       cy.contains('button', 'Volver al menú').click()
-      cy.contains('button', 'Salir y descartar acta').click()
+      cy.contains('.acta-modal button', /^Salir$/).click()
 
       cy.location('pathname').should('match', /^\/(inicio|admin)$/)
       cy.window().then((ventana) => {
@@ -439,10 +438,10 @@ describe('Acta General', () => {
       irSiguiente()
       esperarGuardado('@guardarAcciones', 'Apartado V (Acciones)')
 
-      // Apartado VI: Cierre y Firmas. "Siguiente" guarda y lleva a la vista previa.
+      // Apartado VI: Cierre y Firmas. "Finalizar" guarda y lleva a la vista previa.
       verApartado('VI')
       cy.contains('Paso 6 de 6').should('be.visible')
-      cy.contains('button', 'Siguiente').should('be.visible')
+      cy.contains('.acta-pie button', 'Finalizar').should('be.visible')
       evidencia('11-apartado-VI-vacio')
       llenarCierre()
       evidencia('12-apartado-VI-lleno')
@@ -466,6 +465,7 @@ describe('Acta General', () => {
       })
       cy.contains('button', 'Siguiente').should('not.exist')
       cy.contains('button', 'Anterior').should('be.visible')
+      cy.contains('button', 'Guardar y enviar acta').should('be.visible')
 
       // Los seis apartados quedan marcados como completos (verde).
       cy.get('.acta-tab--completa').should('have.length', 6)
@@ -506,7 +506,7 @@ describe('Acta General', () => {
       verApartado('II')
     })
 
-    it('en el último apartado "Siguiente" muestra el pop-up si falta algún dato de la persona', () => {
+    it('en el último apartado "Finalizar" muestra el pop-up si falta algún dato de la persona', () => {
       llenarInfoGeneral()
       irSiguiente()
       llenarResponsable()
@@ -541,7 +541,7 @@ describe('Acta General', () => {
       llenarAcciones()
       irSiguiente()
 
-      // Aunque el apartado VI no se haya tocado, "Siguiente" lo valida antes de
+      // Aunque el apartado VI no se haya tocado, "Finalizar" lo valida antes de
       // abrir la vista previa.
       irSiguiente()
       verAvisoCamposObligatorios()
