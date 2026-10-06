@@ -1,11 +1,16 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MARCA_ALIMENTOS } from '../config/inspeccionAlimentos';
 import { TEXTO_ORDEN_SANITARIA } from '../../config/inspeccion';
 import { useCierreInspeccion } from '../../hooks/useCierreInspeccion';
-import { cerrarInspeccion } from '../../services/inspeccionesService';
+import { obtenerSeccion } from '../../services/guiasInspeccionService';
+import { useSincronizacionCierre } from '../../hooks/useSincronizacionCierre';
+import { construirVistaPrevia } from '../../domain/vistaPreviaInspeccion';
+import { validarInspeccionCompleta } from '../../domain/validacionEnvioInspeccion';
 import AlertaError from '../../components/AlertaError';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
 import { limpiarSoloNumeros } from '../../domain/cierreInspeccion';
+import VistaPreviaInspeccion from './VistaPreviaInspeccion';
+import ErroresValidacionEnvio from './ErroresValidacionEnvio';
 import './formulario.css';
 
 // Convierte fecha localizada a formato ISO
@@ -36,7 +41,13 @@ export default function FormularioCierreInspeccion({
   datosCierre: datosCierreControlado,
   onDatosCierreChange,
   onAnterior,
+  mostrarVistaPrevia,
+  onMostrarVistaPreviaChange,
+  onSeccionCargada,
+  onIrASeccion,
+  onGuardarDelta,
   onFinalizado,
+  onVolverInicio,
   onCrearOrdenSanitaria,
   paso,
   totalPasos,
@@ -49,10 +60,7 @@ export default function FormularioCierreInspeccion({
     puntajeMaximoAjustado,
     porcentaje,
     clasificacion,
-    seccionesCompletas,
-    vistasIncompletas,
     camposPendientes,
-    puedeEnviar,
   } = useCierreInspeccion({
     vistas,
     seccionesCache,
@@ -63,21 +71,69 @@ export default function FormularioCierreInspeccion({
   });
 
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
-  const [mostrarVistaPrevia, setMostrarVistaPrevia] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState(null);
   const [cierreConfirmado, setCierreConfirmado] = useState(null);
+  const [erroresValidacion, setErroresValidacion] = useState([]);
+  const [validando, setValidando] = useState(false);
 
-  // Si falta algo (sección incompleta o campo obligatorio), muestra la
-  // alerta en vez de enviar. Si todo está bien, no envía todavía: abre la
-  // vista previa para que el inspector confirme antes del envío real.
-  const abrirVistaPrevia = () => {
-    if (!puedeEnviar) {
-      setMostrarAlerta(true);
-      return;
+  const cerrarConExito = useCallback((confirmacion) => {
+    setCierreConfirmado(confirmacion);
+    onMostrarVistaPreviaChange(false);
+  }, [onMostrarVistaPreviaChange]);
+
+  const sincronizacionCierre = useSincronizacionCierre({
+    idInspeccion: datos.idInspeccion,
+    onFinalizado: cerrarConExito,
+  });
+
+  const documento = useMemo(
+    () => construirVistaPrevia(datos, seccionesCache, respuestas, vistas),
+    [datos, seccionesCache, respuestas, vistas],
+  );
+
+  const abrirVistaPrevia = async () => {
+    setMostrarAlerta(camposPendientes.length > 0);
+    setValidando(true);
+    setErroresValidacion([]);
+    setErrorEnvio(null);
+
+    const cacheValidacion = { ...seccionesCache };
+    const codigosIncluidos = new Set(vistas.flatMap((vista) => vista.secciones.map((seccion) => seccion.codigo)));
+    const vistasValidacion = [...vistas];
+    [...(datos.secciones ?? []), ...Object.values(seccionesCache)].forEach((seccion) => {
+      if (!codigosIncluidos.has(seccion.codigo)) {
+        vistasValidacion.push({ codigo: seccion.codigo, secciones: [seccion] });
+        codigosIncluidos.add(seccion.codigo);
+      }
+    });
+
+    try {
+      for (const vista of vistasValidacion) {
+        for (const seccionRaw of vista.secciones) {
+          if (cacheValidacion[seccionRaw.codigo]) continue;
+          try {
+            const seccion = await obtenerSeccion(
+              datos.idGuia ?? 1,
+              seccionRaw.codigo,
+              datos.idTipoEstablecimiento,
+            );
+            cacheValidacion[seccionRaw.codigo] = seccion;
+            onSeccionCargada?.(seccionRaw.codigo, seccion);
+          } catch {
+            // La validación comunica qué sección no pudo cargarse.
+          }
+        }
+      }
+
+      const errores = validarInspeccionCompleta(vistasValidacion, cacheValidacion, respuestas);
+      setErroresValidacion(errores);
+      if (errores.length === 0 && camposPendientes.length === 0) {
+        onMostrarVistaPreviaChange(true);
+      }
+    } finally {
+      setValidando(false);
     }
-    setMostrarAlerta(false);
-    setMostrarVistaPrevia(true);
   };
 
   // Envío real del cierre, se dispara solo desde la vista previa.
@@ -85,13 +141,15 @@ export default function FormularioCierreInspeccion({
     setErrorEnvio(null);
     setEnviando(true);
     try {
-      const confirmacion = await cerrarInspeccion(datos.idInspeccion, {
-        identificacionRepresentante: datosCierre.identificacionRepresentante.trim(),
-        observacionesFinales: datosCierre.observacionesFinales.trim() || null,
-        registrarOrdenSanitaria: datosCierre.ordenSanitaria,
+      await sincronizacionCierre.finalizar({
+        datosCierre: {
+          identificacionRepresentante: datosCierre.identificacionRepresentante.trim(),
+          observacionesFinales: datosCierre.observacionesFinales.trim() || null,
+          registrarOrdenSanitaria: datosCierre.ordenSanitaria,
+        },
+        respuestas,
+        guardarDelta: onGuardarDelta,
       });
-      setCierreConfirmado(confirmacion);
-      setMostrarVistaPrevia(false);
     } catch (error) {
       setErrorEnvio(error.message);
     } finally {
@@ -157,89 +215,22 @@ export default function FormularioCierreInspeccion({
     );
   }
 
-  // Pantalla de vista previa: resume lo que se va a enviar y pide
-  // confirmación explícita antes de disparar el envío real al backend.
   if (mostrarVistaPrevia) {
     return (
-      <div className="pagina">
-        <header className="cabecera">
-          <div className="cabecera__marca">
-            <div className="cabecera__logo cabecera__logo--imagen">
-              <img src={mapaDorado} alt="Ministerio de Salud de Costa Rica" />
-            </div>
-            <div>
-              <h1>{MARCA_ALIMENTOS.tituloGuia}</h1>
-              <p>{datos.nombre} · Consecutivo: {datos.consecutivo}</p>
-            </div>
-          </div>
-          <div className="cabecera__estado">
-            <span className="chip chip--info">{datos.tipoLabel}</span>
-          </div>
-        </header>
-
-        <main className="tarjeta">
-          <div className="tarjeta__encabezado">
-            <span className="tarjeta__etiqueta">VISTA PREVIA</span>
-            <div className="tarjeta__titulo-fila">
-              <h2>Confirme los datos antes de enviar</h2>
-            </div>
-          </div>
-
-          {errorEnvio && <AlertaError titulo="No se pudo registrar el cierre" mensaje={errorEnvio} />}
-
-          <div className="cierre__campos-grid">
-            <div className="campo">
-              <span className="cierre__info-label">Inspector responsable</span>
-              <p>{identidadInspector?.nombreCompleto ?? '—'}</p>
-            </div>
-            <div className="campo">
-              <span className="cierre__info-label">Identificación del inspector</span>
-              <p>{identidadInspector?.identificacion ?? '—'}</p>
-            </div>
-          </div>
-
-          <div className="cierre__campos-grid">
-            <div className="campo">
-              <span className="cierre__info-label">Fecha</span>
-              <p>{datos.fecha || '—'}</p>
-            </div>
-            <div className="campo">
-              <span className="cierre__info-label">Hora</span>
-              <p>{datos.hora || '—'}</p>
-            </div>
-          </div>
-
-          <div className="campo">
-            <span className="cierre__info-label">Identificación del representante</span>
-            <p>{datosCierre.identificacionRepresentante || '—'}</p>
-          </div>
-
-          <div className="campo">
-            <span className="cierre__info-label">Observaciones finales</span>
-            <p>{datosCierre.observacionesFinales || 'Sin observaciones'}</p>
-          </div>
-
-          <div className="campo">
-            <span className="cierre__info-label">Orden sanitaria</span>
-            <p>{datosCierre.ordenSanitaria ? 'Sí, se requiere emitir' : 'No se requiere'}</p>
-          </div>
-
-          <div className="cierre__puntaje-box">
-            <span className="cierre__puntaje-label">Resultado obtenido</span>
-            <strong className="cierre__puntaje-valor">{porcentaje}%</strong>
-            <span className="cierre__puntaje-clasificacion">{clasificacion.etiqueta}</span>
-          </div>
-        </main>
-
-        <footer className="pie">
-          <button type="button" className="boton boton--secundario" onClick={() => setMostrarVistaPrevia(false)} disabled={enviando}>
-            ← Volver a editar
-          </button>
-          <button type="button" className="boton boton--primario" onClick={manejarFinalizar} disabled={enviando}>
-            {enviando ? 'Registrando…' : 'Confirmar y enviar ✓'}
-          </button>
-        </footer>
-      </div>
+      <VistaPreviaInspeccion
+        documento={documento}
+        datosCierre={datosCierre}
+        identidadInspector={identidadInspector}
+        onRegresarEditar={() => {
+          onMostrarVistaPreviaChange(false);
+          onAnterior();
+        }}
+        onConfirmar={manejarFinalizar}
+        onVolverMenu={onVolverInicio}
+        confirmando={enviando}
+        pendienteSincronizacion={sincronizacionCierre.pendienteSincronizacion}
+        error={errorEnvio || sincronizacionCierre.errorSincronizacion}
+      />
     );
   }
 
@@ -316,16 +307,7 @@ export default function FormularioCierreInspeccion({
             <span className="cierre__panel-etiqueta">INFORMACIÓN DE CIERRE</span>
             <h3 className="cierre__panel-titulo">Datos finales</h3>
 
-            {/* Secciones incompletas */}
-            {!seccionesCompletas && (
-              <div className="alerta-validacion-error" style={{ marginBottom: '24px' }}>
-                <span className="alerta-validacion-error__titulo">Hay secciones sin completar</span>
-                <span>
-                  No se puede cerrar la inspección hasta completar:{' '}
-                  {vistasIncompletas.map((vista) => vista.codigo).join(', ')}.
-                </span>
-              </div>
-            )}
+            <ErroresValidacionEnvio errores={erroresValidacion} onIrASeccion={onIrASeccion} />
 
             {/* Alerta de campos incompletos */}
             {mostrarAlerta && camposPendientes.length > 0 && (
@@ -433,8 +415,8 @@ export default function FormularioCierreInspeccion({
           ← Anterior
         </button>
         <span>Paso {paso}{totalPasos ? ` de ${totalPasos}` : ''}</span>
-        <button type="button" className="boton boton--secundario" onClick={abrirVistaPrevia} disabled={enviando}>
-          Vista previa →
+        <button type="button" className="boton boton--secundario" onClick={abrirVistaPrevia} disabled={enviando || validando}>
+          {validando ? 'Validando secciones…' : 'Vista previa →'}
         </button>
       </footer>
     </div>

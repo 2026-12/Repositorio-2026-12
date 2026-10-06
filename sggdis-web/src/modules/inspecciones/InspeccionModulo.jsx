@@ -13,7 +13,6 @@ import { cargarProgreso, limpiarProgreso } from './services/progresoInspeccionSe
 import { eliminarInspeccion } from './services/inspeccionesService';
 import { TOTAL_PASOS_ALIMENTOS } from './inspeccionAlimentos/config/inspeccionAlimentos';
 import { DATOS_CIERRE_INICIALES } from './domain/cierreInspeccion';
-import { esVistaCompleta } from './domain/progresoVistas';
 
 // Qué componente de formulario usar para cada vista (paso del asistente).
 // La mayoría de las secciones (A, D, E, F, G, H) se pintan con el componente
@@ -62,6 +61,9 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
   );
 
   const [cierreActivo, setCierreActivo] = useState(progresoGuardado?.cierreActivo ?? false);
+  const [mostrarVistaPreviaCierre, setMostrarVistaPreviaCierre] = useState(
+    progresoGuardado?.mostrarVistaPreviaCierre ?? false,
+  );
   const [datosCierre, setDatosCierre] = useState(progresoGuardado?.datosCierre ?? DATOS_CIERRE_INICIALES);
 
   const [errorGuardado, setErrorGuardado] = useState(null);
@@ -74,18 +76,6 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
   });
 
   const salida = useConfirmacionSalida();
-
-  // Chequea si TODAS las vistas están completas, incluyendo las compuestas
-  // B (B1/B2/B3) y C (C1/C2).
-  const todasLasSeccionesCompletas =
-    wizard.vistas.length > 0 &&
-    wizard.vistas.every((vista) =>
-      esVistaCompleta(
-        vista,
-        seccionesCache,
-        respuestas
-      )
-    );
 
   // Actualiza el mapa de respuestas de la sección actual.
   const actualizarRespuestas = useCallback((actualizar) => {
@@ -130,23 +120,9 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
       return;
     }
 
-    // Llegar al final de las pestañas no significa que esté completa: antes
-    // de abrir el cierre se valida todo.
-    if (!todasLasSeccionesCompletas) {
-      setErrorGuardado(
-        'Debe completar todas las secciones de la inspección antes de continuar al cierre.'
-      );
-
-      return;
-    }
-
-    // El cierre solo se habilita cuando todas las secciones están completas.
+    // La validación completa y detallada ocurre al intentar generar la vista previa.
     setCierreActivo(true);
-  }, [
-    sincronizacion,
-    wizard,
-    todasLasSeccionesCompletas,
-  ]);
+  }, [sincronizacion, wizard]);
 
   // Regresa de la pantalla de cierre al formulario.
   const volverDeCierre = useCallback(() => {
@@ -160,6 +136,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
     seccionesCache,
     wizard,
     cierreActivo,
+    mostrarVistaPreviaCierre,
     datosCierre,
   });
 
@@ -203,6 +180,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
     setRespuestasGuardadas({});
     setSeccionesCache({});
     setCierreActivo(false);
+    setMostrarVistaPreviaCierre(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     setErrorGuardado(null);
     sincronizacion.reiniciarEstado();
@@ -243,6 +221,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
     setRespuestasGuardadas({});
     setSeccionesCache({});
     setCierreActivo(false);
+    setMostrarVistaPreviaCierre(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     setErrorGuardado(null);
     sincronizacion.reiniciarEstado();
@@ -265,6 +244,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
     setRespuestasGuardadas({});
     setSeccionesCache({});
     setCierreActivo(false);
+    setMostrarVistaPreviaCierre(false);
     setDatosCierre(DATOS_CIERRE_INICIALES);
     setErrorGuardado(null);
     sincronizacion.reiniciarEstado();
@@ -380,7 +360,7 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
   );
 
 
-  // El cierre solo se puede mostrar cuando ya se completaron todas las secciones.
+  // El cierre se usa para validar todas las secciones antes de abrir el documento.
   if (cierreActivo) {
     return (
       <>
@@ -396,7 +376,22 @@ function InspeccionModulo({ onVolverInicio, onCrearOrdenSanitaria, sesion }) {
             datosCierre={datosCierre}
             onDatosCierreChange={actualizarDatosCierre}
             onAnterior={volverDeCierre}
+            mostrarVistaPrevia={mostrarVistaPreviaCierre}
+            onMostrarVistaPreviaChange={setMostrarVistaPreviaCierre}
+            onSeccionCargada={registrarSeccion}
+            onIrASeccion={(codigo) => {
+              const indice = wizard.vistas.findIndex((vista) =>
+                vista.codigo === codigo || vista.secciones.some((seccion) => seccion.codigo === codigo)
+              );
+              if (indice >= 0) {
+                setMostrarVistaPreviaCierre(false);
+                setCierreActivo(false);
+                wizard.irAVista(indice);
+              }
+            }}
+            onGuardarDelta={sincronizacion.guardarDelta}
             onFinalizado={manejarInspeccionFinalizada}
+            onVolverInicio={salida.abrir}
             onCrearOrdenSanitaria={() => onCrearOrdenSanitaria?.({
               idInspeccion: datos.idInspeccion,
               consecutivo: datos.consecutivo,

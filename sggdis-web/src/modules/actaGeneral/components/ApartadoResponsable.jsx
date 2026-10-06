@@ -89,6 +89,7 @@ function ApartadoResponsable({ datos, errores, onCambiarCampo }) {
           <button
             type="button"
             className={`acta-multiselect__boton ${resumenSeleccion ? '' : 'acta-multiselect__boton--vacio'}`}
+            data-campo="cargoResponsable"
             aria-haspopup="true"
             aria-expanded={listaAbierta}
             aria-labelledby="cargoResponsable-etiqueta"

@@ -8,6 +8,7 @@
   --acta-dorado: #cfac65;
   --acta-gris: #c1c5c8;
   --acta-verde: #1c8a4a;
+  --acta-rojo: #b3261e;
 
   font-family: 'Segoe UI', Inter, Helvetica, sans-serif;
   min-height: 100vh;
@@ -98,34 +99,62 @@
   background: #f3f6fb;
 }
 
-/* ========== TABS (indicador de progreso) ========== */
+/* ========== TABS (indicador de progreso) ==========
+   Mismo diseño que las pestañas de la Guía de Inspección (formulario.css:
+   .tabs / .tabs__item): píldoras con texto gris; la activa en azul oscuro
+   relleno; la completa con contorno y texto verde; y completa + activa en
+   verde relleno. Los colores se copian tal cual de la Guía. */
 
 .acta-tabs {
   display: flex;
-  gap: 6px;
-  padding: 10px 24px;
+  gap: 8px;
+  padding: 8px 24px;
   background: #ffffff;
-  border-bottom: 1px solid #e6e8ec;
+  border-bottom: 1px solid var(--acta-gris);
   overflow-x: auto;
   position: sticky;
   top: 65px;
   z-index: 999;
-  box-shadow: 0 2px 6px rgba(0, 20, 60, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 20, 60, 0.06);
 }
 
+/* Mismo estilo de "píldora" que los tabs del módulo de Guía de Inspección. */
 .acta-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: #5b6470;
+  cursor: pointer;
   border: none;
   background: transparent;
-  color: #8a94a6;
-  padding: 8px 14px;
-  border-radius: 8px 8px 0 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
   white-space: nowrap;
+  font-family: inherit;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.acta-tab--activa {
+  background: #021a53;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.acta-tab--completa {
+  box-shadow: inset 0 0 0 2px #1e7b34;
+  color: #1e7b34;
+}
+
+.acta-tab--completa.acta-tab--activa {
+  background: #1e7b34;
+  color: #ffffff;
+}
+
+.acta-tab:not(.acta-tab--activa):not(:disabled):hover {
+  background: #eef1f4;
 }
 
 .acta-tab:disabled {
@@ -133,44 +162,9 @@
   opacity: 0.55;
 }
 
-.acta-tab__numero {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #eef0f3;
-  color: #8a94a6;
-  font-size: 0.72rem;
-}
-
-/* Apartado con todos sus campos obligatorios llenos y válidos en este
-   momento (independiente de si ya se guardó en el backend). Si además es
-   el apartado activo, el resaltado azul de abajo tiene prioridad visual
-   sobre el verde, para que quede claro dónde está parado el inspector. */
-.acta-tab--completa {
-  color: var(--acta-verde);
-}
-
-.acta-tab--completa .acta-tab__numero {
-  background: var(--acta-verde);
-  color: #ffffff;
-}
-
-.acta-tab--activa {
-  color: var(--acta-azul-medio);
-  border-bottom: 3px solid var(--acta-azul-medio);
-}
-
-.acta-tab--activa .acta-tab__numero {
-  background: var(--acta-azul-medio);
-  color: #ffffff;
-}
-
-/* Texto alternativo para lectores de pantalla: el check ya lo muestra
-   visualmente, pero el ícono del círculo tiene aria-hidden, así que acá
-   queda el equivalente en texto sin ocupar espacio en pantalla. */
+/* Texto alternativo para lectores de pantalla: el verde ya indica que el
+   apartado está completo, acá queda el equivalente en texto sin ocupar
+   espacio en pantalla. */
 .acta-tab__srSolo {
   position: absolute;
   width: 1px;
@@ -223,6 +217,136 @@
   color: #667085;
   border-bottom: 1px solid #eef0f3;
   padding-bottom: 20px;
+}
+
+/* ========== VISTA PREVIA (paso final) ==========
+   Mismo aspecto que la vista previa de Orden Sanitaria: caja con encabezado
+   azul oscuro y secciones de solo lectura con etiqueta gris y valor debajo. */
+
+.acta-vista-previa {
+  overflow: hidden;
+  border: 1px solid #d8dce3;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.acta-vista-previa__encabezado {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: var(--acta-azul-oscuro);
+  color: #ffffff;
+}
+
+.acta-vista-previa__encabezado h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.acta-vista-previa__encabezado span {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.acta-vista-previa__encabezado strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.acta-vista-previa__seccion {
+  border-top: 1px solid #d8dce3;
+}
+
+.acta-vista-previa__titulo {
+  padding: 10px 16px;
+  border-bottom: 1px solid #d8dce3;
+  background: #f3f6fb;
+  color: var(--acta-azul-oscuro);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.acta-vista-previa__grid {
+  padding: 18px 20px;
+  display: grid;
+  column-gap: 40px;
+  row-gap: 20px;
+  align-items: start;
+}
+
+.acta-vista-previa__grid--1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.acta-vista-previa__grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.acta-vista-previa__dato {
+  min-width: 0;
+}
+
+.acta-vista-previa__dato--completo {
+  grid-column: 1 / -1;
+}
+
+.acta-vista-previa__etiqueta {
+  display: block;
+  margin-bottom: 6px;
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.acta-vista-previa__valor {
+  display: block;
+  color: #1f2937;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.acta-vista-previa__personas {
+  padding: 0 18px 18px;
+}
+
+.acta-vista-previa__persona {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #d8dce3;
+  border-radius: 9px;
+}
+
+.acta-vista-previa__persona-titulo {
+  padding: 10px 14px;
+  border-bottom: 1px solid #d8dce3;
+  background: #edf2f7;
+  color: var(--acta-azul-oscuro);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .acta-vista-previa__grid--2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .acta-vista-previa__encabezado {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .acta-vista-previa__encabezado strong {
+    text-align: left;
+  }
 }
 
 /* ========== CAMPOS ========== */
@@ -342,9 +466,121 @@
   cursor: not-allowed;
 }
 
+/* Mensaje de campo obligatorio sin llenar: rojo y en negrita, debajo del campo. */
 .acta-campo__error {
-  font-size: 0.76rem;
-  color: #c0392b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--acta-rojo, #b3261e);
+}
+
+.acta-campo__error::before {
+  content: '!';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--acta-rojo, #b3261e);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* Campo con error: contorno rojo y fondo rosado suave, igual que los criterios
+   pendientes de Guía de Inspección. Se detecta con el mensaje de error que
+   cuelga directamente del campo (:has), así no hay que marcar cada componente.
+   Se usa el combinador hijo (>) para que el error de la lista de personas
+   (Apartado VI) no pinte también los campos de cada persona. */
+.acta-campo:has(> .acta-campo__error) > input,
+.acta-campo:has(> .acta-campo__error) > textarea,
+.acta-campo:has(> .acta-campo__error) > select,
+.acta-campo:has(> .acta-campo__error) > .acta-multiselect > .acta-multiselect__boton {
+  border: 2px solid var(--acta-rojo, #b3261e);
+  background-color: #fff9f9;
+  box-shadow: 0 0 0 1px rgba(179, 38, 30, 0.08);
+}
+
+.acta-campo:has(> .acta-campo__error) > input:focus,
+.acta-campo:has(> .acta-campo__error) > textarea:focus,
+.acta-campo:has(> .acta-campo__error) > select:focus,
+.acta-campo:has(> .acta-campo__error) > .acta-multiselect > .acta-multiselect__boton:focus {
+  border-color: var(--acta-rojo, #b3261e);
+  box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.14);
+}
+
+.acta-campo:has(> .acta-campo__error) > .acta-opciones .acta-opcion:not(.acta-opcion--activa),
+.acta-campo:has(> .acta-campo__error) > .acta-boton-lista {
+  border: 2px solid var(--acta-rojo, #b3261e);
+  background-color: #fff9f9;
+}
+
+/* Aviso flotante pequeño, en el costado derecho, cuando se intenta continuar
+   con campos obligatorios sin llenar. Mismo aspecto y posición que el aviso de
+   navegación bloqueada del módulo de Guía de Inspección. */
+.acta-aviso {
+  position: fixed;
+  top: 145px;
+  right: 24px;
+  z-index: 5000;
+  width: 320px;
+  max-width: calc(100vw - 48px);
+  padding: 13px 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fffdf7;
+  border: 1px solid #e4c76f;
+  border-radius: 12px;
+  color: #654d0b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(2, 26, 83, 0.18);
+  animation: acta-aviso-entrada 0.2s ease;
+}
+
+.acta-aviso::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: -7px;
+  width: 13px;
+  height: 13px;
+  background: #fffdf7;
+  border-left: 1px solid #e4c76f;
+  border-bottom: 1px solid #e4c76f;
+  transform: rotate(45deg);
+}
+
+.acta-aviso__icono {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--acta-dorado);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+@keyframes acta-aviso-entrada {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Lista desplegable de selección múltiple (ej. acciones a seguir del
@@ -517,6 +753,36 @@
   color: var(--acta-azul-medio);
 }
 
+/* Confirmación después de enviar el acta (mismo tono verde de "completo"). */
+.acta-envio-exitoso {
+  text-align: center;
+  padding: 24px 12px;
+}
+
+.acta-envio-exitoso__etiqueta {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #1e7b34;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.acta-envio-exitoso h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  color: var(--acta-azul-oscuro);
+}
+
+.acta-envio-exitoso p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #667085;
+}
+
 /* ========== PIE / ACCIONES ==========
    Mismo estándar de colores que la barra inferior del módulo de Guía de
    Inspección (formulario.css: .pie--fijo / .boton--secundario): barra fija
@@ -528,11 +794,16 @@
   bottom: 0;
   left: 0;
   width: 100%;
+  /* Sin border-box el relleno se suma al 100% y la barra se sale de la
+     pantalla: "Siguiente" quedaba fuera de vista y el "Paso X de 6" corrido. */
+  box-sizing: border-box;
   min-height: 74px;
   z-index: 2000;
-  display: flex;
+  /* Tres columnas fijas: izquierda (Anterior), centro (paso), derecha
+     (Siguiente). El paso queda siempre centrado, haya o no botón a los lados. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   padding: 12px max(7%, 30px);
   background:
@@ -541,8 +812,9 @@
 }
 
 .acta-pie__paso {
-  flex: 1;
+  grid-column: 2;
   text-align: center;
+  white-space: nowrap;
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 700;
@@ -550,6 +822,17 @@
 
 .acta-pie__espaciador {
   min-width: 118px;
+}
+
+/* Anterior pegado a la izquierda y Siguiente a la derecha. */
+.acta-pie--fija > :first-child {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.acta-pie--fija > :last-child {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .acta-boton {
@@ -696,14 +979,15 @@
   background: #eef4fa;
 }
 
+/* Azul, igual que el botón "Salir" del modal de Guía de Inspección. */
 .acta-boton-modal--primario {
-  border: 1px solid #c0392b;
-  background: #c0392b;
+  border: 1px solid var(--acta-azul-acero);
+  background: var(--acta-azul-acero);
   color: #ffffff;
 }
 
 .acta-boton-modal--primario:hover:not(:disabled) {
-  background: #a5321f;
+  background: var(--acta-azul-medio);
 }
 
 .acta-boton-modal:disabled {

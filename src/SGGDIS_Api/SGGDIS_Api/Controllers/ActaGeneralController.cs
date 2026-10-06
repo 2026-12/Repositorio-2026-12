@@ -197,6 +197,39 @@ namespace SGGDIS_Api.Controllers
             }
         }
 
+        // PUT /api/actas-generales/{id}/envio : envía el acta. Guarda los seis
+        // apartados en la base de datos y la marca como FINALIZADA.
+        [HttpPut("{id}/envio")]
+        public async Task<IActionResult> EnviarActa(int id, [FromBody] EnvioActaGeneralDto dto)
+        {
+            try
+            {
+                await _actaGeneralService.EnviarActaAsync(id, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ActaYaFinalizadaException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (Exception ex) when (ex is ResponsableInvalidoException
+                or MotivoInvalidoException
+                or HallazgosInvalidosException
+                or AccionesInvalidasException
+                or CierreInvalidoException)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al enviar el acta general {IdActa}.", id);
+                return StatusCode(500, "Ocurrió un error al enviar el acta.");
+            }
+        }
+
         // DELETE /api/actas-generales/{id} : descarta un acta en curso (el
         // inspector salió sin terminarla desde "Volver al menú"), para que no
         // quede ocupando un folio a medio llenar.

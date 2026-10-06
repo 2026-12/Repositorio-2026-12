@@ -41,5 +41,15 @@ export function validarInfoGeneral(datos) {
     errores.correoNotificaciones = 'El correo no tiene un formato válido.';
   }
 
+  // Las dos preguntas Sí/No del final del apartado también son obligatorias:
+  // hay que responder cada una (Sí o No) para poder continuar.
+  if (datos.autorizaIngreso !== true && datos.autorizaIngreso !== false) {
+    errores.autorizaIngreso = 'Debe indicar si se autoriza el ingreso al establecimiento.';
+  }
+
+  if (datos.autorizaFotos !== true && datos.autorizaFotos !== false) {
+    errores.autorizaFotos = 'Debe indicar si se autoriza tomar fotografías y/o videos.';
+  }
+
   return errores;
 }
