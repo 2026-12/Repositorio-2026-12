@@ -4,7 +4,7 @@
 // incluye en el build de producción porque `import.meta.env.DEV` se reemplaza
 // por `false` y el bloque que la usa queda eliminado al compilar.
 export const inspeccionPruebaOrdenSanitaria = {
-  idInspeccion: 2, // se coloca lo que genera el select
+  idInspeccion: 1, // se coloca lo que genera el select
   consecutivo: 'MS-DRRSCS-ARS-SJ-AI-0002-2026',
   nombreEstablecimiento: 'Restaurante El Buen Sabor',
   nombrePersonaNotificar: 'Juan Carlos Rodríguez Mora',
