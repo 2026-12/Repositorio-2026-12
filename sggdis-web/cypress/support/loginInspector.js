@@ -1,30 +1,11 @@
 const CORREO_POR_DEFECTO = 'cypress1@misalud.go.cr'
 const CONTRASENA_POR_DEFECTO = 'ClaveSegura123'
 
-export function obtenerCredencialesInspector() {
-  return cy
-    .env(['INSPECTOR_CORREO', 'INSPECTOR_CONTRASENA'], { log: false })
-    .then((configuracion) => ({
-      correo: configuracion.INSPECTOR_CORREO || CORREO_POR_DEFECTO,
-      contrasena: configuracion.INSPECTOR_CONTRASENA || CONTRASENA_POR_DEFECTO,
-    }))
-}
-
-function escribirCredencialesYEntrar() {
+function escribirCredencialesYEntrarConDatos({ correo, contrasena }) {
   cy.visit('/login')
 
-  cy.env(['INSPECTOR_CORREO', 'INSPECTOR_CONTRASENA']).then(
-    ({ INSPECTOR_CORREO, INSPECTOR_CONTRASENA }) => {
-      cy.get('input[name="correo"]').type(
-        INSPECTOR_CORREO || CORREO_POR_DEFECTO
-      )
-
-      cy.get('input[name="contrasena"]').type(
-        INSPECTOR_CONTRASENA || CONTRASENA_POR_DEFECTO,
-        { log: false }
-      )
-    },
-  )
+  cy.get('input[name="correo"]').type(correo)
+  cy.get('input[name="contrasena"]').type(contrasena, { log: false })
 
   cy.contains('button', 'Iniciar sesión').click()
 
@@ -46,6 +27,26 @@ function escribirCredencialesYEntrar() {
   })
 }
 
+function escribirCredencialesYEntrar() {
+  cy.env(['INSPECTOR_CORREO', 'INSPECTOR_CONTRASENA']).then(
+    ({ INSPECTOR_CORREO, INSPECTOR_CONTRASENA }) => {
+      escribirCredencialesYEntrarConDatos({
+        correo: INSPECTOR_CORREO || CORREO_POR_DEFECTO,
+        contrasena: INSPECTOR_CONTRASENA || CONTRASENA_POR_DEFECTO,
+      })
+    },
+  )
+}
+
+export function obtenerCredencialesInspector() {
+  return cy
+    .env(['INSPECTOR_CORREO', 'INSPECTOR_CONTRASENA'], { log: false })
+    .then((configuracion) => ({
+      correo: configuracion.INSPECTOR_CORREO || CORREO_POR_DEFECTO,
+      contrasena: configuracion.INSPECTOR_CONTRASENA || CONTRASENA_POR_DEFECTO,
+    }))
+}
+
 export function iniciarSesionYEntrarAlMenu() {
   escribirCredencialesYEntrar()
 
@@ -59,6 +60,22 @@ export function iniciarSesionYEntrarAlMenu() {
 
   cy.location('pathname').should('eq', '/inicio')
   cy.contains('.inicio__navLink', 'Acta General').should('be.visible')
+}
+
+// Versión con sesión cacheada: el login real solo corre la primera vez y en
+// los siguientes tests Cypress restaura el sessionStorage (sggdis:sesion) y
+// la cookie de refresh, sin pasar de nuevo por la pantalla de login.
+export function iniciarSesionComoInspectorConSesion() {
+  obtenerCredencialesInspector().then((credenciales) => {
+    cy.session(
+      ['inspector', credenciales.correo],
+      () => escribirCredencialesYEntrarConDatos(credenciales),
+      { cacheAcrossSpecs: true },
+    )
+  })
+
+  cy.visit('/inicio')
+  cy.contains('.inicio__navLink', 'Nueva inspección').should('be.visible')
 }
 
 export function iniciarSesionComoInspector() {

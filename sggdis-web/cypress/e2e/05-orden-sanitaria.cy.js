@@ -1,7 +1,7 @@
-import { iniciarSesionComoInspector } from '../support/loginInspector'
+import { iniciarSesionComoInspectorConSesion } from '../support/loginInspector'
 
 function entrarOrdenSanitaria() {
-  iniciarSesionComoInspector()
+  iniciarSesionComoInspectorConSesion()
   cy.visit('/orden-sanitaria')
 
   cy.contains('Información General de la Orden Sanitaria')
