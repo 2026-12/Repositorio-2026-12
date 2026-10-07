@@ -292,7 +292,10 @@ export default function FormularioCierreInspeccion({
 
             <div className="cierre__pie-panel">
               <p className="cierre__pie-texto">
-                {resumen.obtenidos} / {puntajeMaximoAjustado} puntos aplicables
+                {resumen.obtenidos} / {datos.puntajeMaximo} Puntos obtenidos
+              </p>
+              <p className="cierre__pie-texto">
+                {puntajeMaximoAjustado} / {datos.puntajeMaximo} Puntos aplicables
               </p>
               {puntosExcluidosPorNoAplica > 0 && (
                 <p className="cierre__pie-nota">
