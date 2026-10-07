@@ -148,30 +148,40 @@ body,
   overflow: visible;
 }
 
+/*
+ * Pestañas con el mismo patrón de "píldora" que la Guía de Inspección
+ * (formulario.css → .tabs__item) y el Acta General (.acta-tab):
+ *   pendiente → sin borde
+ *   completo  → contorno verde
+ *   completo + activo → relleno verde
+ *   activo    → relleno azul oscuro
+ *   error     → contorno rojo; error + activo → relleno rojo
+ * Así el paso activo siempre se distingue de los demás (EH1-02).
+ */
 .orden-tab {
   padding: 6px 14px;
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: #5B6470;
+  color: var(--orden-muted);
   font-size: 0.8rem;
   font-weight: 400;
+  white-space: nowrap;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.orden-tab:not(.orden-tab--completo):not(.orden-tab--error).orden-tab--activo {
+.orden-tab--activo {
   background: var(--orden-navy);
   color: var(--orden-white);
   font-weight: 600;
 }
 
 .orden-tab--completo {
-  background: var(--orden-green);
-  color: var(--orden-white);
-  box-shadow: none;
-  font-weight: 600;
+  background: transparent;
+  color: var(--orden-green);
+  box-shadow: inset 0 0 0 2px var(--orden-green);
 }
 
 .orden-tab--completo.orden-tab--activo {
@@ -179,28 +189,39 @@ body,
   color: var(--orden-white);
 }
 
-.orden-tab--error,
-.orden-tab--error.orden-tab--activo {
-  background: var(--orden-white);
+.orden-tab--error {
+  background: transparent;
   color: var(--orden-danger);
   box-shadow: inset 0 0 0 2px var(--orden-danger);
   font-weight: 600;
 }
 
-.orden-tab:not(.orden-tab--activo):not(.orden-tab--completo):not(.orden-tab--error):hover {
-  background: #EEF1F4;
-}
-
-.orden-tab--completo:hover {
-  background: #176B2D;
+.orden-tab--error.orden-tab--activo {
+  background: var(--orden-danger);
   color: var(--orden-white);
 }
 
-.orden-tab--error:hover,
-.orden-tab--error.orden-tab--activo:hover {
-  background: #FFF5F4;
-  color: var(--orden-danger);
-  box-shadow: inset 0 0 0 2px var(--orden-danger);
+.orden-tab:not(.orden-tab--activo):hover {
+  background: #EEF1F4;
+}
+
+.orden-tab:focus-visible {
+  outline: 2px solid var(--orden-gold);
+  outline-offset: 2px;
+}
+
+/* Texto del estado solo para lectores de pantalla (mismo criterio que
+   .acta-tab__srSolo): el color no es el único indicador (estándar D07). */
+.orden-tab__srSolo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* =========================================================

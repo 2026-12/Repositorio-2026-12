@@ -30,7 +30,7 @@ import {
 import './styles/ordenSanitaria.css';
 
 const TOTAL_PASOS = 5;
-const SEGUNDOS_CONFIRMACION = 20;
+const SEGUNDOS_CONFIRMACION = 180;
 
 const MENSAJE_VALIDACION =
   'Existen campos obligatorios pendientes. Revise las secciones marcadas en rojo antes de continuar.';
@@ -100,8 +100,12 @@ export default function OrdenSanitariaModulo({
   onFinalizar,
   onVolverInicio,
 }) {
-  const [progresoGuardado] = useState(() => cargarProgresoOrdenSanitaria());
-
+  // EH5-05: se carga el progreso de la inspección recibida, no el de la
+  // última orden activa. Así una orden pendiente de otra inspección nunca se
+  // mezcla con esta. Si idInspeccion no llega (recarga de la página, se
+  // pierde location.state), el servicio retoma la orden activa.
+  const [progresoGuardado] = useState(() => cargarProgresoOrdenSanitaria(idInspeccion));
+  
   const infoInspeccion = useMemo(
     () =>
       inspeccionRelacionada ||
