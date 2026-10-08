@@ -1645,9 +1645,12 @@ body {
   overflow: hidden;
 }
 
+/* Panel de resultado con degradado dorado. Sobre el dorado el texto blanco
+   no se lee, así que todo el contenido del panel usa el azul oscuro de la
+   marca (o ese azul con transparencia para los textos secundarios). */
 .cierre__panel-izquierdo {
-  background: linear-gradient(160deg, var(--azul-oscuro), var(--azul-acero));
-  color: var(--blanco);
+  background: linear-gradient(160deg, #E8D3A2, var(--dorado));
+  color: var(--azul-oscuro);
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -1665,23 +1668,29 @@ body {
   margin-bottom: 12px;
 }
 
+/* La etiqueta dorada se mantiene en el panel derecho (fondo blanco); sobre
+   el panel dorado se usa azul para que no se pierda. */
+.cierre__panel-izquierdo .cierre__panel-etiqueta {
+  color: var(--azul-medio);
+}
+
 .cierre__panel-titulo {
   margin: 0 0 16px 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--blanco);
+  color: var(--azul-oscuro);
 }
 
 .cierre__panel-descripcion {
   font-size: 0.9rem;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(2, 26, 83, 0.85);
   margin-bottom: 24px;
 }
 
 .cierre__puntaje-box {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(2, 26, 83, 0.18);
   border-radius: 14px;
   padding: 20px;
   margin-bottom: 24px;
@@ -1690,7 +1699,7 @@ body {
 .cierre__puntaje-label {
   display: block;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(2, 26, 83, 0.85);
   margin-bottom: 8px;
 }
 
@@ -1698,18 +1707,19 @@ body {
   display: block;
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--dorado);
+  color: var(--azul-oscuro);
   margin-bottom: 6px;
 }
 
 .cierre__puntaje-clasificacion {
   display: block;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+  color: var(--azul-medio);
 }
 
 .cierre__info-establecimiento {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   padding: 16px;
   gap: 16px;
@@ -1727,7 +1737,7 @@ body {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(2, 26, 83, 0.75);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1735,25 +1745,25 @@ body {
 .cierre__info-valor {
   display: block;
   font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--blanco);
+  font-weight: 600;
+  color: var(--azul-oscuro);
 }
 
 .cierre__pie-panel {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(2, 26, 83, 0.2);
   padding-top: 16px;
 }
 
 .cierre__pie-texto {
   margin: 0 0 6px 0;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(2, 26, 83, 0.85);
 }
 
 .cierre__pie-nota {
   margin: 0;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(2, 26, 83, 0.75);
   font-style: italic;
 }
 
@@ -1765,8 +1775,8 @@ body {
   flex-direction: column;
 }
 
-/* El título comparte clase con el panel izquierdo (texto blanco sobre azul);
-   sobre el fondo blanco de este panel se usa el azul de los demás títulos. */
+/* El título comparte clase con el panel izquierdo; sobre el fondo blanco de
+   este panel se usa el azul de los demás títulos. */
 .cierre__panel-derecho .cierre__panel-titulo {
   color: var(--azul-oscuro);
 }
