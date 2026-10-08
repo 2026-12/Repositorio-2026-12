@@ -1,4 +1,5 @@
 import { PROVINCIAS_CATALOGO } from '../config/divisionTerritorial';
+import { limpiarSoloNumeros } from '../domain/validacionInfoGeneral';
 
 // Apartado I del wizard del Acta General (HU-006): datos de ubicación, fecha/
 // hora y permisos de acceso para la inspección. Es un componente "tonto": todo
@@ -174,10 +175,14 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
           <input
             id="telefonoContacto"
             type="tel"
-            placeholder="Ej: 2550-0000"
+            inputMode="numeric"
+            placeholder="Ej: 25500000"
             value={datos.telefonoContacto}
-            onChange={manejarCambio('telefonoContacto')}
+            onChange={(evento) => onCambiarCampo('telefonoContacto', limpiarSoloNumeros(evento.target.value))}
           />
+          {errores.telefonoContacto && (
+            <span className="acta-campo__error">{errores.telefonoContacto}</span>
+          )}
         </div>
 
         <div className="acta-campo">

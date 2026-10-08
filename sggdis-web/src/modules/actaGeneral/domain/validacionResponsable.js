@@ -2,6 +2,8 @@
 // inspección). Mismo formato que validarInfoGeneral: un objeto { campo:
 // mensaje } solo con lo que falla.
 
+import { esSoloNumeros, MENSAJE_SOLO_NUMEROS } from './validacionInfoGeneral';
+
 export function validarResponsable(datos) {
   const errores = {};
   const cargoResponsable = datos.cargoResponsable ?? [];
@@ -19,6 +21,8 @@ export function validarResponsable(datos) {
 
   if (!datos.numeroIdentificacionResponsable?.trim()) {
     errores.numeroIdentificacionResponsable = 'El número de identificación es obligatorio.';
+  } else if (!esSoloNumeros(datos.numeroIdentificacionResponsable)) {
+    errores.numeroIdentificacionResponsable = MENSAJE_SOLO_NUMEROS;
   }
 
   return errores;

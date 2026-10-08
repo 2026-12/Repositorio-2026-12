@@ -1,4 +1,5 @@
 import { clavePersona } from '../domain/validacionCierre';
+import { limpiarSoloNumeros } from '../domain/validacionInfoGeneral';
 import {
   LONGITUD_MAXIMA_NOMBRE_PERSONA,
   LONGITUD_MAXIMA_CARGO_INSTITUCION,
@@ -24,8 +25,10 @@ const CAMPOS_PERSONA = [
   {
     campo: 'numeroIdentificacion',
     etiqueta: 'Número de identificación *',
-    placeholder: 'Ej: 1-1234-5678',
+    placeholder: 'Ej: 112345678',
     longitudMaxima: LONGITUD_MAXIMA_IDENTIFICACION_PERSONA,
+    // Solo dígitos, igual que la identificación del Apartado II.
+    soloNumeros: true,
   },
   {
     campo: 'firma',
@@ -96,7 +99,7 @@ function ApartadoCierre({
             </div>
 
             <div className="acta-campo-fila">
-              {CAMPOS_PERSONA.map(({ campo, etiqueta, placeholder, longitudMaxima }) => {
+              {CAMPOS_PERSONA.map(({ campo, etiqueta, placeholder, longitudMaxima, soloNumeros }) => {
                 const clave = clavePersona(persona.id, campo);
 
                 return (
@@ -105,10 +108,14 @@ function ApartadoCierre({
                     <input
                       id={clave}
                       type="text"
+                      inputMode={soloNumeros ? 'numeric' : undefined}
                       maxLength={longitudMaxima}
                       placeholder={placeholder}
                       value={persona[campo]}
-                      onChange={(evento) => onCambiarPersona(persona.id, campo, evento.target.value)}
+                      onChange={(evento) => {
+                        const valor = soloNumeros ? limpiarSoloNumeros(evento.target.value) : evento.target.value;
+                        onCambiarPersona(persona.id, campo, valor);
+                      }}
                     />
                     {errores[clave] && (
                       <span className="acta-campo__error">{errores[clave]}</span>

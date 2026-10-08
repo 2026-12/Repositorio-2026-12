@@ -93,7 +93,7 @@ function llenarInfoGeneral() {
 function llenarResponsable() {
   cy.get('#nombreResponsable').type('María Fernández Solano')
   marcarOpciones('cargoResponsable', ['Encargado(a)'])
-  cy.get('#numeroIdentificacionResponsable').type('1-2345-6789')
+  cy.get('#numeroIdentificacionResponsable').type('123456789')
 }
 
 function llenarMotivo() {
@@ -114,7 +114,7 @@ function llenarCierre() {
   cy.contains('button', 'Agregar persona').click()
   cy.get('[id$="-nombreCompleto"]').type('Juan Pérez Mora')
   cy.get('[id$="-cargoInstitucion"]').type('Inspector')
-  cy.get('[id$="-numeroIdentificacion"]').type('1-1111-1111')
+  cy.get('[id$="-numeroIdentificacion"]').type('111111111')
   cy.get('[id$="-firma"]').type('J. Pérez')
 }
 
@@ -338,7 +338,7 @@ describe('Acta General', () => {
 
     it('al faltar el cargo, el pop-up lleva el foco al selector del cargo', () => {
       cy.get('#nombreResponsable').type('María Fernández Solano')
-      cy.get('#numeroIdentificacionResponsable').type('1-2345-6789')
+      cy.get('#numeroIdentificacionResponsable').type('123456789')
       irSiguiente()
 
       verAvisoCamposObligatorios()

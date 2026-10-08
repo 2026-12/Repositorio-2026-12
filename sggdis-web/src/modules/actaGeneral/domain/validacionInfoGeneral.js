@@ -4,6 +4,25 @@
 
 const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Teléfono y número de identificación del acta solo admiten dígitos, sin
+// guiones, espacios ni otros símbolos, en todos los apartados donde aparecen
+// (I, II y VI). Estas utilidades viven acá y las importan las demás
+// validaciones y los formularios.
+const PATRON_SOLO_NUMEROS = /^\d+$/;
+
+export const MENSAJE_SOLO_NUMEROS = 'Solo se admiten números, sin guiones ni otros símbolos.';
+
+// Filtra el valor mientras se escribe (o se pega): deja solo los dígitos.
+export function limpiarSoloNumeros(valor = '') {
+  return valor.replace(/\D/g, '');
+}
+
+// true si el valor tiene solo dígitos. Sirve para rechazar datos que no
+// pasaron por el filtro (por ejemplo, un acta guardada antes con "1-2345-6789").
+export function esSoloNumeros(valor = '') {
+  return PATRON_SOLO_NUMEROS.test(valor.trim());
+}
+
 export function validarInfoGeneral(datos) {
   const errores = {};
 
@@ -33,6 +52,11 @@ export function validarInfoGeneral(datos) {
 
   if (!datos.direccionExacta?.trim()) {
     errores.direccionExacta = 'La dirección exacta es obligatoria.';
+  }
+
+  // El teléfono es opcional, pero si se escribe debe tener solo números.
+  if (datos.telefonoContacto?.trim() && !esSoloNumeros(datos.telefonoContacto)) {
+    errores.telefonoContacto = MENSAJE_SOLO_NUMEROS;
   }
 
   if (!datos.correoNotificaciones?.trim()) {

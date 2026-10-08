@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CARGOS_RESPONSABLE } from '../config/actaGeneral';
+import { limpiarSoloNumeros } from '../domain/validacionInfoGeneral';
 
 // Apartado II del wizard del Acta General (HU-007): datos de la persona que
 // atiende la inspección. El cargo es una lista desplegable de selección ÚNICA
@@ -141,9 +142,12 @@ function ApartadoResponsable({ datos, errores, onCambiarCampo }) {
         <input
           id="numeroIdentificacionResponsable"
           type="text"
-          placeholder="Ej: 1-2345-6789"
+          inputMode="numeric"
+          placeholder="Ej: 123456789"
           value={datos.numeroIdentificacionResponsable}
-          onChange={manejarCambio('numeroIdentificacionResponsable')}
+          onChange={(evento) =>
+            onCambiarCampo('numeroIdentificacionResponsable', limpiarSoloNumeros(evento.target.value))
+          }
         />
         {errores.numeroIdentificacionResponsable && (
           <span className="acta-campo__error">{errores.numeroIdentificacionResponsable}</span>

@@ -54,7 +54,7 @@ describe('useActaGeneral - navegación, finalizar y envío', () => {
       r.actualizarCampoInfoGeneral('correoNotificaciones', 'soda@correo.com');
       r.actualizarCampoResponsable('nombreResponsable', 'Luis Mora');
       r.actualizarCampoResponsable('cargoResponsable', ['ENCARGADO']);
-      r.actualizarCampoResponsable('numeroIdentificacionResponsable', '1-1111-1111');
+      r.actualizarCampoResponsable('numeroIdentificacionResponsable', '111111111');
       r.actualizarCampoMotivo('motivoInspeccion', ['SEGUIMIENTO']);
       r.actualizarCampoHallazgos('idsGuias', [1]);
       r.actualizarCampoHallazgos('hallazgos', 'Sin hallazgos relevantes.');
@@ -66,7 +66,7 @@ describe('useActaGeneral - navegación, finalizar y envío', () => {
       const r = result.current;
       r.actualizarPersonaPresente(idPersona, 'nombreCompleto', 'Luis Mora');
       r.actualizarPersonaPresente(idPersona, 'cargoInstitucion', 'Encargado');
-      r.actualizarPersonaPresente(idPersona, 'numeroIdentificacion', '1-1111-1111');
+      r.actualizarPersonaPresente(idPersona, 'numeroIdentificacion', '111111111');
       r.actualizarPersonaPresente(idPersona, 'firma', 'L. Mora');
     });
   }

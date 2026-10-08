@@ -5,6 +5,8 @@
 // useActaGeneral (bloquear la salida, indicador completo/pendiente, limpiar
 // el error al editar) funciona igual que con un formulario de campos fijos.
 
+import { esSoloNumeros, MENSAJE_SOLO_NUMEROS } from './validacionInfoGeneral';
+
 // Campos de cada persona presente y su mensaje cuando están vacíos.
 const MENSAJES_CAMPOS_PERSONA = {
   nombreCompleto: 'El nombre completo es obligatorio.',
@@ -30,6 +32,8 @@ export function validarCierre(datos) {
     Object.entries(MENSAJES_CAMPOS_PERSONA).forEach(([campo, mensaje]) => {
       if (!persona[campo]?.trim()) {
         errores[clavePersona(persona.id, campo)] = mensaje;
+      } else if (campo === 'numeroIdentificacion' && !esSoloNumeros(persona[campo])) {
+        errores[clavePersona(persona.id, campo)] = MENSAJE_SOLO_NUMEROS;
       }
     });
   });

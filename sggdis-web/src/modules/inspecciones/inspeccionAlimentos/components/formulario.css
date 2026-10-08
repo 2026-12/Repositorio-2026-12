@@ -1765,6 +1765,12 @@ body {
   flex-direction: column;
 }
 
+/* El título comparte clase con el panel izquierdo (texto blanco sobre azul);
+   sobre el fondo blanco de este panel se usa el azul de los demás títulos. */
+.cierre__panel-derecho .cierre__panel-titulo {
+  color: var(--azul-oscuro);
+}
+
 .cierre__campos-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
