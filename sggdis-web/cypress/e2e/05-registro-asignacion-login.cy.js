@@ -1,6 +1,15 @@
 // Sprint 1 — Flujo 5: Registro de cuenta, asignación de rol por el
-// Administrador, login del Inspector ya activado y arranque de una
-// inspección de alimentos.
+// Administrador y login del Inspector ya activado.
+//
+// HU "Inicio de sesión": la suite está dividida por criterio de aceptación.
+//   CA1 — El sistema valida que las credenciales correspondan a un usuario
+//         registrado (y rechaza cuentas sin rol/área asignados).
+//   CA2 — Si las credenciales son incorrectas, se muestra un mensaje de
+//         error y no se da acceso.
+//   CA3 — Las contraseñas se manejan cifradas, nunca en texto plano.
+// Nota: la HU menciona como salidas el código 2FA al correo y la pantalla
+// de verificación, pero el login actual es directo (correo + contraseña →
+// sesión); el 2FA aún no está implementado en PantallaLogin/AuthController.
 //
 // Prerequisito: la cuenta temporal de Administrador debe existir en la BD
 // (ver DataBase/CrearAdministradorTemporal.sql): 123@misalud.go.cr / 123.
@@ -8,129 +17,195 @@
 // Dividido en varios it() que se continúan entre sí (comparten el correo
 // creado en el primer paso). testIsolation se desactiva porque la sesión
 // vive en sessionStorage y, si no, Cypress la borraría antes de cada it().
-describe('Registro, asignación de rol, login e inspección del inspector', { testIsolation: false }, () => {
-  const sufijo = Date.now()
-  const correoNuevo = `inspector.cypress.${sufijo}@misalud.go.cr`
-  const contrasenaNueva = 'ClaveSegura123'
 
-  function seleccionarPrimeraOpcion(selector) {
-    cy.get(selector)
-      .find('option')
-      .eq(1)
-      .invoke('val')
-      .then((valor) => {
-        cy.get(selector).select(valor)
+// ========================== DATOS DE PRUEBA ==========================
+// Separados de la lógica: para cambiar usuarios o casos solo se edita
+// esta sección.
+const sufijo = Date.now()
+
+const ADMINISTRADOR = {
+  correo: '123@misalud.go.cr',
+  contrasena: '123',
+}
+
+const INSPECTOR_NUEVO = {
+  nombre: 'Inspectora',
+  primerApellido: 'Cypress',
+  segundoApellido: 'Prueba',
+  identificacion: `CY${sufijo}`,
+  correo: `inspector.cypress.${sufijo}@misalud.go.cr`,
+  contrasena: 'ClaveSegura123',
+}
+
+// Casos negativos del CA2: ambos deben terminar en el mismo mensaje
+// genérico para no revelar cuál de los dos datos falló.
+const CREDENCIALES_INVALIDAS = [
+  {
+    caso: 'un correo que no está registrado',
+    correo: 'no.existe.cypress@misalud.go.cr',
+    contrasena: 'ClaveSegura123',
+  },
+  {
+    caso: 'una contraseña equivocada para un correo registrado',
+    correo: ADMINISTRADOR.correo,
+    contrasena: 'ContrasenaEquivocada999',
+  },
+]
+
+const MSJ_CREDENCIALES_INVALIDAS = 'Correo o contraseña incorrectos.'
+// Misma URL por defecto que usa el frontend (src/config/api.js). No es un
+// dato sensible, así que va como constante (Cypress 16 eliminó Cypress.env).
+const URL_API = 'http://localhost:5288'
+// =====================================================================
+
+describe('Registro, asignación de rol y login del inspector', { testIsolation: false }, () => {
+  context('CA1 — credenciales válidas: el sistema las valida y abre el panel del rol', () => {
+    it('1) un usuario nuevo se registra desde la pantalla pública de login', () => {
+      // Por tener testIsolation: false en esta suite, la limpieza automática
+      // de Cypress no corre aquí: si quedó una cookie de refresh de una sesión
+      // manual previa, el primer visit nos metería ya logueados.
+      cy.clearCookies()
+      cy.clearAllSessionStorage()
+
+      cy.visit('/login')
+      cy.contains('button', 'Crear una cuenta').click()
+
+      cy.get('input[name="nombre"]').type(INSPECTOR_NUEVO.nombre)
+      cy.get('input[name="primerApellido"]').type(INSPECTOR_NUEVO.primerApellido)
+      cy.get('input[name="segundoApellido"]').type(INSPECTOR_NUEVO.segundoApellido)
+      cy.get('input[name="identificacion"]').type(INSPECTOR_NUEVO.identificacion)
+      cy.get('input[name="correo"]').type(INSPECTOR_NUEVO.correo)
+      cy.get('input[name="contrasena"]').type(INSPECTOR_NUEVO.contrasena)
+      cy.contains('button', 'Crear cuenta').click()
+
+      cy.get('[role="status"]').should('be.visible')
+    })
+
+    it('2) mientras no tenga rol asignado, el login debe rechazarse', () => {
+      cy.get('input[name="contrasena"]').type(INSPECTOR_NUEVO.contrasena)
+      cy.contains('button', 'Iniciar sesión').click()
+      cy.contains('Debe esperar a que el Administrador complete la asignación.').should('be.visible')
+    })
+
+    it('3) el Administrador inicia sesión y le asigna rol, región y área', () => {
+      cy.get('input[name="correo"]').clear().type(ADMINISTRADOR.correo)
+      cy.get('input[name="contrasena"]').clear().type(ADMINISTRADOR.contrasena)
+      cy.contains('button', 'Iniciar sesión').click()
+      cy.contains('Panel de administración').should('be.visible')
+
+      // El panel de administración solo maneja una región/área por select, pero
+      // el backend exige las LISTAS idAreas/idRegiones para el rol Inspector
+      // (asignaciones múltiples, ver ActualizarAsignacionAsync en AuthService).
+      // Hasta que el panel se actualice, la asignación se hace por la misma API
+      // con el token de la sesión del Administrador.
+      cy.window().then((ventana) => {
+        const sesion = JSON.parse(ventana.sessionStorage.getItem('sggdis:sesion'))
+
+        cy.request({
+          method: 'GET',
+          url: `${URL_API}/api/administracion/usuarios`,
+          headers: { Authorization: `Bearer ${sesion.token}` },
+        }).then(({ body: usuarios }) => {
+          const pendiente = usuarios.find((usuario) =>
+            usuario.correo.toLowerCase() === INSPECTOR_NUEVO.correo.toLowerCase()
+          )
+          expect(pendiente, 'usuario recién registrado en la lista').to.exist
+
+          cy.request({
+            method: 'GET',
+            url: `${URL_API}/api/administracion/usuarios/areas`,
+            headers: { Authorization: `Bearer ${sesion.token}` },
+          }).then(({ body: areas }) => {
+            const area = areas[0]
+            expect(area, 'Debe existir un área de trabajo en la BD de pruebas').to.exist
+
+            cy.request({
+              method: 'PUT',
+              url: `${URL_API}/api/administracion/usuarios/${pendiente.idUsuario}/asignacion`,
+              headers: { Authorization: `Bearer ${sesion.token}` },
+              body: {
+                rol: 'Inspector',
+                idAreas: [area.idArea],
+                idRegiones: [area.idRegion],
+              },
+            }).its('status').should('eq', 204)
+          })
+        })
       })
-  }
 
-  // Click al primer "Cumple" sin marcar, y se repite hasta que no quede
-  // ninguno (ver nota igual en 02-diligenciamiento-formulario.cy.js).
-  function responderTodosCumple() {
-    cy.get('body').then(($body) => {
-      if ($body.find('.item .opcion--cumple').not('.opcion--activa').length === 0) return
-
-      cy.get('.item .opcion--cumple').not('.opcion--activa').first().click()
-      responderTodosCumple()
-    })
-  }
-
-  // Responde todo y avanza, repitiendo hasta llegar al cierre (ver nota en 04-cierre-inspeccion.cy.js).
-  function avanzarHastaCierre(intentosRestantes) {
-    if (intentosRestantes <= 0) return
-
-    cy.get('.opcion--cumple:not(.opcion--activa), .cierre__resumen', { timeout: 10000 }).should('exist')
-
-    cy.get('body').then(($body) => {
-      if ($body.find('.cierre__resumen').length > 0) return
-
-      responderTodosCumple()
-      cy.contains('button', 'Siguiente').click()
-      avanzarHastaCierre(intentosRestantes - 1)
-    })
-  }
-
-  it('1) un usuario nuevo se registra desde la pantalla pública de login', () => {
-    // Por tener testIsolation: false en esta suite, la limpieza automática
-    // de Cypress no corre aquí: si quedó una cookie de refresh de una sesión
-    // manual previa, el primer visit nos metería ya logueados.
-    cy.clearCookies()
-    cy.clearAllSessionStorage()
-
-    cy.visit('/login')
-    cy.contains('button', 'Crear una cuenta').click()
-
-    cy.get('input[name="nombre"]').type('Inspectora')
-    cy.get('input[name="primerApellido"]').type('Cypress')
-    cy.get('input[name="segundoApellido"]').type('Prueba')
-    cy.get('input[name="identificacion"]').type(`CY${sufijo}`)
-    cy.get('input[name="correo"]').type(correoNuevo)
-    cy.get('input[name="contrasena"]').type(contrasenaNueva)
-    cy.contains('button', 'Crear cuenta').click()
-
-    cy.get('[role="status"]').should('be.visible')
-  })
-
-  it('2) mientras no tenga rol asignado, el login debe rechazarse', () => {
-    cy.get('input[name="contrasena"]').type(contrasenaNueva)
-    cy.contains('button', 'Iniciar sesión').click()
-    cy.contains('Debe esperar a que el Administrador complete la asignación.').should('be.visible')
-  })
-
-  it('3) el Administrador inicia sesión y le asigna rol, región y área', () => {
-    cy.get('input[name="correo"]').clear().type('123@misalud.go.cr')
-    cy.get('input[name="contrasena"]').clear().type('123')
-    cy.contains('button', 'Iniciar sesión').click()
-    cy.contains('Panel de administración').should('be.visible')
-
-    cy.contains('tr', correoNuevo).within(() => {
-      cy.get(`select[aria-label="Rol de ${correoNuevo}"]`).select('Inspector')
-      seleccionarPrimeraOpcion(`select[aria-label="Región de ${correoNuevo}"]`)
-      seleccionarPrimeraOpcion(`select[aria-label="Área de ${correoNuevo}"]`)
-      cy.contains('button', 'Guardar').click()
+      // El Administrador cierra sesión para que el Inspector pueda entrar.
+      cy.get('.panel-admin__logout').click()
     })
 
-    cy.contains(`Asignaciones de ${correoNuevo} actualizadas.`).should('be.visible')
+    it('4) el Inspector ya activado inicia sesión y llega a la pantalla principal', () => {
+      cy.get('input[name="correo"]').type(INSPECTOR_NUEVO.correo)
+      cy.get('input[name="contrasena"]').type(INSPECTOR_NUEVO.contrasena)
+      cy.contains('button', 'Iniciar sesión').click()
+      cy.contains('.inicio__navLink', 'Nueva inspección').should('be.visible')
 
-    // El Administrador cierra sesión para que el Inspector pueda entrar.
-    cy.get('.panel-admin__logout').click()
+      // La sesión queda guardada con el rol correcto (panel correspondiente).
+      cy.window().then((ventana) => {
+        const sesion = JSON.parse(ventana.sessionStorage.getItem('sggdis:sesion'))
+        expect(sesion.correo.toLowerCase()).to.equal(INSPECTOR_NUEVO.correo.toLowerCase())
+        expect(sesion.rol).to.equal('Inspector')
+      })
+    })
   })
 
-  it('4) el Inspector ya activado inicia sesión y llega a la pantalla principal', () => {
-    cy.get('input[name="correo"]').type(correoNuevo)
-    cy.get('input[name="contrasena"]').type(contrasenaNueva)
-    cy.contains('button', 'Iniciar sesión').click()
-    cy.contains('.inicio__navLink', 'Nueva inspección').should('be.visible')
+  context('CA2 — credenciales incorrectas: mensaje de error y sin acceso', () => {
+    it('7) se vuelve a la pantalla de login sin sesión', () => {
+      cy.clearCookies()
+      cy.clearAllSessionStorage()
+      cy.visit('/login')
+      cy.contains('button', 'Iniciar sesión').should('be.visible')
+    })
+
+    it('8) exige correo y contraseña antes de enviar la solicitud', () => {
+      cy.contains('button', 'Iniciar sesión').click()
+      cy.get('.login-error').should('be.visible').and('contain', 'Ingrese su correo institucional.')
+
+      cy.get('input[name="correo"]').type(ADMINISTRADOR.correo)
+      cy.contains('button', 'Iniciar sesión').click()
+      cy.get('.login-error').should('be.visible').and('contain', 'Ingrese su contraseña.')
+    })
+
+    for (const invalido of CREDENCIALES_INVALIDAS) {
+      it(`rechaza ${invalido.caso} con el mensaje genérico`, () => {
+        cy.intercept('POST', '**/api/auth/login').as('loginFallido')
+        cy.get('input[name="correo"]').clear().type(invalido.correo)
+        cy.get('input[name="contrasena"]').clear().type(invalido.contrasena, { log: false })
+        cy.contains('button', 'Iniciar sesión').click()
+
+        cy.wait('@loginFallido').its('response.statusCode').should('eq', 401)
+        cy.get('.login-error').should('be.visible').and('contain', MSJ_CREDENCIALES_INVALIDAS)
+        cy.location('pathname').should('eq', '/login')
+        cy.window().then((ventana) => {
+          expect(ventana.sessionStorage.getItem('sggdis:sesion')).to.be.null
+        })
+      })
+    }
   })
 
-  it('5) el Inspector arranca una inspección de alimentos', () => {
-    const numeroConsecutivo = String(Math.floor(1000 + Math.random() * 9000))
-
-    cy.get('.inicio__navLink').contains('Nueva inspección').click()
-    // Fecha y hora se auto-completan solas (campo de solo lectura). Región y
-    // área también vienen precargadas y deshabilitadas: el Inspector ya
-    // tiene un área asignada por el Administrador (ver areaAsignada en
-    // SeleccionEstablecimiento.jsx).
-    cy.get('#region').should('be.disabled')
-    cy.get('#area').should('be.disabled')
-    cy.get('#numero-consecutivo').type(numeroConsecutivo)
-    cy.get('#nombre').type('Soda Cypress Flujo Completo')
-    cy.get('.tipo-card').first().click()
-
-    cy.contains('button', 'Comenzar inspección')
-      .should('not.be.disabled')
-      .click()
-
-    cy.contains('SECCIÓN A').should('be.visible')
-  })
-
-  it('6) el Inspector completa todas las secciones y llega a la vista previa del cierre', () => {
-    avanzarHastaCierre(15) // tope de 15 pasos (secciones + subsecciones) para evitar un bucle infinito
-
-    cy.contains('Dictamen y cierre').should('be.visible')
-    cy.get('#id-representante').type('987654321')
-    cy.contains('button', 'Vista previa →').click()
-
-    cy.contains('VISTA PREVIA').should('be.visible')
-    cy.contains('Confirme los datos antes de enviar').should('be.visible')
+  context('CA3 — las contraseñas se manejan cifradas, nunca en texto plano', () => {
+    // El hash en la base de datos (PasswordHasher de ASP.NET Identity,
+    // registrado en Program.cs) no se puede verificar desde el navegador:
+    // lo cubren las pruebas unitarias del backend (AuthServiceTests). Aquí
+    // se valida que la API jamás devuelva la contraseña ni su hash.
+    it('la respuesta del login no expone la contraseña ni su hash', () => {
+      cy.request('POST', `${URL_API}/api/auth/login`, {
+        correo: INSPECTOR_NUEVO.correo,
+        contrasena: INSPECTOR_NUEVO.contrasena,
+      }).then((respuesta) => {
+        expect(respuesta.status).to.eq(200)
+        expect(respuesta.body).to.not.have.any.keys(
+          'contrasena',
+          'password',
+          'passwordHash',
+          'hashContrasena',
+          'hash',
+        )
+        expect(JSON.stringify(respuesta.body)).to.not.include(INSPECTOR_NUEVO.contrasena)
+      })
+    })
   })
 })

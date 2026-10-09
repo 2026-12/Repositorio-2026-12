@@ -17,6 +17,30 @@ function Icono({ nombre, className }) {
   );
 }
 
+// Tipos de identificación admitidos en el registro público, con su formato
+// esperado. La cédula nacional tiene 9 dígitos; la DIMEX, entre 11 y 12; el
+// pasaporte es alfanumérico.
+const TIPOS_IDENTIFICACION = {
+  CEDULA: {
+    etiqueta: 'Cédula de identidad',
+    placeholder: '9 dígitos, sin guiones',
+    patron: /^\d{9}$/,
+    mensaje: 'La cédula de identidad debe tener exactamente 9 dígitos.',
+  },
+  DIMEX: {
+    etiqueta: 'Cédula DIMEX',
+    placeholder: '11 o 12 dígitos, sin guiones',
+    patron: /^\d{11,12}$/,
+    mensaje: 'La cédula DIMEX debe tener entre 11 y 12 dígitos.',
+  },
+  PASAPORTE: {
+    etiqueta: 'Pasaporte',
+    placeholder: 'Número de pasaporte',
+    patron: /^[A-Za-z0-9]{5,30}$/,
+    mensaje: 'El pasaporte admite entre 5 y 30 caracteres alfanuméricos.',
+  },
+};
+
 export default function PantallaLogin({ onIniciarSesion, onRegistrar }) {
   const [correo, setCorreo] = useState(() => localStorage.getItem('sggdis:correo-recordado') ?? '');
   const [contrasena, setContrasena] = useState('');
@@ -24,6 +48,7 @@ export default function PantallaLogin({ onIniciarSesion, onRegistrar }) {
   const [primerApellido, setPrimerApellido] = useState('');
   const [segundoApellido, setSegundoApellido] = useState('');
   const [identificacion, setIdentificacion] = useState('');
+  const [tipoIdentificacion, setTipoIdentificacion] = useState('CEDULA');
   const [recordarme, setRecordarme] = useState(() => Boolean(localStorage.getItem('sggdis:correo-recordado')));
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [error, setError] = useState('');
@@ -54,6 +79,11 @@ export default function PantallaLogin({ onIniciarSesion, onRegistrar }) {
         setCargando(false);
         return;
       }
+      if (modoRegistro && !TIPOS_IDENTIFICACION[tipoIdentificacion].patron.test(identificacion.trim())) {
+        setError(TIPOS_IDENTIFICACION[tipoIdentificacion].mensaje);
+        setCargando(false);
+        return;
+      }
       if (modoRegistro && (nombre.trim().length > 100 || primerApellido.trim().length > 100 ||
           segundoApellido.trim().length > 100 ||
           `${nombre.trim()} ${primerApellido.trim()} ${segundoApellido.trim()}`.length > 150 ||
@@ -75,6 +105,7 @@ export default function PantallaLogin({ onIniciarSesion, onRegistrar }) {
           nombre: nombre.trim(),
           primerApellido: primerApellido.trim(),
           segundoApellido: segundoApellido.trim(),
+          tipoIdentificacion,
           identificacion: identificacion.trim(),
         });
         setMensaje(resultado?.mensaje ?? 'Cuenta creada. El Administrador debe asignarle rol y área antes de que pueda ingresar.');
@@ -84,6 +115,7 @@ export default function PantallaLogin({ onIniciarSesion, onRegistrar }) {
         setPrimerApellido('');
         setSegundoApellido('');
         setIdentificacion('');
+        setTipoIdentificacion('CEDULA');
         return;
       }
       await onIniciarSesion(correo.trim(), contrasena);
@@ -132,9 +164,19 @@ export default function PantallaLogin({ onIniciarSesion, onRegistrar }) {
                   </span>
                 </label>
                 <label className="login-field">
+                  <span>Tipo de identificación</span>
+                  <span className="login-input-wrap">
+                    <select name="tipoIdentificacion" value={tipoIdentificacion} onChange={(event) => setTipoIdentificacion(event.target.value)}>
+                      {Object.entries(TIPOS_IDENTIFICACION).map(([valor, tipo]) => (
+                        <option key={valor} value={valor}>{tipo.etiqueta}</option>
+                      ))}
+                    </select>
+                  </span>
+                </label>
+                <label className="login-field">
                   <span>Identificación</span>
                   <span className="login-input-wrap">
-                    <input autoComplete="off" name="identificacion" value={identificacion} onChange={(event) => setIdentificacion(event.target.value)} />
+                    <input autoComplete="off" name="identificacion" placeholder={TIPOS_IDENTIFICACION[tipoIdentificacion].placeholder} value={identificacion} onChange={(event) => setIdentificacion(event.target.value)} />
                   </span>
                 </label>
               </>
