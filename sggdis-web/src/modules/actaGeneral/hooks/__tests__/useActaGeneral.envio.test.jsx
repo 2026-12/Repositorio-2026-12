@@ -52,6 +52,9 @@ describe('useActaGeneral - navegación, finalizar y envío', () => {
       r.actualizarCampoInfoGeneral('distrito', 'San Rafael');
       r.actualizarCampoInfoGeneral('direccionExacta', '100 m norte de la iglesia');
       r.actualizarCampoInfoGeneral('correoNotificaciones', 'soda@correo.com');
+      // Las dos preguntas Sí/No del Apartado I también son obligatorias.
+      r.actualizarCampoInfoGeneral('autorizaIngreso', true);
+      r.actualizarCampoInfoGeneral('autorizaFotos', false);
       r.actualizarCampoResponsable('nombreResponsable', 'Luis Mora');
       r.actualizarCampoResponsable('cargoResponsable', ['ENCARGADO']);
       r.actualizarCampoResponsable('numeroIdentificacionResponsable', '111111111');
