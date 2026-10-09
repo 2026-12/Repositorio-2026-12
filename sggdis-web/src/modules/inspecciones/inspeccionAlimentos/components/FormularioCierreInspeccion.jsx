@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MARCA_ALIMENTOS } from '../config/inspeccionAlimentos';
 import { TEXTO_ORDEN_SANITARIA } from '../../config/inspeccion';
 import { useCierreInspeccion } from '../../hooks/useCierreInspeccion';
@@ -8,25 +8,43 @@ import { construirVistaPrevia } from '../../domain/vistaPreviaInspeccion';
 import { validarInspeccionCompleta } from '../../domain/validacionEnvioInspeccion';
 import AlertaError from '../../components/AlertaError';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
-import { limpiarSoloNumeros } from '../../domain/cierreInspeccion';
+import { IDENTIFICACION_REGEX, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
 import VistaPreviaInspeccion from './VistaPreviaInspeccion';
 import ErroresValidacionEnvio from './ErroresValidacionEnvio';
 import './formulario.css';
 
-// Convierte fecha localizada a formato ISO
-// para que funcione con inputs type="date"
-function convertirFechaAISO(fechaLocalizada) {
-  if (!fechaLocalizada) return '';
-  try {
-    const partes = fechaLocalizada.split('/');
-    if (partes.length !== 3) return '';
-    const dia = partes[0].padStart(2, '0');
-    const mes = partes[1].padStart(2, '0');
-    const ano = partes[2];
-    return `${ano}-${mes}-${dia}`;
-  } catch {
-    return '';
-  }
+// Geometría del anillo de cumplimiento del panel de resultado (viewBox 120x120).
+const RadioAnillo = 52;
+const CircunferenciaAnillo = 2 * Math.PI * RadioAnillo;
+
+// Tiempo que la burbuja de aviso permanece visible (igual que en las secciones).
+const DuracionAvisoMs = 3500;
+
+// Limita un valor porcentual al rango 0–100 para dibujar barras y anillos.
+function limitarPorcentaje(valor) {
+  const numero = Number(valor) || 0;
+  return Math.min(Math.max(numero, 0), 100);
+}
+
+// Formatea la fecha localizada (d/m/aaaa) como dd/mm/aaaa para mostrarla
+// en el bloque de datos registrados automáticamente.
+function formatearFechaVisual(fechaLocalizada) {
+  if (!fechaLocalizada) return '—';
+  const partes = String(fechaLocalizada).split('/');
+  if (partes.length !== 3) return String(fechaLocalizada);
+  const dia = partes[0].padStart(2, '0');
+  const mes = partes[1].padStart(2, '0');
+  const ano = partes[2];
+  return `${dia}/${mes}/${ano}`;
+}
+
+// Mensaje de error del campo de identificación del representante. Usa la misma
+// regla que obtenerCamposCierrePendientes; devuelve '' si el valor es válido.
+function obtenerErrorRepresentante(identificacion) {
+  const valor = identificacion?.trim() ?? '';
+  if (!valor) return 'Ingrese la identificación del representante.';
+  if (!IDENTIFICACION_REGEX.test(valor)) return 'Solo se permiten números.';
+  return '';
 }
 
 // Último paso del wizard: observaciones, identificación de las partes,
@@ -70,12 +88,35 @@ export default function FormularioCierreInspeccion({
     onDatosCierreChange,
   });
 
-  const [mostrarAlerta, setMostrarAlerta] = useState(false);
+  const [mostrarErroresCampos, setMostrarErroresCampos] = useState(false);
+  const [mensajeAviso, setMensajeAviso] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState(null);
   const [cierreConfirmado, setCierreConfirmado] = useState(null);
   const [erroresValidacion, setErroresValidacion] = useState([]);
   const [validando, setValidando] = useState(false);
+  const campoRepresentanteRef = useRef(null);
+  const temporizadorAvisoRef = useRef(null);
+
+  // Limpia el temporizador de la burbuja si el componente se desmonta.
+  useEffect(() => () => clearTimeout(temporizadorAvisoRef.current), []);
+
+  // Muestra la burbuja flotante de aviso y la oculta después de DuracionAvisoMs.
+  const mostrarAviso = (mensaje) => {
+    clearTimeout(temporizadorAvisoRef.current);
+    setMensajeAviso(mensaje);
+    temporizadorAvisoRef.current = setTimeout(() => setMensajeAviso(''), DuracionAvisoMs);
+  };
+
+  // Lleva la vista al campo con error y lo enfoca, como en las secciones del formulario.
+  const enfocarCampoConError = () => {
+    requestAnimationFrame(() => {
+      const campo = campoRepresentanteRef.current;
+      if (!campo) return;
+      campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => campo.focus(), 450);
+    });
+  };
 
   const cerrarConExito = useCallback((confirmacion) => {
     setCierreConfirmado(confirmacion);
@@ -92,8 +133,25 @@ export default function FormularioCierreInspeccion({
     [datos, seccionesCache, respuestas, vistas],
   );
 
+  // Valores visuales del panel de resultado: avance del anillo y de las barras.
+  const longitudProgresoAnillo = (limitarPorcentaje(porcentaje) / 100) * CircunferenciaAnillo;
+  const porcentajeAplicables = datos.puntajeMaximo
+    ? limitarPorcentaje((puntajeMaximoAjustado / datos.puntajeMaximo) * 100)
+    : 0;
+
+  // El error del campo solo se muestra después del primer intento de continuar
+  // y desaparece en cuanto el valor es válido.
+  const errorRepresentante = mostrarErroresCampos
+    ? obtenerErrorRepresentante(datosCierre.identificacionRepresentante)
+    : '';
+
   const abrirVistaPrevia = async () => {
-    setMostrarAlerta(camposPendientes.length > 0);
+    setMostrarErroresCampos(true);
+    if (camposPendientes.length > 0) {
+      mostrarAviso('Complete los campos marcados en rojo antes de continuar.');
+      enfocarCampoConError();
+    }
+
     setValidando(true);
     setErroresValidacion([]);
     setErrorEnvio(null);
@@ -128,6 +186,9 @@ export default function FormularioCierreInspeccion({
 
       const errores = validarInspeccionCompleta(vistasValidacion, cacheValidacion, respuestas);
       setErroresValidacion(errores);
+      if (errores.length > 0 && camposPendientes.length === 0) {
+        mostrarAviso('Hay secciones con ítems pendientes. Revíselas antes de continuar.');
+      }
       if (errores.length === 0 && camposPendientes.length === 0) {
         onMostrarVistaPreviaChange(true);
       }
@@ -251,6 +312,14 @@ export default function FormularioCierreInspeccion({
         </div>
       </header>
 
+      {/* Burbuja flotante de aviso (mismo patrón que las secciones del formulario) */}
+      {mensajeAviso && (
+        <div className="aviso-navegacion" role="alert">
+          <span className="aviso-navegacion__icono">!</span>
+          <span>{mensajeAviso}</span>
+        </div>
+      )}
+
       <main className="tarjeta">
         <div className="tarjeta__encabezado">
           <span className="tarjeta__etiqueta">CIERRE DE INSPECCIÓN</span>
@@ -260,49 +329,109 @@ export default function FormularioCierreInspeccion({
         </div>
 
         <div className="cierre__contenedor-grid">
-          {/* Panel izquierdo: Información de la inspección y resultado */}
+          {/* Panel izquierdo: resultado de la inspección */}
           <aside className="cierre__panel-izquierdo">
-            <div>
+            <div className="cierre__panel-encabezado">
               <span className="cierre__panel-etiqueta">RESULTADO DE LA INSPECCIÓN</span>
-              
               <h3 className="cierre__panel-titulo">Condición sanitaria</h3>
-              
-              <p className="cierre__panel-descripcion">
-                La inspección está lista para ser finalizada. Revise el resultado y complete los datos requeridos.
-              </p>
+            </div>
 
-              <div className="cierre__puntaje-box">
-                <span className="cierre__puntaje-label">Resultado obtenido</span>
-                <strong className="cierre__puntaje-valor">{porcentaje}%</strong>
-                <span className="cierre__puntaje-clasificacion">{clasificacion.etiqueta}</span>
+            {/* Tarjeta blanca con el anillo de cumplimiento y la clasificación */}
+            <div className={`cierre__resultado cierre__resultado--${clasificacion.clase}`}>
+              <div className="cierre__anillo">
+                <svg className="cierre__anillo-svg" viewBox="0 0 120 120" aria-hidden="true">
+                  <circle className="cierre__anillo-fondo" cx="60" cy="60" r={RadioAnillo} />
+                  <circle
+                    className="cierre__anillo-progreso"
+                    cx="60"
+                    cy="60"
+                    r={RadioAnillo}
+                    strokeDasharray={`${longitudProgresoAnillo} ${CircunferenciaAnillo}`}
+                  />
+                </svg>
+                <div className="cierre__anillo-texto">
+                  <strong className="cierre__anillo-valor">{porcentaje}%</strong>
+                  <span className="cierre__anillo-label">cumplimiento</span>
+                </div>
               </div>
 
-              {/* Información del establecimiento*/}
-              <div className="cierre__info-establecimiento">
-                <div className="cierre__info-item">
+              <span className="cierre__resultado-label">CLASIFICACIÓN</span>
+              <span className="cierre__clasificacion">
+                <span aria-hidden="true">{clasificacion.icono}</span>
+                {clasificacion.etiqueta}
+              </span>
+            </div>
+
+            {/* Puntos obtenidos y aplicables */}
+            <div className="cierre__puntos-grid">
+              <div className="cierre__puntos-caja">
+                <span className="cierre__puntos-label">OBTENIDOS</span>
+                <strong className="cierre__puntos-valor cierre__puntos-valor--destacado">
+                  {resumen.obtenidos} <span className="cierre__puntos-total">/ {puntajeMaximoAjustado}</span>
+                </strong>
+                <div className="cierre__barra">
+                  <div
+                    className="cierre__barra-relleno cierre__barra-relleno--dorado"
+                    style={{ width: `${limitarPorcentaje(porcentaje)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="cierre__puntos-caja">
+                <span className="cierre__puntos-label">APLICABLES</span>
+                <strong className="cierre__puntos-valor">
+                  {puntajeMaximoAjustado} <span className="cierre__puntos-total">/ {datos.puntajeMaximo}</span>
+                </strong>
+                <div className="cierre__barra">
+                  <div
+                    className="cierre__barra-relleno cierre__barra-relleno--blanco"
+                    style={{ width: `${porcentajeAplicables}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Información del establecimiento */}
+            <div className="cierre__info-establecimiento">
+              <div className="cierre__info-item">
+                <span className="cierre__info-icono" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21h18" />
+                    <path d="M5 21V9l7-5 7 5v12" />
+                    <path d="M10 21v-6h4v6" />
+                  </svg>
+                </span>
+                <div>
                   <span className="cierre__info-label">Establecimiento</span>
                   <span className="cierre__info-valor">{datos.nombre}</span>
                 </div>
-                <div className="cierre__info-item">
+              </div>
+              <div className="cierre__info-item">
+                <span className="cierre__info-icono" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M3 10h18" />
+                  </svg>
+                </span>
+                <div>
                   <span className="cierre__info-label">Tipo</span>
                   <span className="cierre__info-valor">{datos.tipoLabel}</span>
                 </div>
               </div>
             </div>
 
-            <div className="cierre__pie-panel">
-              <p className="cierre__pie-texto">
-                {resumen.obtenidos} / {datos.puntajeMaximo} Puntos obtenidos
+            {/* Aviso de puntos excluidos por "No aplica" */}
+            {puntosExcluidosPorNoAplica > 0 && (
+              <p className="cierre__pie-nota">
+                <svg className="cierre__pie-nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 11v5M12 8h.01" />
+                </svg>
+                <span>
+                  Se excluyeron <strong>{puntosExcluidosPorNoAplica} {puntosExcluidosPorNoAplica === 1 ? 'pt' : 'pts'}</strong> de ítems «No aplica». No penalizan el resultado.
+                </span>
               </p>
-              <p className="cierre__pie-texto">
-                {puntajeMaximoAjustado} / {datos.puntajeMaximo} Puntos aplicables
-              </p>
-              {puntosExcluidosPorNoAplica > 0 && (
-                <p className="cierre__pie-nota">
-                  Se excluyeron {puntosExcluidosPorNoAplica} pts de ítems "No aplica"
-                </p>
-              )}
-            </div>
+            )}
           </aside>
 
           {/* Panel derecho: Formulario de datos de cierre */}
@@ -312,78 +441,76 @@ export default function FormularioCierreInspeccion({
 
             <ErroresValidacionEnvio errores={erroresValidacion} onIrASeccion={onIrASeccion} />
 
-            {/* Alerta de campos incompletos */}
-            {mostrarAlerta && camposPendientes.length > 0 && (
-              <div className="alerta-campos-incompletos">
-¿                <div className="alerta-campos-contenido">
-                  <h4 className="alerta-campos-titulo">Campos requeridos incompletos</h4>
-                  <p className="alerta-campos-texto">
-                    Antes de finalizar la inspección, completa los siguientes campos:
-                  </p>
-                  <ul className="alerta-campos-lista">
-                    {camposPendientes.map((campo) => (
-                      <li key={campo}>{campo}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
             {/* Error de envío */}
             {errorEnvio && <AlertaError titulo="No se pudo registrar el cierre" mensaje={errorEnvio} />}
 
-            {/* CAMPOS DEL FORMULARIO EN GRID 2 COLUMNAS */}
-            <div className="cierre__campos-grid">
-              <div className="campo">
-                <label htmlFor="nombre-inspector">Inspector responsable</label>
-                <input
-                  id="nombre-inspector"
-                  type="text"
-                  value={identidadInspector?.nombreCompleto ?? ''}
-                  readOnly
-                />
-              </div>
-              <div className="campo">
-                <label htmlFor="id-inspector">Identificación del inspector</label>
-                <input
-                  id="id-inspector"
-                  type="text"
-                  value={identidadInspector?.identificacion ?? ''}
-                  readOnly
-                />
-              </div>
-            </div>
+            {/* Datos de solo lectura que el sistema registra automáticamente */}
+            <section className="cierre__datos-auto" aria-labelledby="titulo-datos-auto">
+              <h4 id="titulo-datos-auto" className="cierre__datos-auto-titulo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="5" y="11" width="14" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                REGISTRADO AUTOMÁTICAMENTE
+              </h4>
 
-            <div className="cierre__campos-grid">
-              <div className="campo">
-                <label htmlFor="fecha-inspeccion">Fecha *</label>
-                <input
-                  id="fecha-inspeccion"
-                  type="date"
-                  value={convertirFechaAISO(datos.fecha) || ''}
-                  readOnly
-                />
-              </div>
-              <div className="campo">
-                <label htmlFor="hora-cierre">Hora</label>
-                <input
-                  id="hora-cierre"
-                  type="time"
-                  value={datos.hora || ''}
-                  readOnly
-                />
-              </div>
-            </div>
+              <dl className="cierre__datos-auto-grid">
+                <div className="cierre__dato">
+                  <dt className="cierre__dato-label">Inspector responsable</dt>
+                  <dd className="cierre__dato-valor">{identidadInspector?.nombreCompleto || '—'}</dd>
+                </div>
 
-            <div className="campo">
+                <div className="cierre__dato">
+                  <dt className="cierre__dato-label">Identificación del inspector</dt>
+                  <dd className="cierre__dato-valor">{identidadInspector?.identificacion || '—'}</dd>
+                </div>
+
+                <div className="cierre__dato">
+                  <dt className="cierre__dato-label">Fecha</dt>
+                  <dd className="cierre__dato-valor">
+                    <svg className="cierre__dato-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <path d="M3 10h18M8 3v4M16 3v4" />
+                    </svg>
+                    {formatearFechaVisual(datos.fecha)}
+                  </dd>
+                </div>
+
+                <div className="cierre__dato">
+                  <dt className="cierre__dato-label">Hora de cierre</dt>
+                  <dd className="cierre__dato-valor">
+                    <svg className="cierre__dato-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </svg>
+                    {datos.hora || '—'}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <div className={`campo${errorRepresentante ? ' campo--error' : ''}`}>
               <label htmlFor="id-representante">Identificación del representante *</label>
               <input
+                ref={campoRepresentanteRef}
                 id="id-representante"
                 type="text"
                 inputMode="numeric"
+                placeholder="Ej. 102340567"
+                aria-invalid={Boolean(errorRepresentante)}
+                aria-describedby={errorRepresentante ? 'error-representante' : undefined}
                 value={datosCierre.identificacionRepresentante}
                 onChange={(e) => actualizarCampo('identificacionRepresentante', limpiarSoloNumeros(e.target.value))}
               />
+              {errorRepresentante && (
+                <span id="error-representante" className="campo__error">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5M12 16h.01" />
+                  </svg>
+                  {errorRepresentante}
+                </span>
+              )}
             </div>
 
             <div className="campo">
@@ -397,18 +524,44 @@ export default function FormularioCierreInspeccion({
               />
             </div>
 
-            {/* Checkbox de orden sanitaria */}
-            <div className="cierre__orden-sanitaria">
-              <label className="cierre__orden-sanitaria-check">
-                <input
-                  type="checkbox"
-                  checked={datosCierre.ordenSanitaria}
-                  onChange={(e) => actualizarCampo('ordenSanitaria', e.target.checked)}
-                />
-                Se requiere emitir Orden Sanitaria
-              </label>
-              <p className="cierre__orden-sanitaria-texto">{TEXTO_ORDEN_SANITARIA}</p>
-            </div>
+            {/* Orden sanitaria (Art. 65): tarjeta completa con interruptor accesible */}
+            <label
+              htmlFor="orden-sanitaria"
+              className={`cierre__orden-sanitaria${datosCierre.ordenSanitaria ? ' cierre__orden-sanitaria--activa' : ''}`}
+            >
+              <span className="cierre__orden-sanitaria-icono" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                  <path d="M14 3v5h5" />
+                  <path d="M12 11v4M12 18h.01" />
+                </svg>
+              </span>
+
+              <span className="cierre__orden-sanitaria-contenido">
+                <span className="cierre__orden-sanitaria-titulo">Se requiere emitir Orden Sanitaria</span>
+                <span className="cierre__orden-sanitaria-texto">{TEXTO_ORDEN_SANITARIA}</span>
+                {datosCierre.ordenSanitaria && (
+                  <span className="cierre__orden-sanitaria-aviso">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                    Al finalizar podrá continuar con el registro de la orden
+                  </span>
+                )}
+              </span>
+
+              <input
+                id="orden-sanitaria"
+                className="cierre__orden-sanitaria-input"
+                type="checkbox"
+                role="switch"
+                checked={datosCierre.ordenSanitaria}
+                onChange={(e) => actualizarCampo('ordenSanitaria', e.target.checked)}
+              />
+              <span className="cierre__orden-sanitaria-switch" aria-hidden="true">
+                <span className="cierre__orden-sanitaria-perilla" />
+              </span>
+            </label>
           </div>
         </div>
       </main>

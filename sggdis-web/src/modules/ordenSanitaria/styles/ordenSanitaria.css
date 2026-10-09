@@ -1126,41 +1126,43 @@ body,
 
 /* =========================================================
    MODAL DE SALIDA
+   Mismo diseño que el modal "¿Volver al menú principal?" del
+   Acta General (.acta-modal). Estas clases también las usa el
+   modal de eliminar ordenanza.
    ========================================================= */
 
 .orden-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  padding: 20px;
+  padding: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(2, 18, 48, 0.58);
-  backdrop-filter: blur(2px);
+  background: rgba(2, 26, 83, 0.55);
 }
 
 .orden-modal-salida {
-  width: min(520px, 100%);
-  padding: 26px 28px 24px;
-  border: 1px solid var(--orden-border);
-  border-radius: 14px;
+  width: 100%;
+  max-width: 560px;
+  padding: 28px;
+  border-radius: 16px;
   background: var(--orden-white);
-  box-shadow: 0 18px 50px rgba(2, 26, 83, 0.28);
+  box-shadow: 0 16px 40px rgba(2, 26, 83, 0.28);
 }
 
 .orden-modal-salida h2 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: var(--orden-navy);
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
 }
 
 .orden-modal-salida > p {
-  margin: 0 0 24px;
+  margin: 0 0 26px;
   color: var(--orden-muted);
-  font-size: 0.88rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 .orden-modal-salida__acciones {
@@ -1171,32 +1173,44 @@ body,
 }
 
 .orden-modal-boton {
-  min-height: 40px;
-  padding: 8px 16px;
+  min-width: 130px;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 .orden-modal-boton--secundario {
-  border: 1px solid #BCC5D1;
+  border: 1px solid var(--orden-blue);
   background: var(--orden-white);
   color: var(--orden-blue);
 }
 
-.orden-modal-boton--secundario:not(:disabled):hover {
+.orden-modal-boton--secundario:hover:not(:disabled) {
   background: #EEF4FA;
 }
 
+/* Azul: acción "Salir", igual que en Acta General y Guía de Inspección. */
+.orden-modal-boton--azul {
+  border: 1px solid var(--orden-blue);
+  background: var(--orden-blue);
+  color: var(--orden-white);
+}
+
+.orden-modal-boton--azul:hover:not(:disabled) {
+  background: #002E7A;
+}
+
+/* Rojo: acciones destructivas como "Eliminar" ordenanza (estándar D06). */
 .orden-modal-boton--primario {
   border: 1px solid var(--orden-danger);
   background: var(--orden-danger);
   color: var(--orden-white);
 }
 
-.orden-modal-boton--primario:hover {
+.orden-modal-boton--primario:hover:not(:disabled) {
   background: #922019;
 }
 
@@ -1204,7 +1218,6 @@ body,
   opacity: 0.45;
   cursor: not-allowed;
 }
-
 /* =========================================================
    CONFIRMACIÓN FINAL COMPACTA
    ========================================================= */
