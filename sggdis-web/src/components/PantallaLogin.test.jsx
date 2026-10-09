@@ -56,8 +56,45 @@ describe('PantallaLogin', () => {
       nombre: 'María',
       primerApellido: 'Pérez',
       segundoApellido: 'Solano',
+      tipoIdentificacion: 'CEDULA',
       identificacion: '001234567',
     }));
     expect(await screen.findByRole('status')).toHaveTextContent('Cuenta pendiente de asignación.');
+  });
+
+  it('permite registrarse con pasaporte usando su formato alfanumérico', async () => {
+    const onRegistrar = vi.fn().mockResolvedValue({ mensaje: 'Cuenta pendiente de asignación.' });
+    render(<PantallaLogin onIniciarSesion={vi.fn()} onRegistrar={onRegistrar} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Crear una cuenta' }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
+    fireEvent.change(screen.getByLabelText('Primer apellido'), { target: { value: 'Rojas' } });
+    fireEvent.change(screen.getByLabelText('Segundo apellido'), { target: { value: 'Mora' } });
+    fireEvent.change(screen.getByLabelText('Tipo de identificación'), { target: { value: 'PASAPORTE' } });
+    fireEvent.change(screen.getByLabelText('Identificación'), { target: { value: 'X1234567' } });
+    fireEvent.change(screen.getByLabelText('Usuario institucional'), { target: { value: 'ana@misalud.go.cr' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'clave-inicial-segura' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+    await waitFor(() => expect(onRegistrar).toHaveBeenCalledWith(expect.objectContaining({
+      tipoIdentificacion: 'PASAPORTE',
+      identificacion: 'X1234567',
+    })));
+  });
+
+  it('rechaza una identificación que no cumple el formato del tipo elegido', async () => {
+    const onRegistrar = vi.fn();
+    render(<PantallaLogin onIniciarSesion={vi.fn()} onRegistrar={onRegistrar} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Crear una cuenta' }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana' } });
+    fireEvent.change(screen.getByLabelText('Primer apellido'), { target: { value: 'Rojas' } });
+    fireEvent.change(screen.getByLabelText('Segundo apellido'), { target: { value: 'Mora' } });
+    fireEvent.change(screen.getByLabelText('Tipo de identificación'), { target: { value: 'DIMEX' } });
+    fireEvent.change(screen.getByLabelText('Identificación'), { target: { value: '123' } });
+    fireEvent.change(screen.getByLabelText('Usuario institucional'), { target: { value: 'ana@misalud.go.cr' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'clave-inicial-segura' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('DIMEX');
+    expect(onRegistrar).not.toHaveBeenCalled();
   });
 });

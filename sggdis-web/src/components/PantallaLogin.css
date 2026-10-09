@@ -108,7 +108,8 @@
   color: #164c9b;
 }
 
-.login-input-wrap input {
+.login-input-wrap input,
+.login-input-wrap select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
