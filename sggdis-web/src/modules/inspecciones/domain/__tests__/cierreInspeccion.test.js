@@ -115,6 +115,29 @@ describe('obtenerCamposCierrePendientes', () => {
     });
     expect(pendientes).toContain('Identificación del representante del establecimiento (solo se permiten números)');
   });
+
+  it('rechaza la identificación del representante si supera el tamaño de la columna (30)', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      identificacionRepresentante: '1'.repeat(31),
+    });
+    expect(pendientes).toEqual(['Identificación del representante del establecimiento (máximo 30 caracteres)']);
+  });
+
+  it('rechaza las observaciones finales si superan el tamaño de la columna (2000)', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      identificacionRepresentante: '223456789',
+      observacionesFinales: 'a'.repeat(2001),
+    });
+    expect(pendientes).toEqual(['Observaciones finales (máximo 2000 caracteres)']);
+  });
+
+  it('acepta observaciones finales justo en el límite', () => {
+    const pendientes = obtenerCamposCierrePendientes({
+      identificacionRepresentante: '223456789',
+      observacionesFinales: 'a'.repeat(2000),
+    });
+    expect(pendientes).toEqual([]);
+  });
 });
 
 describe('limpiarSoloLetras / limpiarSoloNumeros', () => {

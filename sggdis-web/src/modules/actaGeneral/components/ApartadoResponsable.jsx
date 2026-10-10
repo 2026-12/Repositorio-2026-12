@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { CARGOS_RESPONSABLE } from '../config/actaGeneral';
+import {
+  CARGOS_RESPONSABLE,
+  LONGITUD_MAXIMA_NOMBRE_RESPONSABLE,
+  LONGITUD_MAXIMA_CARGO_RESPONSABLE_OTRO,
+  LONGITUD_MAXIMA_IDENTIFICACION_RESPONSABLE,
+} from '../config/actaGeneral';
 import { limpiarSoloNumeros } from '../domain/validacionInfoGeneral';
 
 // Apartado II del wizard del Acta General (HU-007): datos de la persona que
@@ -71,6 +76,7 @@ function ApartadoResponsable({ datos, errores, onCambiarCampo }) {
           id="nombreResponsable"
           type="text"
           placeholder="Ej: María Fernández Solano"
+          maxLength={LONGITUD_MAXIMA_NOMBRE_RESPONSABLE}
           value={datos.nombreResponsable}
           onChange={manejarCambio('nombreResponsable')}
         />
@@ -126,6 +132,7 @@ function ApartadoResponsable({ datos, errores, onCambiarCampo }) {
             id="cargoResponsableOtro"
             type="text"
             placeholder="Ej: Encargado de mantenimiento"
+            maxLength={LONGITUD_MAXIMA_CARGO_RESPONSABLE_OTRO}
             value={datos.cargoResponsableOtro}
             onChange={manejarCambio('cargoResponsableOtro')}
           />
@@ -144,6 +151,7 @@ function ApartadoResponsable({ datos, errores, onCambiarCampo }) {
           type="text"
           inputMode="numeric"
           placeholder="Ej: 123456789"
+          maxLength={LONGITUD_MAXIMA_IDENTIFICACION_RESPONSABLE}
           value={datos.numeroIdentificacionResponsable}
           onChange={(evento) =>
             onCambiarCampo('numeroIdentificacionResponsable', limpiarSoloNumeros(evento.target.value))

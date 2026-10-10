@@ -63,6 +63,12 @@ export const DATOS_CIERRE_INICIALES = {
 export const NOMBRE_INSPECTOR_REGEX = /^[A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]+$/;
 export const IDENTIFICACION_REGEX = /^[0-9]+$/;
 
+// Máximo de caracteres de los campos del cierre. Son los mismos tamaños de las
+// columnas IDENTIFICACION_REPRESENTANTE VARCHAR2(30) y OBSERVACIONES_FINALES
+// VARCHAR2(2000) de INS_INSPECCION, y los que valida el backend al cerrar.
+export const LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE = 30;
+export const LONGITUD_MAXIMA_OBSERVACIONES_FINALES = 2000;
+
 // Filtra el campo de nombre mientras se escribe: solo letras (con acentos) y espacios.
 export function limpiarSoloLetras(valor = '') {
   return valor.replace(/[^A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]/g, '');
@@ -74,7 +80,9 @@ export function limpiarSoloNumeros(valor = '') {
 }
 
 // La identidad del inspector viene de su cuenta; en el cierre solo valida la contraparte.
-export function obtenerCamposCierrePendientes({ identificacionRepresentante }) {
+// También revisa los tamaños máximos: el maxLength del input no cubre datos
+// restaurados desde localStorage.
+export function obtenerCamposCierrePendientes({ identificacionRepresentante, observacionesFinales }) {
   const pendientes = [];
 
   const idRepresentante = identificacionRepresentante?.trim() ?? '';
@@ -82,6 +90,14 @@ export function obtenerCamposCierrePendientes({ identificacionRepresentante }) {
     pendientes.push('Identificación del representante del establecimiento');
   } else if (!IDENTIFICACION_REGEX.test(idRepresentante)) {
     pendientes.push('Identificación del representante del establecimiento (solo se permiten números)');
+  } else if (idRepresentante.length > LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE) {
+    pendientes.push(
+      `Identificación del representante del establecimiento (máximo ${LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE} caracteres)`,
+    );
+  }
+
+  if ((observacionesFinales?.trim().length ?? 0) > LONGITUD_MAXIMA_OBSERVACIONES_FINALES) {
+    pendientes.push(`Observaciones finales (máximo ${LONGITUD_MAXIMA_OBSERVACIONES_FINALES} caracteres)`);
   }
 
   return pendientes;

@@ -70,6 +70,10 @@ namespace SGGDIS_Api.Controllers
             {
                 return NotFound();
             }
+            catch (InfoGeneralInvalidaException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al guardar el apartado de información general del acta {IdActa}.", id);
@@ -215,7 +219,8 @@ namespace SGGDIS_Api.Controllers
             {
                 return Conflict(ex.Message);
             }
-            catch (Exception ex) when (ex is ResponsableInvalidoException
+            catch (Exception ex) when (ex is InfoGeneralInvalidaException
+                or ResponsableInvalidoException
                 or MotivoInvalidoException
                 or HallazgosInvalidosException
                 or AccionesInvalidasException

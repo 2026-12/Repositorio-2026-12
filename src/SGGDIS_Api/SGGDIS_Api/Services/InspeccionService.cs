@@ -28,6 +28,13 @@ namespace SGGDIS_Api.Services
             : base("La identificación del representante es obligatoria para cerrar la inspección.") { }
     }
 
+    // Se lanza si algún dato de cierre supera el tamaño de su columna en la BD
+    // (si llegara a Oracle, fallaría con ORA-12899 y el cierre respondería 500).
+    public class CamposCierreInvalidosException : Exception
+    {
+        public CamposCierreInvalidosException(string mensaje) : base(mensaje) { }
+    }
+
     public class InspectorNoDisponibleException : Exception
     {
         public InspectorNoDisponibleException()
@@ -40,6 +47,10 @@ namespace SGGDIS_Api.Services
     /// </summary>
     public class InspeccionService : IInspeccionService
     {
+        // Mismos tamaños que las columnas de cierre en INS_INSPECCION.
+        private const int LongitudMaximaIdentificacionRepresentante = 30;
+        private const int LongitudMaximaObservacionesFinales = 2000;
+
         private readonly SggdisDbContext _context;
         private readonly ILogger<InspeccionService> _logger;
 
@@ -170,6 +181,20 @@ namespace SGGDIS_Api.Services
             if (string.IsNullOrWhiteSpace(dto.IdentificacionRepresentante))
             {
                 throw new CamposCierreIncompletosException();
+            }
+
+            // Mismos tamaños que IDENTIFICACION_REPRESENTANTE VARCHAR2(30) y
+            // OBSERVACIONES_FINALES VARCHAR2(2000). Se valida antes de tocar la BD.
+            if (dto.IdentificacionRepresentante.Trim().Length > LongitudMaximaIdentificacionRepresentante)
+            {
+                throw new CamposCierreInvalidosException(
+                    $"La identificación del representante no puede superar los {LongitudMaximaIdentificacionRepresentante} caracteres.");
+            }
+
+            if (dto.ObservacionesFinales?.Trim().Length > LongitudMaximaObservacionesFinales)
+            {
+                throw new CamposCierreInvalidosException(
+                    $"Las observaciones finales no pueden superar los {LongitudMaximaObservacionesFinales} caracteres.");
             }
 
             var inspeccion = await _context.Inspecciones

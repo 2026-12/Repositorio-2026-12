@@ -152,6 +152,40 @@ namespace SGGDIS_Api.Tests.Services
             Assert.False(contexto.ActasResponsable.AsNoTracking().Any());
         }
 
+        [Fact]
+        public async Task GuardarResponsableAsync_RechazaUnaIdentificacionMasLargaQueLaColumna()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActa(contexto);
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<ResponsableInvalidoException>(() =>
+                servicio.GuardarResponsableAsync(1, new InfoResponsableActaDto
+                {
+                    NumeroIdentificacionResponsable = new string('1', 31),
+                }));
+
+            Assert.False(contexto.ActasResponsable.AsNoTracking().Any());
+        }
+
+        // ---------- Apartado I: límites de longitud ----------
+
+        [Fact]
+        public async Task GuardarInfoGeneralAsync_RechazaUnaDireccionMasLargaQueLaColumna()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActa(contexto);
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<InfoGeneralInvalidaException>(() =>
+                servicio.GuardarInfoGeneralAsync(1, new InfoGeneralActaDto
+                {
+                    DireccionExacta = new string('a', 401),
+                }));
+
+            Assert.False(contexto.ActasInfoGeneral.AsNoTracking().Any());
+        }
+
         // ---------- Apartado III: Motivo ----------
 
         [Fact]
@@ -201,6 +235,21 @@ namespace SGGDIS_Api.Tests.Services
                 servicio.GuardarMotivoAsync(1, new InfoMotivoActaDto
                 {
                     MotivoInspeccion = new List<string> { "MOTIVO_INVENTADO" },
+                }));
+        }
+
+        [Fact]
+        public async Task GuardarMotivoAsync_RechazaUnDetalleDeOtroMasLargoQueLaColumna()
+        {
+            using var contexto = TestDbContextFactory.Crear();
+            CrearActa(contexto);
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<MotivoInvalidoException>(() =>
+                servicio.GuardarMotivoAsync(1, new InfoMotivoActaDto
+                {
+                    MotivoInspeccion = new List<string> { "OTRO" },
+                    MotivoInspeccionOtro = new string('a', 201),
                 }));
         }
 

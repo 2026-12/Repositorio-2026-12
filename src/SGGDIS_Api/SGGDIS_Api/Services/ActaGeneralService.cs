@@ -20,15 +20,22 @@ namespace SGGDIS_Api.Services
         public AccionesInvalidasException(string mensaje) : base(mensaje) { }
     }
 
+    // Se lanza si los datos del Apartado I no se pueden guardar tal como
+    // vienen (algún texto supera el tamaño de su columna).
+    public class InfoGeneralInvalidaException : Exception
+    {
+        public InfoGeneralInvalidaException(string mensaje) : base(mensaje) { }
+    }
+
     // Se lanza si los datos del Apartado II no se pueden guardar tal como
-    // vienen (un código de cargo desconocido).
+    // vienen (un código de cargo desconocido, o textos demasiado largos).
     public class ResponsableInvalidoException : Exception
     {
         public ResponsableInvalidoException(string mensaje) : base(mensaje) { }
     }
 
     // Se lanza si los datos del Apartado III no se pueden guardar tal como
-    // vienen (un código de motivo desconocido).
+    // vienen (un código de motivo desconocido, o el detalle de "Otro" demasiado largo).
     public class MotivoInvalidoException : Exception
     {
         public MotivoInvalidoException(string mensaje) : base(mensaje) { }
@@ -82,6 +89,24 @@ namespace SGGDIS_Api.Services
             "PRIMERA_VEZ_PSF", "SEGUIMIENTO", "RENOVACION_PSF", "DENUNCIA", "LEY_9028_10066",
             "EVENTO_MASIVO", "EMERGENCIA", "OTRO",
         };
+
+        // Mismos tamaños que las columnas de INS_ACTA_INFO_GENERAL (Apartado I).
+        private const int LongitudMaximaHoraInicio = 5;
+        private const int LongitudMaximaNumeroExpediente = 30;
+        private const int LongitudMaximaNumeroDenuncia = 30;
+        private const int LongitudMaximaNombreComercial = 200;
+        private const int LongitudMaximaDivisionTerritorial = 100;
+        private const int LongitudMaximaDireccionExacta = 400;
+        private const int LongitudMaximaTelefonoContacto = 30;
+        private const int LongitudMaximaCorreoNotificaciones = 150;
+
+        // Mismos tamaños que las columnas de INS_ACTA_RESPONSABLE (Apartado II).
+        private const int LongitudMaximaNombreResponsable = 200;
+        private const int LongitudMaximaCargoResponsableOtro = 200;
+        private const int LongitudMaximaIdentificacionResponsable = 30;
+
+        // Mismo tamaño que la columna MOTIVO_INSPECCION_OTRO (Apartado III).
+        private const int LongitudMaximaMotivoInspeccionOtro = 200;
 
         // Mismos tamaños que las columnas MOTIVO_REPROGRAMACION y ACCION_OTRO.
         private const int LongitudMaximaMotivoReprogramacion = 400;
@@ -209,19 +234,43 @@ namespace SGGDIS_Api.Services
 
         private async Task AplicarInfoGeneralAsync(int idActa, InfoGeneralActaDto dto)
         {
+            var numeroExpediente = LimpiarOpcional(dto.NumeroExpediente);
+            var numeroDenuncia = LimpiarOpcional(dto.NumeroDenuncia);
+            var nombreComercial = LimpiarOpcional(dto.NombreComercial);
+            var provincia = LimpiarOpcional(dto.Provincia);
+            var canton = LimpiarOpcional(dto.Canton);
+            var distrito = LimpiarOpcional(dto.Distrito);
+            var direccionExacta = LimpiarOpcional(dto.DireccionExacta);
+            var telefonoContacto = LimpiarOpcional(dto.TelefonoContacto);
+            var correoNotificaciones = LimpiarOpcional(dto.CorreoNotificaciones);
+
+            // Se valida antes de tocar la BD: si un texto supera su columna, Oracle
+            // rechaza el guardado (ORA-12899) y el endpoint respondería 500.
+            Func<string, Exception> crearError = mensaje => new InfoGeneralInvalidaException(mensaje);
+            ValidarLongitud(dto.HoraInicio, LongitudMaximaHoraInicio, "La hora de inicio", crearError);
+            ValidarLongitud(numeroExpediente, LongitudMaximaNumeroExpediente, "El número de expediente", crearError);
+            ValidarLongitud(numeroDenuncia, LongitudMaximaNumeroDenuncia, "El número de denuncia", crearError);
+            ValidarLongitud(nombreComercial, LongitudMaximaNombreComercial, "El nombre del establecimiento", crearError);
+            ValidarLongitud(provincia, LongitudMaximaDivisionTerritorial, "La provincia", crearError);
+            ValidarLongitud(canton, LongitudMaximaDivisionTerritorial, "El cantón", crearError);
+            ValidarLongitud(distrito, LongitudMaximaDivisionTerritorial, "El distrito", crearError);
+            ValidarLongitud(direccionExacta, LongitudMaximaDireccionExacta, "La dirección exacta", crearError);
+            ValidarLongitud(telefonoContacto, LongitudMaximaTelefonoContacto, "El teléfono de contacto", crearError);
+            ValidarLongitud(correoNotificaciones, LongitudMaximaCorreoNotificaciones, "El correo para notificaciones", crearError);
+
             var infoGeneral = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaInfoGeneral { IdActa = idActa });
 
             infoGeneral.FechaInspeccion = dto.FechaInspeccion;
             infoGeneral.HoraInicio = dto.HoraInicio;
-            infoGeneral.NumeroExpediente = LimpiarOpcional(dto.NumeroExpediente);
-            infoGeneral.NumeroDenuncia = LimpiarOpcional(dto.NumeroDenuncia);
-            infoGeneral.NombreComercial = LimpiarOpcional(dto.NombreComercial);
-            infoGeneral.Provincia = LimpiarOpcional(dto.Provincia);
-            infoGeneral.Canton = LimpiarOpcional(dto.Canton);
-            infoGeneral.Distrito = LimpiarOpcional(dto.Distrito);
-            infoGeneral.DireccionExacta = LimpiarOpcional(dto.DireccionExacta);
-            infoGeneral.TelefonoContacto = LimpiarOpcional(dto.TelefonoContacto);
-            infoGeneral.CorreoNotificaciones = LimpiarOpcional(dto.CorreoNotificaciones);
+            infoGeneral.NumeroExpediente = numeroExpediente;
+            infoGeneral.NumeroDenuncia = numeroDenuncia;
+            infoGeneral.NombreComercial = nombreComercial;
+            infoGeneral.Provincia = provincia;
+            infoGeneral.Canton = canton;
+            infoGeneral.Distrito = distrito;
+            infoGeneral.DireccionExacta = direccionExacta;
+            infoGeneral.TelefonoContacto = telefonoContacto;
+            infoGeneral.CorreoNotificaciones = correoNotificaciones;
             infoGeneral.AutorizaIngreso = ConvertirBooleanoSN(dto.AutorizaIngreso);
             infoGeneral.AutorizaFotos = ConvertirBooleanoSN(dto.AutorizaFotos);
         }
@@ -242,17 +291,26 @@ namespace SGGDIS_Api.Services
             // siempre quede igual sin importar en qué orden se marcó.
             var cargosOrdenados = CargosValidos.Where(cargos.Contains).ToList();
 
-            var responsable = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaResponsable { IdActa = idActa });
-
-            responsable.NombreResponsable = LimpiarOpcional(dto.NombreResponsable);
-            responsable.CargoResponsable = cargosOrdenados.Count > 0 ? string.Join(",", cargosOrdenados) : null;
+            var nombreResponsable = LimpiarOpcional(dto.NombreResponsable);
             // El detalle libre de "Otro" solo tiene sentido si "Otro" está entre
             // los cargos marcados; si no, se descarta para no dejar basura de una
             // elección anterior.
-            responsable.CargoResponsableOtro = cargosOrdenados.Contains("OTRO")
+            var cargoResponsableOtro = cargosOrdenados.Contains("OTRO")
                 ? LimpiarOpcional(dto.CargoResponsableOtro)
                 : null;
-            responsable.NumeroIdentificacionResponsable = LimpiarOpcional(dto.NumeroIdentificacionResponsable);
+            var numeroIdentificacion = LimpiarOpcional(dto.NumeroIdentificacionResponsable);
+
+            Func<string, Exception> crearError = mensaje => new ResponsableInvalidoException(mensaje);
+            ValidarLongitud(nombreResponsable, LongitudMaximaNombreResponsable, "El nombre del responsable", crearError);
+            ValidarLongitud(cargoResponsableOtro, LongitudMaximaCargoResponsableOtro, "El detalle del cargo", crearError);
+            ValidarLongitud(numeroIdentificacion, LongitudMaximaIdentificacionResponsable, "El número de identificación", crearError);
+
+            var responsable = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaResponsable { IdActa = idActa });
+
+            responsable.NombreResponsable = nombreResponsable;
+            responsable.CargoResponsable = cargosOrdenados.Count > 0 ? string.Join(",", cargosOrdenados) : null;
+            responsable.CargoResponsableOtro = cargoResponsableOtro;
+            responsable.NumeroIdentificacionResponsable = numeroIdentificacion;
         }
 
         private async Task AplicarMotivoAsync(int idActa, InfoMotivoActaDto dto)
@@ -271,14 +329,19 @@ namespace SGGDIS_Api.Services
             // siempre quede igual sin importar en qué orden se marcó.
             var motivosOrdenados = MotivosValidos.Where(motivos.Contains).ToList();
 
+            // Igual que con los cargos del responsable: el detalle de "Otro" solo
+            // se conserva si "Otro" está entre los motivos marcados.
+            var motivoOtro = motivosOrdenados.Contains("OTRO")
+                ? LimpiarOpcional(dto.MotivoInspeccionOtro)
+                : null;
+
+            ValidarLongitud(motivoOtro, LongitudMaximaMotivoInspeccionOtro, "El detalle del motivo",
+                mensaje => new MotivoInvalidoException(mensaje));
+
             var motivo = await ObtenerOCrearApartadoAsync(idActa, () => new InsActaMotivo { IdActa = idActa });
 
             motivo.MotivoInspeccion = motivosOrdenados.Count > 0 ? string.Join(",", motivosOrdenados) : null;
-            // Igual que con los cargos del responsable: el detalle de "Otro" solo
-            // se conserva si "Otro" está entre los motivos marcados.
-            motivo.MotivoInspeccionOtro = motivosOrdenados.Contains("OTRO")
-                ? LimpiarOpcional(dto.MotivoInspeccionOtro)
-                : null;
+            motivo.MotivoInspeccionOtro = motivoOtro;
         }
 
         private async Task AplicarHallazgosAsync(int idActa, InfoHallazgosActaDto dto)
@@ -398,6 +461,16 @@ namespace SGGDIS_Api.Services
             {
                 throw new CierreInvalidoException(
                     $"{nombreCampo} de una persona presente no puede superar los {longitudMaxima} caracteres.");
+            }
+        }
+
+        // Lanza la excepción del apartado (el controller responde 400) si el
+        // texto supera el tamaño de su columna en la BD.
+        private static void ValidarLongitud(string? valor, int longitudMaxima, string nombreCampo, Func<string, Exception> crearExcepcion)
+        {
+            if (valor is not null && valor.Length > longitudMaxima)
+            {
+                throw crearExcepcion($"{nombreCampo} no puede superar los {longitudMaxima} caracteres.");
             }
         }
 

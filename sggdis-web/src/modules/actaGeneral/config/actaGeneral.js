@@ -19,6 +19,23 @@ export const APARTADOS_ACTA = [
 // tabs y el "Paso X de 6" solo cuentan los seis apartados).
 export const APARTADO_VISTA_PREVIA = 'vista-previa';
 
+// Máximo de caracteres de los textos del Apartado I (mismos tamaños que las
+// columnas de INS_ACTA_INFO_GENERAL y que valida el backend al guardar).
+export const LONGITUD_MAXIMA_NUMERO_EXPEDIENTE = 30;
+export const LONGITUD_MAXIMA_NUMERO_DENUNCIA = 30;
+export const LONGITUD_MAXIMA_NOMBRE_COMERCIAL = 200;
+export const LONGITUD_MAXIMA_DIRECCION_EXACTA = 400;
+export const LONGITUD_MAXIMA_TELEFONO_CONTACTO = 30;
+export const LONGITUD_MAXIMA_CORREO_NOTIFICACIONES = 150;
+
+// Máximo de caracteres de los textos del Apartado II (columnas de INS_ACTA_RESPONSABLE).
+export const LONGITUD_MAXIMA_NOMBRE_RESPONSABLE = 200;
+export const LONGITUD_MAXIMA_CARGO_RESPONSABLE_OTRO = 200;
+export const LONGITUD_MAXIMA_IDENTIFICACION_RESPONSABLE = 30;
+
+// Máximo de caracteres del detalle de "Otro" del Apartado III (MOTIVO_INSPECCION_OTRO).
+export const LONGITUD_MAXIMA_MOTIVO_INSPECCION_OTRO = 200;
+
 // Máximo de caracteres de la descripción de hallazgos (Apartado IV). Es el
 // mismo tamaño de la columna HALLAZGOS VARCHAR2(4000) de INS_ACTA_GENERAL.
 export const LONGITUD_MAXIMA_HALLAZGOS = 4000;

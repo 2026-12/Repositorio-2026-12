@@ -188,6 +188,38 @@ namespace SGGDIS_Api.Tests.Services
         }
 
         [Fact]
+        public async Task CerrarInspeccionAsync_RechazaIdentificacionRepresentanteMasLargaQueLaColumna()
+        {
+            var (contexto, inspeccion, _, _) = await PrepararInspeccionConItems();
+            using var _1 = contexto;
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<CamposCierreInvalidosException>(() =>
+                servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
+                {
+                    IdentificacionRepresentante = new string('1', 31),
+                }));
+        }
+
+        [Fact]
+        public async Task CerrarInspeccionAsync_RechazaObservacionesFinalesMasLargasQueLaColumna()
+        {
+            var (contexto, inspeccion, _, _) = await PrepararInspeccionConItems();
+            using var _1 = contexto;
+            var servicio = CrearServicio(contexto);
+
+            await Assert.ThrowsAsync<CamposCierreInvalidosException>(() =>
+                servicio.CerrarInspeccionAsync(inspeccion.IdInspeccion, new CerrarInspeccionDto
+                {
+                    IdentificacionRepresentante = "222222222",
+                    ObservacionesFinales = new string('a', 2001),
+                }));
+
+            // No debe quedar finalizada a medias.
+            Assert.NotEqual("FINALIZADA", (await contexto.Inspecciones.FindAsync(inspeccion.IdInspeccion))!.Estado);
+        }
+
+        [Fact]
         public async Task CerrarInspeccionAsync_RechazaSiHayItemsObligatoriosSinResponder()
         {
             var (contexto, inspeccion, _, _) = await PrepararInspeccionConItems();

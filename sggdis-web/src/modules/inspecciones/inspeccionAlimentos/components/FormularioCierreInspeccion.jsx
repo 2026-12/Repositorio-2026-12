@@ -8,7 +8,12 @@ import { construirVistaPrevia } from '../../domain/vistaPreviaInspeccion';
 import { validarInspeccionCompleta } from '../../domain/validacionEnvioInspeccion';
 import AlertaError from '../../components/AlertaError';
 import mapaDorado from '../../../../assets/mapa-dorado.png';
-import { IDENTIFICACION_REGEX, limpiarSoloNumeros } from '../../domain/cierreInspeccion';
+import {
+  IDENTIFICACION_REGEX,
+  LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE,
+  LONGITUD_MAXIMA_OBSERVACIONES_FINALES,
+  limpiarSoloNumeros,
+} from '../../domain/cierreInspeccion';
 import VistaPreviaInspeccion from './VistaPreviaInspeccion';
 import ErroresValidacionEnvio from './ErroresValidacionEnvio';
 import './formulario.css';
@@ -44,6 +49,9 @@ function obtenerErrorRepresentante(identificacion) {
   const valor = identificacion?.trim() ?? '';
   if (!valor) return 'Ingrese la identificación del representante.';
   if (!IDENTIFICACION_REGEX.test(valor)) return 'Solo se permiten números.';
+  if (valor.length > LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE) {
+    return `Máximo ${LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE} dígitos.`;
+  }
   return '';
 }
 
@@ -497,6 +505,7 @@ export default function FormularioCierreInspeccion({
                 type="text"
                 inputMode="numeric"
                 placeholder="Ej. 102340567"
+                maxLength={LONGITUD_MAXIMA_IDENTIFICACION_REPRESENTANTE}
                 aria-invalid={Boolean(errorRepresentante)}
                 aria-describedby={errorRepresentante ? 'error-representante' : undefined}
                 value={datosCierre.identificacionRepresentante}
@@ -518,6 +527,7 @@ export default function FormularioCierreInspeccion({
               <textarea
                 id="observaciones-finales"
                 rows={4}
+                maxLength={LONGITUD_MAXIMA_OBSERVACIONES_FINALES}
                 placeholder="Anotar observaciones finales de la inspección..."
                 value={datosCierre.observacionesFinales}
                 onChange={(e) => actualizarCampo('observacionesFinales', e.target.value)}

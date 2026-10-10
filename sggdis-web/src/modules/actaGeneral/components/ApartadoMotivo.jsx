@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MOTIVOS_INSPECCION } from '../config/actaGeneral';
+import { MOTIVOS_INSPECCION, LONGITUD_MAXIMA_MOTIVO_INSPECCION_OTRO } from '../config/actaGeneral';
 
 // Apartado III del wizard del Acta General (HU-008): motivo de la
 // inspección. Es una lista desplegable de selección ÚNICA (combobox): solo se
@@ -109,6 +109,7 @@ function ApartadoMotivo({ datos, errores, onCambiarCampo }) {
             id="motivoInspeccionOtro"
             type="text"
             placeholder="Ej: Verificación de denuncia anónima"
+            maxLength={LONGITUD_MAXIMA_MOTIVO_INSPECCION_OTRO}
             value={datos.motivoInspeccionOtro}
             onChange={manejarCambio('motivoInspeccionOtro')}
           />

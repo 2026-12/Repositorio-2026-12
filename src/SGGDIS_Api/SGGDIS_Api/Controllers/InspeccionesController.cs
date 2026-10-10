@@ -158,6 +158,10 @@ namespace SGGDIS_Api.Controllers
             {
                 return BadRequest(ex.Message);
             }
+            catch (CamposCierreInvalidosException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (SeccionesIncompletasException ex)
             {
                 return Conflict(ex.Message);

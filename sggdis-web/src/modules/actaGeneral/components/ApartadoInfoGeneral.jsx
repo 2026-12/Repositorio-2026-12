@@ -1,3 +1,11 @@
+import {
+  LONGITUD_MAXIMA_NUMERO_EXPEDIENTE,
+  LONGITUD_MAXIMA_NUMERO_DENUNCIA,
+  LONGITUD_MAXIMA_NOMBRE_COMERCIAL,
+  LONGITUD_MAXIMA_DIRECCION_EXACTA,
+  LONGITUD_MAXIMA_TELEFONO_CONTACTO,
+  LONGITUD_MAXIMA_CORREO_NOTIFICACIONES,
+} from '../config/actaGeneral';
 import { PROVINCIAS_CATALOGO } from '../config/divisionTerritorial';
 import { limpiarSoloNumeros } from '../domain/validacionInfoGeneral';
 
@@ -74,6 +82,7 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
             id="numeroExpediente"
             type="text"
             placeholder="Ej: EXP-2026-0892"
+            maxLength={LONGITUD_MAXIMA_NUMERO_EXPEDIENTE}
             value={datos.numeroExpediente}
             onChange={manejarCambio('numeroExpediente')}
           />
@@ -85,6 +94,7 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
             id="numeroDenuncia"
             type="text"
             placeholder="Ej: DEN-2026-0104"
+            maxLength={LONGITUD_MAXIMA_NUMERO_DENUNCIA}
             value={datos.numeroDenuncia}
             onChange={manejarCambio('numeroDenuncia')}
           />
@@ -97,6 +107,7 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
           id="nombreComercial"
           type="text"
           placeholder="Ej: Industria de Alimentos Central S.A."
+          maxLength={LONGITUD_MAXIMA_NOMBRE_COMERCIAL}
           value={datos.nombreComercial}
           onChange={manejarCambio('nombreComercial')}
         />
@@ -161,6 +172,7 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
         <textarea
           id="direccionExacta"
           placeholder="Otras señas y referencia geográfica exacta..."
+          maxLength={LONGITUD_MAXIMA_DIRECCION_EXACTA}
           value={datos.direccionExacta}
           onChange={manejarCambio('direccionExacta')}
         />
@@ -177,6 +189,7 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
             type="tel"
             inputMode="numeric"
             placeholder="Ej: 25500000"
+            maxLength={LONGITUD_MAXIMA_TELEFONO_CONTACTO}
             value={datos.telefonoContacto}
             onChange={(evento) => onCambiarCampo('telefonoContacto', limpiarSoloNumeros(evento.target.value))}
           />
@@ -191,6 +204,7 @@ function ApartadoInfoGeneral({ datos, errores, onCambiarCampo }) {
             id="correoNotificaciones"
             type="email"
             placeholder="notificaciones@empresa.com"
+            maxLength={LONGITUD_MAXIMA_CORREO_NOTIFICACIONES}
             value={datos.correoNotificaciones}
             onChange={manejarCambio('correoNotificaciones')}
           />
